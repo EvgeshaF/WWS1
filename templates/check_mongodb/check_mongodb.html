@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="status" hx-post="{% url 'check_mongodb' %}"
+     hx-trigger="load"
+     hx-target="#status"
+     hx-swap="none"
+     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <p>Проверяем подключение к MongoDB...</p>
+</div>
+{% endblock %}
