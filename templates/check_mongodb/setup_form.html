@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <!-- Кнопка для открытия модального окна -->
+    <div class="text-center">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#setupModal">
+            Настроить подключение к MongoDB
+        </button>
+    </div>
+
+    <!-- Модальное окно для настроек -->
+    <div class="modal fade" id="setupModal" tabindex="-1" aria-labelledby="setupModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="setupModalLabel">Настройка подключения к MongoDB</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма для настройки MongoDB -->
+                    <form method="post" action="{% url 'check_mongodb' %}" class="form-horizontal">
+                        {% csrf_token %}
+
+                        <!-- Если форма невалидна, показываем ошибки -->
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <ul>
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <!-- Поля формы -->
+                        {{ form.as_p }}
+
+                        <!-- Кнопка отправки -->
+                        <button type="submit" class="btn btn-success">Сохранить настройки</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

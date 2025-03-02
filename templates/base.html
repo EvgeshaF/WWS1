@@ -1,50 +1,87 @@
 {% load static %}
+
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}WWS1{% endblock %}</title>
+    <title>MongoDB Проверка</title>
 
-    <link rel="icon" href="{% static 'defaults_html_img/favicon.ico' %}">
-    <link rel="apple-touch-icon" href="{% static 'defaults_html_img/apple-touch-icon.png' %}">
-    <link rel="apple-touch-icon-precomposed" href="{% static 'defaults_html_img/apple-touch-icon-precomposed.png' %}">
+    <!-- Подключение локального Bootstrap -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'bootstrap/icons/bootstrap-icons.css' %}">
-    <link rel="stylesheet" href="{% static 'my_toasts/toasts.css' %}">
+    <!-- Подключение локального HTMX -->
+    <script src="{% static 'js/htmx.min.js' %}"></script>
+{#    <script src="{% static 'js/htmx_event-header.js' %}"></script>#}
 
-    {% block extra_css %}{% endblock %}
+
 </head>
 <body>
-{% block navbar %}{% include 'navbar.html' %}{% endblock %}
+    <div class="container mt-5">
+        {% block content %}
+        {% endblock %}
+    </div>
 
-<div class="container">
-    <header class="mb-4 text-center">
-        <h1 class="display-4">{% block header %}WWS1{% endblock %}</h1>
-    </header>
+    <!-- Подключение локального Bootstrap JS -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 
-    <main>{% block content %}{% endblock %}</main>
+<!-- Контейнер для Toast (исправленный ID) -->
+<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>
 
-    <footer class="mt-5 py-3 text-center">
-        <p class="text-muted">&copy; 2025 WWS1 EF-SOFT</p>
-    </footer>
-</div>
+<!-- Скрипт для динамического отображения Toast -->
+<script>
+document.body.addEventListener("htmx:afterRequest", function(event) {
+    console.log("Ответ от сервера:", event.detail.xhr.responseText);
+    if (event.detail.xhr.status === 200) {
+        let response = JSON.parse(event.detail.xhr.responseText);
+        console.log("Параметры Toast:", response.status, response.success);
+        showToast(response.status, response.success);
+    } else {
+        console.error("Ошибка запроса:", event.detail.xhr.status);
+    }
+});
 
-<!-- Контейнер тостов -->
-<div id="toast-container"></div>
 
-<!-- Скрытые Django сообщения -->
-<div id="django-messages" style="display: none;">
-    {% for message in messages %}
-    <div data-tags="{{ message.tags }}" data-text="{{ message|force_escape }}" data-delay="5000"></div>
-    {% endfor %}
-</div>
+function showToast(message, isSuccess = true) {
+    console.log("Показываю Toast:", message);
 
-<script src="{% static 'my_toasts/toasts.js' %}"></script>
-<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'htmx/js/htmx.min.js' %}"></script>
+    let toastContainer = document.getElementById("toastContainer");
+    if (!toastContainer) {
+        console.error("Не найден контейнер для Toast");
+        return;
+    }
 
-{% block extra_js %}{% endblock %}
+    // Динамически создаем элемент Toast с HTML-шаблоном
+    let toastHTML = `
+        <div class="toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+
+    // Создаем новый DOM-элемент из строки HTML
+    let toastElement = document.createElement("div");
+    toastElement.innerHTML = toastHTML;
+
+    // Получаем сам элемент Toast
+    let toastNode = toastElement.firstElementChild; // Используем firstElementChild, а не firstChild
+
+    // Добавляем созданный Toast в контейнер
+    toastContainer.appendChild(toastNode);
+
+    // Создаем и показываем Toast
+    let toast = new bootstrap.Toast(toastNode);
+    toast.show();
+
+    // Убираем Toast через 5 секунд
+    setTimeout(() => toastNode.remove(), 5000);
+}
+
+
+</script>
+
+
 </body>
 </html>

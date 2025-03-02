@@ -1,7 +1,10 @@
 from django.urls import path, include
-from . import views
+#
+from home.views import home
+
+
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('mongodb/', include('mongodb.urls')),
+    path('', home, name='home'),
+    path('check-mongodb/', include('check_mongodb.urls')),
 ]
