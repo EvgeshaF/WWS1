@@ -1,5 +1,7 @@
+from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('', include('home.urls')),  # Главная страница
+    path('admin/', admin.site.urls),
+    path('', include('mongo_db.urls')),
 ]

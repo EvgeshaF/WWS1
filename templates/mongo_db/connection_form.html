@@ -1,0 +1,90 @@
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">MongoDB Connection</h5>
+    </div>
+    <div class="card-body">
+        <form hx-post="{% url 'save_mongo_config' %}"
+              hx-target="#main-content"
+              hx-swap="innerHTML"
+              hx-indicator="#form-indicator">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form.host.id_for_label }}" class="form-label">{{ form.host.label }}</label>
+                {{ form.host }}
+                {% if form.host.errors %}
+                <div class="text-danger">
+                    {% for error in form.host.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.port.id_for_label }}" class="form-label">{{ form.port.label }}</label>
+                {{ form.port }}
+                {% if form.port.errors %}
+                <div class="text-danger">
+                    {% for error in form.port.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.login.id_for_label }}" class="form-label">{{ form.login.label }}</label>
+                {{ form.login }}
+                {% if form.login.errors %}
+                <div class="text-danger">
+                    {% for error in form.login.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                <div class="text-danger">
+                    {% for error in form.password.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.database.id_for_label }}" class="form-label">{{ form.database.label }}</label>
+                {{ form.database }}
+                {% if form.database.errors %}
+                <div class="text-danger">
+                    {% for error in form.database.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                    <span class="spinner-border spinner-border-sm d-none" id="form-indicator" role="status" aria-hidden="true"></span>
+                    Save Connection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('htmx:afterRequest', function(event) {
+        const connectionMessage = '{{ connection_message }}';
+        if (connectionMessage && connectionMessage !== '') {
+            const isSuccess = false;  // Connection form means there was an issue
+            showToast(connectionMessage, isSuccess);
+        }
+    });
+</script>
