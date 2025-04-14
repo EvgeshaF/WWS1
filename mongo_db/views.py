@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
-from forms import MongoConnectionForm, LoginForm
-from mongo import MongoConnection
+from .forms import MongoConnectionForm, LoginForm
+from .mongo import MongoConnection
 
 
 def index(request):
