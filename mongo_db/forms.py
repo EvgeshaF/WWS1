@@ -31,6 +31,7 @@ class MongoConnectionForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Username'
         }),
+        initial='evgenij',
         required=True,
         help_text="Enter your MongoDB username."
     )
@@ -40,6 +41,7 @@ class MongoConnectionForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Password'
         }),
+        initial='16081977',
         required=True,
         help_text="Enter your MongoDB password."
     )
@@ -49,6 +51,7 @@ class MongoConnectionForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Database name'
         }),
+        initial='wws',
         required=True,
         help_text="Enter the name of the MongoDB database."
     )
