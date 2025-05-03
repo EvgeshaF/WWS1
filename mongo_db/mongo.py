@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from dotenv import load_dotenv
 
 
 class MongoConnection:
