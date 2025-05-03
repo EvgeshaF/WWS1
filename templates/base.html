@@ -1,29 +1,26 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Django MongoDB HTMX App</title>
+
+    <title>{% block title %}Django MongoDB App{% endblock %}</title>
+
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
     <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
-    <style>
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-        }
-    </style>
+    <script src="{% static 'js/htmx.min.js' %}"></script>
 </head>
 <body>
+{% include 'partials/messages.html' %}
     <div class="container py-4">
         <header class="pb-3 mb-4 border-bottom">
-            <h1 class="fw-bold">Django MongoDB App</h1>
+            <h1 class="fw-bold">{% block page_title %}Django MongoDB App{% endblock %}</h1>
         </header>
-
-        <div class="toast-container" id="toastContainer"></div>
 
         <div class="row">
             <div class="col-md-6 mx-auto">
@@ -31,71 +28,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Custom JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Function to show a toast message
-            window.showToast = function(message, isSuccess = true) {
-                const toastContainer = document.getElementById('toastContainer');
-
-                const toastEl = document.createElement('div');
-                toastEl.className = 'toast';
-                toastEl.setAttribute('role', 'alert');
-                toastEl.setAttribute('aria-live', 'assertive');
-                toastEl.setAttribute('aria-atomic', 'true');
-
-                const toastHeader = document.createElement('div');
-                toastHeader.className = `toast-header bg-${isSuccess ? 'success' : 'danger'} text-white`;
-
-                const toastTitle = document.createElement('strong');
-                toastTitle.className = 'me-auto';
-                toastTitle.textContent = isSuccess ? 'Success' : 'Error';
-
-                const closeButton = document.createElement('button');
-                closeButton.type = 'button';
-                closeButton.className = 'btn-close btn-close-white';
-                closeButton.setAttribute('data-bs-dismiss', 'toast');
-                closeButton.setAttribute('aria-label', 'Close');
-
-                const toastBody = document.createElement('div');
-                toastBody.className = 'toast-body';
-                toastBody.textContent = message;
-
-                toastHeader.appendChild(toastTitle);
-                toastHeader.appendChild(closeButton);
-
-                toastEl.appendChild(toastHeader);
-                toastEl.appendChild(toastBody);
-
-                toastContainer.appendChild(toastEl);
-
-                const toast = new bootstrap.Toast(toastEl, {
-                    delay: 5000
-                });
-
-                toast.show();
-
-                // Remove the toast element after it's hidden
-                toastEl.addEventListener('hidden.bs.toast', function() {
-                    toastContainer.removeChild(toastEl);
-                });
-            };
-
-            // Check for connection message and display toast
-            const connectionMessage = '{{ connection_message }}';
-            if (connectionMessage && connectionMessage !== '') {
-                const isSuccess = '{{ show_login_form }}' === 'True';
-                setTimeout(() => {
-                    showToast(connectionMessage, isSuccess);
-                }, 500);
-            }
-        });
-    </script>
-
-    {% block scripts %}{% endblock %}
 </body>
 </html>

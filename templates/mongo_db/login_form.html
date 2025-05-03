@@ -1,3 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Login — Django MongoDB App{% endblock %}
+{% block page_title %}Login{% endblock %}
+
+{% block content %}
 <div class="card">
     <div class="card-header bg-success text-white">
         <h5 class="card-title mb-0">Login</h5>
@@ -44,13 +50,4 @@
         <div id="login-result-container" class="mt-3"></div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('htmx:afterRequest', function(event) {
-        const connectionMessage = '{{ connection_message }}';
-        if (connectionMessage && connectionMessage !== '') {
-            const isSuccess = true;  // Login form means connection was successful
-            showToast(connectionMessage, isSuccess);
-        }
-    });
-</script>
+{% endblock %}

@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from .forms import MongoConnectionForm, LoginForm
@@ -6,31 +7,36 @@ from .mongo import MongoConnection
 
 
 def index(request):
-    # Check if MongoDB configuration exists
+    # Проверка существования конфигурации MongoDB
     config_exists = MongoConnection.check_mongo_config_exists()
 
     if config_exists:
-        # Test the connection
+        # Проверка подключения
         success, message = MongoConnection.test_connection()
+
+        if message:
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
 
         context = {
             'show_login_form': success,
             'show_connection_form': not success,
-            'connection_message': message,
             'login_form': LoginForm(),
             'connection_form': MongoConnectionForm(),
         }
     else:
-        # Configuration doesn't exist
+        messages.warning(request, "MongoDB configuration not found")
         context = {
             'show_login_form': False,
             'show_connection_form': True,
-            'connection_message': "MongoDB configuration not found",
             'login_form': LoginForm(),
             'connection_form': MongoConnectionForm(),
         }
 
     return render(request, 'mongo_db/index.html', context)
+
 
 
 @require_POST
@@ -49,25 +55,21 @@ def save_mongo_config(request):
         )
 
         if success:
-            # Test connection with new configuration
             connection_success, connection_message = MongoConnection.test_connection()
 
             if connection_success:
-                return render(request, 'mongo_db/login_form.html', {
-                    'form': LoginForm(),
-                    'connection_message': connection_message
-                })
+                messages.success(request, connection_message)  # ✅ показываем сообщение
+                return redirect('index')
 
-        # If we got here, either saving failed or connection test failed
-        return render(request, 'mongo_db/connection_form.html', {
-            'form': form,
-            'connection_message': message if not success else connection_message
-        })
+            messages.error(request, connection_message)  # ❌ ошибка подключения
+        else:
+            messages.error(request, message)  # ❌ ошибка сохранения
 
-    # Form validation failed
+    else:
+        messages.error(request, "Invalid form data")
+
     return render(request, 'mongo_db/connection_form.html', {
-        'form': form,
-        'connection_message': "Invalid form data"
+        'form': form
     })
 
 
