@@ -50,7 +50,7 @@ class MongoConnectionForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Database name'
         }),
-        initial='wws',
+        initial='admin',
         required=True,
         help_text="Enter the name of the MongoDB database."
     )
