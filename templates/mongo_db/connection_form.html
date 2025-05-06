@@ -3,10 +3,13 @@
         <h5 class="card-title mb-0">MongoDB Connection</h5>
     </div>
     <div class="card-body">
+    <!--
         <form hx-post="{% url 'save_mongo_config' %}"
               hx-target="#main-content"
               hx-swap="innerHTML"
               hx-indicator="#form-indicator">
+    -->
+    <form method="POST" action="{% url 'save_mongo_config' %}">
             {% csrf_token %}
 
             <div class="mb-3">

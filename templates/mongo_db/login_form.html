@@ -3,10 +3,13 @@
         <h5 class="card-title mb-0">Login</h5>
     </div>
     <div class="card-body">
+    <!--
         <form hx-post="{% url 'login' %}"
               hx-target="#login-result-container"
               hx-swap="innerHTML"
               hx-indicator="#login-indicator">
+    -->
+        <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
 
             <div class="mb-3">
