@@ -41,7 +41,6 @@ class MongoConnectionForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Password'
         }),
-        initial='16081977',
         required=True,
         help_text="Enter your MongoDB password."
     )
