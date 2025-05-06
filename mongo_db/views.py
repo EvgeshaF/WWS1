@@ -25,6 +25,7 @@ def index(request):
             'show_connection_form': not success,
             'login_form': LoginForm(),
             'connection_form': MongoConnectionForm(),
+            'page_title': 'Anmelden' if success else 'Servereinstellungen',
         }
     else:
         messages.warning(request, "MongoDB configuration not found")
@@ -33,9 +34,12 @@ def index(request):
             'show_connection_form': True,
             'login_form': LoginForm(),
             'connection_form': MongoConnectionForm(),
+            'page_title': 'Servereinstellungen',
         }
 
     return render(request, 'mongo_db/index.html', context)
+
+
 
 
 

@@ -1,29 +1,35 @@
 {% if messages %}
-<div class="toast-container position-fixed top-0 end-0 p-3">
-    {% for message in messages %}
-    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header {% if message.tags %}bg-{{ message.tags }} text-white{% endif %}">
-            <strong class="me-auto">Notification</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body">
-            {{ message }}
-        </div>
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        {% for message in messages %}
+            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header {% if message.tags == "error" %} bg-danger text-white
+                                            {% elif message.tags == "success" %} bg-success text-white
+                                            {% elif message.tags == "warning" %} bg-warning text-dark
+                                            {% elif message.tags == "info" %} bg-info text-dark
+                                            {% else %} bg-secondary text-white
+                                            {% endif %}
+                ">
+                    <strong class="me-auto">Notification</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var toastElList = [].slice.call(document.querySelectorAll('.toast'));
-        var toastList = toastElList.map(function(toastEl) {
-            return new bootstrap.Toast(toastEl, {
-                autohide: true,
-                delay: 5000
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            var toastList = toastElList.map(function (toastEl) {
+                return new bootstrap.Toast(toastEl, {
+                    autohide: true,
+                    delay: 5000
+                });
             });
+
+            toastList.forEach(toast => toast.show());
         });
-        
-        toastList.forEach(toast => toast.show());
-    });
-</script>
+    </script>
 {% endif %}
