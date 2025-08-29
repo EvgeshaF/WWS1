@@ -1,129 +1,106 @@
-function showToast(toastEl) {
-    if (toastEl.classList.contains('shown')) return;
+// static/my_toasts/toasts.js - Исправленная версия
 
-    const container = document.getElementById('toast-container');
-    const toastDelay = parseInt(toastEl.dataset.delay) || 5000;
+document.addEventListener('DOMContentLoaded', function() {
+    // Обрабатываем Django сообщения при загрузке страницы
+    const djangoMessages = document.getElementById('django-messages');
+    if (djangoMessages) {
+        const messages = djangoMessages.querySelectorAll('div[data-tags]');
+        messages.forEach(messageDiv => {
+            const tags = messageDiv.getAttribute('data-tags');
+            const text = messageDiv.getAttribute('data-text');
+            const delay = parseInt(messageDiv.getAttribute('data-delay')) || 5000;
+            showToast(text, tags, delay);
+        });
+    }
 
-    // Удаляем дублирующиеся тосты с тем же текстом
-    container.querySelectorAll('.toast').forEach(el => {
-        const existingBody = el.querySelector('.toast-body');
-        const newBody = toastEl.querySelector('.toast-body');
-
-        if (existingBody && newBody && existingBody.innerHTML === newBody.innerHTML) {
-            const oldToast = bootstrap.Toast.getInstance(el);
-            if (oldToast) oldToast.hide();
-            el.remove();
+    // Обрабатываем HTMX ответы
+    document.body.addEventListener('htmx:afterRequest', function(event) {
+        const response = event.detail.xhr.responseText;
+        
+        // Проверяем, является ли ответ JSON с сообщениями
+        try {
+            const data = JSON.parse(response);
+            if (data && data.messages && Array.isArray(data.messages)) {
+                // Очищаем контейнер toast от JSON текста
+                const container = document.getElementById('toast-container');
+                if (container && container.textContent.includes('{"messages"')) {
+                    container.innerHTML = '';
+                }
+                
+                // Показываем каждое сообщение как toast
+                data.messages.forEach(message => {
+                    showToast(message.text, message.tags, message.delay || 5000);
+                });
+            }
+        } catch (e) {
+            // Если это не JSON, игнорируем
         }
     });
+});
 
-    toastEl.classList.add('toast', 'border-0', 'toast-pop', 'shown');
-    container.prepend(toastEl);
+function showToast(message, type = 'info', delay = 5000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
 
-    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: toastDelay });
+    // Создаем элемент toast
+    const toast = document.createElement('div');
+    toast.className = `toast show align-items-center text-white bg-${getBootstrapClass(type)} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
 
-    toastEl.addEventListener('hidden.bs.toast', () => {
-        toastEl.remove();
-    });
+    const toastId = 'toast-' + Date.now();
+    toast.id = toastId;
 
-    toast.show();
-}
-
-function createToast(message) {
-    const toastEl = document.createElement('div');
-    toastEl.className = 'toast mb-2 fade';
-    toastEl.setAttribute('role', 'alert');
-    toastEl.setAttribute('aria-live', 'assertive');
-    toastEl.setAttribute('aria-atomic', 'true');
-    toastEl.dataset.delay = message.delay || 5000;
-
-    let bgClass = 'bg-info text-white';
-    let iconClass = 'bi-info-circle-fill';
-    let strongText = 'Info';
-
-    if (message.tags === 'success') {
-        bgClass = 'bg-success text-white';
-        iconClass = 'bi-check-circle-fill';
-        strongText = 'Erfolg';
-    }
-    else if (message.tags === 'error') {
-        bgClass = 'bg-danger text-white';
-        iconClass = 'bi-x-circle-fill';
-        strongText = 'Fehler';
-    }
-    else if (message.tags === 'warning') {
-        bgClass = 'bg-warning text-dark';
-        iconClass = 'bi-exclamation-triangle-fill';
-        strongText = 'Warnung';
-    }
-
-    toastEl.innerHTML = `
-        <div class="toast-header ${bgClass} rounded-top">
-            <i class="bi ${iconClass} me-2"></i>
-            <strong class="me-auto">${strongText}</strong>
+    // HTML структура toast
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="${getIcon(type)}"></i> ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                    data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
-        <div class="toast-body toast-body-${message.tags}">${message.text}</div>
     `;
 
-    showToast(toastEl);
+    // Добавляем в контейнер
+    container.appendChild(toast);
+
+    // Инициализируем Bootstrap Toast
+    const bsToast = new bootstrap.Toast(toast, {
+        delay: delay,
+        autohide: true
+    });
+
+    // Показываем toast
+    bsToast.show();
+
+    // Удаляем элемент после скрытия
+    toast.addEventListener('hidden.bs.toast', function() {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    });
 }
 
-// Инициализация Django сообщений при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    // Ищем скрытый контейнер с сообщениями
-    const messagesContainer = document.getElementById('django-messages');
+function getBootstrapClass(type) {
+    const typeMap = {
+        'success': 'success',
+        'error': 'danger',
+        'warning': 'warning',
+        'info': 'info',
+        'debug': 'secondary'
+    };
+    return typeMap[type] || 'info';
+}
 
-    if (messagesContainer) {
-        const messageElements = messagesContainer.querySelectorAll('div[data-tags]');
-
-        messageElements.forEach(el => {
-            const message = {
-                tags: el.getAttribute('data-tags'),
-                text: el.getAttribute('data-text'),
-                delay: parseInt(el.getAttribute('data-delay')) || 5000
-            };
-
-            if (message.tags && message.text) {
-                createToast(message);
-            }
-        });
-
-        // Удаляем контейнер после обработки
-        messagesContainer.remove();
-    }
-});
-
-// HTMX: обработка JSON ответов после HTMX запросов
-document.body.addEventListener('htmx:afterRequest', function(evt) {
-    const xhr = evt.detail.xhr;
-    if (!xhr || xhr.status !== 200) return;
-
-    // Проверяем Content-Type на JSON
-    const contentType = xhr.getResponseHeader('Content-Type') || '';
-    if (!contentType.includes('application/json')) return;
-
-    try {
-        const data = JSON.parse(xhr.responseText);
-        if (data.messages && Array.isArray(data.messages)) {
-            data.messages.forEach(msg => createToast(msg));
-        }
-    } catch (e) {
-        console.warn('Ошибка парсинга JSON ответа:', e);
-    }
-});
-
-// Обработка ошибок HTMX
-document.body.addEventListener('htmx:responseError', function(evt) {
-    createToast({
-        tags: 'error',
-        text: 'Ошибка сети. Попробуйте еще раз.',
-        delay: 5000
-    });
-});
-
-document.body.addEventListener('htmx:sendError', function(evt) {
-    createToast({
-        tags: 'error',
-        text: 'Ошибка отправки запроса.',
-        delay: 5000
-    });
-});
+function getIcon(type) {
+    const iconMap = {
+        'success': 'bi bi-check-circle-fill',
+        'error': 'bi bi-exclamation-triangle-fill',
+        'warning': 'bi bi-exclamation-triangle-fill',
+        'info': 'bi bi-info-circle-fill',
+        'debug': 'bi bi-gear-fill'
+    };
+    return iconMap[type] || 'bi bi-info-circle-fill';
+}
