@@ -2151,3 +2151,33 @@ django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '
 2025-08-29 17:05:42.174 | ERROR    | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
 2025-08-29 17:05:42.180 | WARNING  | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
 2025-08-29 17:05:54.943 | ERROR    | Ping des MongoDB-Server fehlgeschlagen: ef-soft.local:27016: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 68b1c1cdb570706a4da03442, topology_type: Unknown, servers: [<ServerDescription ('ef-soft.local', 27016) server_type: Unknown, rtt: None, error=AutoReconnect('ef-soft.local:27016: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-08-29 18:08:50.759 | INFO     | Watching for file changes with StatReloader
+2025-08-29 18:08:50.912 | INFO     | 
+2025-08-29 18:08:50.913 | INFO     | --- Start APP ---
+2025-08-29 18:08:50.913 | ERROR    | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
+2025-08-29 18:08:50.917 | WARNING  | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
+2025-08-29 18:09:03.778 | ERROR    | Ping des MongoDB-Server fehlgeschlagen: ef-soft.local:27016: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 68b1d09aa5bc3ee0b3afb74e, topology_type: Unknown, servers: [<ServerDescription ('ef-soft.local', 27016) server_type: Unknown, rtt: None, error=AutoReconnect('ef-soft.local:27016: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-08-29 18:30:27.355 | INFO     | /Users/evgenij/Projects/WWS1/WWS1/settings.py changed, reloading.
+2025-08-29 18:31:45.585 | INFO     | Watching for file changes with StatReloader
+2025-08-29 18:31:45.734 | INFO     | 
+2025-08-29 18:31:45.735 | INFO     | --- Start APP ---
+2025-08-29 18:31:45.735 | ERROR    | Ошибки в конфигурации:
+2025-08-29 18:31:45.735 | ERROR    |   - Отсутствует обязательное поле: host
+2025-08-29 18:31:45.735 | ERROR    |   - Отсутствует обязательное поле: port
+2025-08-29 18:31:45.735 | ERROR    | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
+2025-08-29 18:31:45.739 | WARNING  | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
+2025-08-29 18:31:57.871 | ERROR    | Ping des MongoDB-Server fehlgeschlagen: ef-soft.local:27016: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 68b1d5f828afdd7c2c612587, topology_type: Unknown, servers: [<ServerDescription ('ef-soft.local', 27016) server_type: Unknown, rtt: None, error=AutoReconnect('ef-soft.local:27016: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-08-29 18:40:05.562 | INFO     | /Users/evgenij/Projects/WWS1/mongodb/views.py changed, reloading.
+2025-08-29 18:40:05.751 | INFO     | Watching for file changes with StatReloader
+2025-08-29 18:40:52.725 | INFO     | Watching for file changes with StatReloader
+2025-08-29 18:40:52.833 | INFO     | 
+2025-08-29 18:40:52.833 | INFO     | --- Start APP ---
+2025-08-29 18:40:52.833 | ERROR    | Ошибки в конфигурации:
+2025-08-29 18:40:52.833 | ERROR    |   - Отсутствует обязательное поле: host
+2025-08-29 18:40:52.833 | ERROR    |   - Отсутствует обязательное поле: port
+2025-08-29 18:40:52.833 | ERROR    | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
+2025-08-29 18:40:52.841 | WARNING  | Parameter zum Pingen des Datenbankservers fehlen oder sind falsch.
+2025-08-29 18:41:08.350 | ERROR    | Ping des MongoDB-Server fehlgeschlagen: ef-soft.local:27018: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 68b1d81faf46d0bad283ab5f, topology_type: Unknown, servers: [<ServerDescription ('ef-soft.local', 27018) server_type: Unknown, rtt: None, error=AutoReconnect('ef-soft.local:27018: [Errno 61] Connection refused (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+2025-08-29 18:41:29.106 | SUCCESS  | Ping des MongoDB-Servers war erfolgreich
+2025-08-29 18:41:29.112 | INFO     | Konfigurationsdatei für die Datenbankverbindung aktualisiert
+2025-08-29 18:41:29.112 | SUCCESS  | ef-soft.local:27017 — Ping des MongoDB-Servers war erfolgreich
