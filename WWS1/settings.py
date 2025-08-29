@@ -110,7 +110,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # Для продакшена
+#STATIC_ROOT = BASE_DIR / 'staticfiles'  # Для продакшена
 
 # Media files
 MEDIA_URL = '/media/'
@@ -121,8 +121,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Создание необходимых директорий
-LOGS_DIR = BASE_DIR / 'logs'
-LOGS_DIR.mkdir(exist_ok=True)
+#LOGS_DIR = BASE_DIR / 'logs'
+#LOGS_DIR.mkdir(exist_ok=True)
 
 # Security settings for production
 if not DEBUG:
