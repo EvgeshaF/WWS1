@@ -1,5 +1,6 @@
 import os
 import hashlib
+from django.contrib.auth.hashers import make_password, check_password
 from urllib.parse import quote_plus
 from pymongo.errors import ConnectionFailure, OperationFailure
 from loguru import logger
@@ -8,9 +9,11 @@ from cryptography.fernet import Fernet
 from . import language
 
 
-def sha512_hash(password):
-    """Хеширование пароля по алгоритму SHA-512"""
-    return hashlib.sha512(password.encode('utf-8')).hexdigest()
+def hash_password(password):
+    return make_password(password)
+
+def verify_password(password, hashed):
+    return check_password(password, hashed)
 
 
 class MongoConfig:

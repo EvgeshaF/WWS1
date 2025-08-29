@@ -1,4 +1,6 @@
 from django import forms
+from django.core.validators import RegexValidator
+
 
 class MongoConnectionForm(forms.Form):
     """Форма для настройки соединения с MongoDB"""
@@ -6,10 +8,16 @@ class MongoConnectionForm(forms.Form):
         label="Host",
         max_length=100,
         initial='ef-soft.local',  # дефолт
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-Z0-9.-]+$',
+                message='Ungültiges Hostformat'
+            )
+        ],
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'autofocus': True,
-            'placeholder': 'например, localhost или IP'
+            'placeholder': 'zum Beispiel, localhost oder IP'
         })
     )
     port = forms.IntegerField(

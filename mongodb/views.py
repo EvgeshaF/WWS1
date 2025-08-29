@@ -9,6 +9,8 @@ from .mongodb_config import MongoConfig
 from .mongodb_utils import MongoConnection
 from . import language
 
+from django_ratelimit.decorators import ratelimit
+
 
 def render_toast_response(request):
     """JSON ответ с сообщениями для HTMX"""
@@ -26,7 +28,7 @@ def render_toast_response(request):
     response['Content-Type'] = 'application/json'
     return response
 
-
+@ratelimit(key='ip', rate='5/m', method='POST')
 def mongo_connection(request):
     """Форма конфигурации сервера MongoDB (хост, порт)"""
     is_htmx = request.headers.get('HX-Request') == 'true'
