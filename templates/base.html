@@ -1,5 +1,4 @@
 {% load static %}
-{% load media %}
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -8,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}WWS1{% endblock %}</title>
 
-    <link rel="icon" href="{% media 'defaults_html_img/favicon.ico' %}">
+    <link rel="icon" href="{% static 'defaults/img/favicon.ico' %}">
     <link rel="apple-touch-icon" href="{% static 'defaults_html_img/apple-touch-icon.png' %}">
     <link rel="apple-touch-icon-precomposed" href="{% static 'defaults_html_img/apple-touch-icon-precomposed.png' %}">
 
