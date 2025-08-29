@@ -21,10 +21,7 @@ def render_toast_response(request):
             'delay': 5000
         })
 
-    response = JsonResponse({'messages': messages_list})
-    # Важно! Устанавливаем правильный Content-Type
-    response['Content-Type'] = 'application/json'
-    return response
+    return JsonResponse({'messages': messages_list})
 
 
 def mongo_connection(request):
@@ -55,15 +52,9 @@ def mongo_connection(request):
 
                 if is_htmx:
                     return render_toast_response(request)
-                return redirect('home')  # Перенаправляем на главную после успеха
+                return redirect('mongo_login')
             else:
-                # Детальная диагностика для лучшего сообщения об ошибке
-                if host == 'ef-soft.local':
-                    error_msg = f"{language.mess_server_ping_error}. Überprüfen Sie, ob ef-soft.local erreichbar ist oder verwenden Sie 'localhost'."
-                else:
-                    error_msg = f"{language.mess_server_ping_error}. Überprüfen Sie, ob MongoDB auf {host}:{port} läuft."
-
-                messages.error(request, error_msg)
+                messages.error(request, language.mess_server_ping_error)
                 if is_htmx:
                     return render_toast_response(request)
         else:
@@ -77,7 +68,7 @@ def mongo_connection(request):
         if config:
             # Если конфиг есть — используем его (с запасными значениями)
             form = MongoConnectionForm(initial={
-                'host': config.get('host', 'localhost'),  # Изменено с ef-soft.local на localhost
+                'host': config.get('host', 'ef-soft.local'),
                 'port': config.get('port', 27017),
             })
         else:
@@ -88,7 +79,7 @@ def mongo_connection(request):
         if not config.get('host') or not config.get('port'):
             logger.warning(language.mess_server_configuration_warning)
             messages.warning(request, language.mess_server_configuration_warning)
-            messages.info(request, "Standardwerte: localhost:27017. Stellen Sie sicher, dass MongoDB läuft.")
+            messages.info(request, language.mess_server_configuration_info)
             if is_htmx:
                 return render_toast_response(request)
 
