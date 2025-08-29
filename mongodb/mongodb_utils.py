@@ -6,7 +6,7 @@ from django.core.cache import cache
 import pymongo
 from pymongo import errors
 from pymongo.errors import ConnectionFailure, OperationFailure
-from .mongodb_config import MongoConfig, hash_password
+from .mongodb_config import MongoConfig, hash_password, verify_password
 from loguru import logger
 
 from . import language
@@ -163,7 +163,7 @@ class MongoConnection:
                 except errors.PyMongoError as e:
                     logger.error(f"[{collection_name}]{language.mess_default_data_loaded_error}: {e}")
 
-            hashed_password = sha512_hash(admin_password)
+            hashed_password = hash_password(admin_password)
             user_result = db.users.insert_one({
                 'username': admin_user,
                 'password': hashed_password,
@@ -223,13 +223,14 @@ class MongoConnection:
 
         try:
             db = client[db_name]
-            hashed_password = sha512_hash(password)
-            user = db.users.find_one({'username': username, 'password': hashed_password})
-            if user:
-                logger.success(f"{lang_user.mess_login_success1}'{username}'{lang_user.mess_login_success2}")
+
+            user = db.users.find_one({'username': username, 'deleted': False})
+            if user and verify_password(password, user['password']):
+                logger.success(f"Пользователь '{username}' успешно авторизован.")
+                return user
             else:
-                logger.error(lang_user.mess_user_login_error)
-            return user is not None
+                logger.error("Неверное имя пользователя или пароль.")
+                return None
         except Exception as e:
             logger.error(f"Ошибка аутентификации пользователя '{username}': {e}")
             return False
