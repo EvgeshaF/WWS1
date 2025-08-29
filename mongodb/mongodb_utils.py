@@ -1,11 +1,12 @@
 import datetime
 import json
 import os
-from django.core.cache import cache
+#from django.core.cache import cache
 
 import pymongo
 from pymongo import errors
 from pymongo.errors import ConnectionFailure, OperationFailure
+
 from .mongodb_config import MongoConfig, hash_password, verify_password
 from loguru import logger
 
@@ -24,9 +25,9 @@ class MongoConnection:
 
     @classmethod
     def get_client(cls):
-        cache_key = 'mongodb_client_status'
-        if cache.get(cache_key) and cls._client:
-            return cls._client
+        # cache_key = 'mongodb_client_status'
+        # if cache.get(cache_key) and cls._client:
+        #     return cls._client
         """Получает клиент MongoDB из конфигурации"""
         if cls._client is None:
             config = MongoConfig.read_config()
@@ -53,7 +54,7 @@ class MongoConnection:
                 except (ConnectionFailure, OperationFailure) as e:
                     logger.error(f"{language.mess_server_auth_error}: {e}")
                     cls._client = None
-        cache.set(cache_key, True, 300)  # 5 минут
+        # cache.set(cache_key, True, 300)  # 5 минут
         return cls._client
 
     @classmethod

@@ -1,5 +1,4 @@
 import os
-#import hashlib
 from django.contrib.auth.hashers import make_password, check_password
 from urllib.parse import quote_plus
 from pymongo.errors import ConnectionFailure, OperationFailure

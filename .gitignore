@@ -20,10 +20,10 @@ venv.bak/
 
 # Django specific
 staticfiles/
-media/
+#media/
 
 # Project specific
-logs/
+#logs/
 *.log.zip
 mongo_config.env.enc
 .DS_Store
