@@ -1,0 +1,14 @@
+[
+  {
+    "payment": "Bar"
+  },
+  {
+    "payment": "Banküberweisung"
+  },
+  {
+    "payment": "PayPal"
+  },
+  {
+    "payment": "Kreditkarte"
+  }
+]

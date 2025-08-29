@@ -1,0 +1,62 @@
+[
+  {
+    "unit": "mm",
+    "label": "Millimeter"
+  },
+  {
+    "unit": "cm",
+    "label": "Zentimeter"
+  },
+  {
+    "unit": "m",
+    "label": "Meter"
+  },
+  {
+    "unit": "km",
+    "label": "Kilometer"
+  },
+  {
+    "unit": "g",
+    "label": "Gramm"
+  },
+  {
+    "unit": "kg",
+    "label": "Kilogramm"
+  },
+  {
+    "unit": "t",
+    "label": "Tonne"
+  },
+  {
+    "unit": "l",
+    "label": "Liter"
+  },
+  {
+    "unit": "ml",
+    "label": "Milliliter"
+  },
+  {
+    "unit": "m²",
+    "label": "Quadratmeter"
+  },
+  {
+    "unit": "cm²",
+    "label": "Quadratzentimeter"
+  },
+  {
+    "unit": "m³",
+    "label": "Kubikmeter"
+  },
+  {
+    "unit": "Stk",
+    "label": "Stück"
+  },
+  {
+    "unit": "Rolle",
+    "label": "Rolle"
+  },
+  {
+    "unit": "Pck",
+    "label": "Packung"
+  }
+]

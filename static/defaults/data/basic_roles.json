@@ -1,0 +1,14 @@
+[
+  {
+    "role": "Administrator",
+    "description": "Voller Zugriff auf das System"
+  },
+  {
+    "role": "Benutzer",
+    "description": "Standardberechtigungen"
+  },
+  {
+    "role": "Gast",
+    "description": "Nur lesender Zugriff"
+  }
+]

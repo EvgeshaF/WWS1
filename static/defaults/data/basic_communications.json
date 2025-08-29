@@ -1,0 +1,35 @@
+[
+  {
+    "type": "Telefon",
+    "icon": "phone",
+    "required_format": "phone"
+  },
+  {
+    "type": "E-Mail",
+    "icon": "envelope",
+    "required_format": "email"
+  },
+  {
+    "type": "Mobil",
+    "icon": "phone",
+    "required_format": "phone"
+  },
+  {
+    "type": "Fax",
+    "icon": "phone",
+    "required_format": "phone"
+  },
+  {
+    "type": "Skype",
+    "icon": "telegram",
+    "required_format": "text"
+  },
+  {
+    "type": "Telegram",
+    "icon": "telegram",
+    "required_format": "text"
+  },
+  {
+    "type": "WhatsApp"
+  }
+]
