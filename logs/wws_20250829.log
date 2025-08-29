@@ -2181,8 +2181,3 @@ django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '
 2025-08-29 18:41:29.106 | SUCCESS  | Ping des MongoDB-Servers war erfolgreich
 2025-08-29 18:41:29.112 | INFO     | Konfigurationsdatei für die Datenbankverbindung aktualisiert
 2025-08-29 18:41:29.112 | SUCCESS  | ef-soft.local:27017 — Ping des MongoDB-Servers war erfolgreich
-2025-08-29 18:54:46.585 | INFO     | /Users/evgenij/Projects/WWS1/manage.py changed, reloading.
-2025-08-29 18:56:16.893 | INFO     | Watching for file changes with StatReloader
-2025-08-29 18:56:17.018 | INFO     | 
-2025-08-29 18:56:17.018 | INFO     | --- Start APP ---
-2025-08-29 18:56:17.055 | SUCCESS  | ef-soft.local:27017 — Ping des MongoDB-Servers war erfolgreich

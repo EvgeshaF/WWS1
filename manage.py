@@ -2,14 +2,17 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-from icecream import install
 
+from icecream import install
 install()
+
+from utils.logger import setup_logger
+setup_logger()
 
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'WWS.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'WWS1.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

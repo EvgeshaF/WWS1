@@ -1,13 +1,17 @@
-asgiref==3.8.1
-asttokens==3.0.0
-colorama==0.4.6
-Django==5.2
-django-htmx==1.23.0
-dnspython==2.7.0
-dotenv==0.9.9
-executing==2.2.0
-icecream==2.1.4
-Pygments==2.19.1
-pymongo==4.12.0
-python-dotenv==1.1.0
-sqlparse==0.5.3
+# Core Django
+Django>=5.2.5,<6.0
+
+# Database
+pymongo>=4.6.0
+
+# Security
+cryptography>=41.0.0
+
+# Development & Debugging
+icecream>=2.1.3
+
+# Logging
+loguru>=0.7.2
+
+# Environment management
+python-dotenv>=1.0.0
