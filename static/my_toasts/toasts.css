@@ -1,0 +1,105 @@
+#toast-container {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    max-width: 500px;
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 1100;
+    pointer-events: none; /* Контейнер не блокирует клики */
+}
+
+.toast {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: auto; /* Сами тосты кликабельны */
+    backdrop-filter: blur(5px); /* Эффект размытия фона */
+}
+
+.toast-pop {
+    animation: pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes pop {
+    0% {
+        transform: translateX(100%) scale(0.8);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(-5px) scale(1.02);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Улучшенные цвета для текста */
+.toast-body-success {
+    color: #155724;
+    background-color: rgba(212, 237, 218, 0.1);
+}
+
+.toast-body-danger {
+    color: #721c24;
+    background-color: rgba(248, 215, 218, 0.1);
+}
+
+.toast-body-warning {
+    color: #856404;
+    background-color: rgba(255, 243, 205, 0.1);
+}
+
+.toast-body-info {
+    color: #0c5460;
+    background-color: rgba(209, 236, 241, 0.1);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 576px) {
+    #toast-container {
+        left: 1rem;
+        right: 1rem;
+        max-width: none;
+        bottom: 1rem;
+    }
+
+    .toast {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Анимация исчезновения */
+.toast.hiding {
+    animation: fadeOut 0.3s ease forwards;
+}
+
+@keyframes fadeOut {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Hover эффект для тостов */
+.toast:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Стилизация кнопки закрытия */
+.toast .btn-close {
+    background-size: 0.8em;
+    opacity: 0.7;
+}
+
+.toast .btn-close:hover {
+    opacity: 1;
+}

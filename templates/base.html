@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WWS1{% endblock %}</title>
+
+    <link rel="icon" href="{% static 'defaults_html_img/favicon.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'defaults_html_img/apple-touch-icon.png' %}">
+    <link rel="apple-touch-icon-precomposed" href="{% static 'defaults_html_img/apple-touch-icon-precomposed.png' %}">
+
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'bootstrap/icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'my_toasts/toasts.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+{% block navbar %}{% include 'navbar.html' %}{% endblock %}
+
+<div class="container">
+    <header class="mb-4 text-center">
+        <h1 class="display-4">{% block header %}WWS1{% endblock %}</h1>
+    </header>
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <footer class="mt-5 py-3 text-center">
+        <p class="text-muted">&copy; 2025 WWS1 EF-SOFT</p>
+    </footer>
+</div>
+
+<!-- Контейнер тостов -->
+<div id="toast-container"></div>
+
+<!-- Скрытые Django сообщения -->
+<div id="django-messages" style="display: none;">
+    {% for message in messages %}
+    <div data-tags="{{ message.tags }}" data-text="{{ message|force_escape }}" data-delay="5000"></div>
+    {% endfor %}
+</div>
+
+<script src="{% static 'my_toasts/toasts.js' %}"></script>
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'htmx/js/htmx.min.js' %}"></script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
