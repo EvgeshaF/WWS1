@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from loguru import logger
 from urllib.parse import quote_plus
 
-from .forms import MongoConnectionForm, MongoLoginForm
+from .forms import MongoConnectionForm, MongoLoginForm, CreateDatabaseForm
 from .mongodb_config import MongoConfig
 from .mongodb_utils import MongoConnection
 from . import language
@@ -161,4 +161,60 @@ def mongo_login(request):
         'form': form,
         'text': language.text_login_form,
         'step': 2
+    })
+
+
+@ratelimit(key='ip', rate='3/m', method='POST')
+def create_database(request):
+    """Форма создания новой базы данных - упрощенная"""
+    is_htmx = request.headers.get('HX-Request') == 'true'
+
+    # Проверяем предыдущие шаги
+    config = MongoConfig.read_config()
+    if not all([config.get('host'), config.get('port'), config.get('admin_user'), config.get('admin_password')]):
+        messages.error(request, "Vorherige Konfigurationsschritte sind unvollständig")
+        return redirect('mongo_connection')
+
+    if request.method == 'POST':
+        form = CreateDatabaseForm(request.POST)
+        if form.is_valid():
+            db_name = form.cleaned_data['db_name']
+
+            # Проверяем, что база данных не существует
+            if MongoConnection.database_exists(db_name):
+                messages.error(request, f"Datenbank '{db_name}' existiert bereits")
+                if is_htmx:
+                    return render_toast_response(request)
+            else:
+                # Создаем простую базу данных
+                if MongoConnection.create_database(db_name):
+                    # Обновляем конфигурацию с новой БД
+                    MongoConfig.update_config({
+                        'db_name': db_name,
+                        'setup_completed': True
+                    })
+
+                    success_msg = f"Datenbank '{db_name}' erfolgreich erstellt"
+                    logger.success(success_msg)
+                    messages.success(request, success_msg)
+
+                    if is_htmx:
+                        return render_toast_response(request)
+                    return redirect('home')  # Завершение настройки
+                else:
+                    messages.error(request, f"Fehler beim Erstellen der Datenbank '{db_name}'")
+                    if is_htmx:
+                        return render_toast_response(request)
+        else:
+            messages.error(request, language.mess_form_invalid)
+            if is_htmx:
+                return render_toast_response(request)
+
+    else:  # GET-запрос
+        form = CreateDatabaseForm()
+
+    return render(request, 'mongodb/create_database_form.html', {
+        'form': form,
+        'text': language.text_create_db_form,
+        'step': 3
     })

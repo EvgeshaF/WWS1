@@ -60,3 +60,24 @@ class MongoLoginForm(forms.Form):
             'readonly': True
         })
     )
+
+
+class CreateDatabaseForm(forms.Form):
+    """Форма для создания новой базы данных - только имя"""
+    db_name = forms.CharField(
+        label="Neuer Datenbankname",
+        max_length=50,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-Z][a-zA-Z0-9_]*$',
+                message='Datenbankname muss mit einem Buchstaben beginnen und darf nur Buchstaben, Zahlen und Unterstriche enthalten'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'autofocus': True,
+            'placeholder': 'z.B. meine_datenbank',
+            'pattern': '[a-zA-Z][a-zA-Z0-9_]*',
+            'title': 'Beginnt mit Buchstaben, nur Buchstaben, Zahlen und Unterstriche'
+        })
+    )

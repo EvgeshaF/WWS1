@@ -135,10 +135,10 @@ class MongoConnection:
             return False
 
     @classmethod
-    def create_database(cls, db_name, admin_user, admin_password):
-        """Создает базу данных и администратора"""
-        if not all([db_name, admin_user, admin_password]):
-            logger.error("Недостаточно данных для создания базы.")
+    def create_database(cls, db_name):
+        """Создает простую базу данных с минимальными коллекциями"""
+        if not db_name:
+            logger.error("Имя базы данных обязательно")
             return False
 
         client = cls.get_client()
@@ -146,93 +146,26 @@ class MongoConnection:
             return False
 
         try:
+            # Проверяем, что база не существует
             if db_name in client.list_database_names():
                 logger.warning(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_warning2}")
                 return False
 
-            base_path = os.path.join('static', 'defaults', 'data')
-
+            # Создаем базу данных и базовую коллекцию
             db = client[db_name]
-            db.create_collection('users')
-            db.create_collection('users_profile')
-            db.create_collection('firma_profile')
 
-            # Перебор всех .json-файлов
-            for file_name in os.listdir(base_path):
-
-                if not file_name.endswith('.json'):
-                    continue
-
-                collection_name = file_name.replace('.json', '')
-                json_path = os.path.join(base_path, file_name)
-
-                try:
-                    with open(json_path, 'r', encoding='utf-8') as file:
-                        data = json.load(file)
-
-                    # Создание коллекции, если не существует
-                    if collection_name not in db.list_collection_names():
-                        db.create_collection(collection_name)
-
-                    now = datetime.datetime.now()
-
-                    # Вставка данных
-                    if isinstance(data, list):
-                        for item in data:
-                            item['created_at'] = now
-                            item['modified_at'] = now
-                            item['deleted'] = False
-                        db[collection_name].insert_many(data)
-                        logger.info(f"{len(data)}{language.mess_default_data_elemente}'{collection_name}'.")
-                    else:
-                        data['created_at'] = now
-                        data['modified_at'] = now
-                        data['deleted'] = False
-                        db[collection_name].insert_one(data)
-                        logger.info(f"1 {language.mess_default_data_elemente}'{collection_name}'.")
-
-                except (FileNotFoundError, json.JSONDecodeError) as e:
-                    logger.error(f"[{collection_name}]{language.mess_default_data_reading_error}: {e}")
-                except errors.PyMongoError as e:
-                    logger.error(f"[{collection_name}]{language.mess_default_data_loaded_error}: {e}")
-
-            hashed_password = hash_password(admin_password)
-            user_result = db.users.insert_one({
-                'username': admin_user,
-                'password': hashed_password,
-                'is_admin': True,
-                'created_at': datetime.datetime.now(),
-                'modified_at': datetime.datetime.now(),
-                'deleted': False,
-            })
-
-            db.users_profile.insert_one({
-                'user_id': user_result.inserted_id,
-                'salutation_id': None,
-                'title_id': None,
-                'first_name': '',
-                'last_name': '',
-                'communications': [],
-                'address_id': None,
-                'address_data': '',
-                'created_at': datetime.datetime.now(),
-                'modified_at': datetime.datetime.now(),
-                'deleted': False,
-            })
-
-            db.firma_profile.insert_one({
-                'firma_name': '',
-                'communication_id': None,
-                'communication_data': '',
-                'address_id': None,
-                'address_data': '',
-                'created_at': datetime.datetime.now(),
-                'modified_at': datetime.datetime.now(),
-                'deleted': False,
+            # Создаем простую коллекцию для инициализации БД
+            now = datetime.datetime.now()
+            db.system_info.insert_one({
+                'database_name': db_name,
+                'created_at': now,
+                'version': '1.0',
+                'status': 'active'
             })
 
             logger.success(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_success2}")
             return True
+
         except Exception as e:
             logger.exception(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_error2}: {e}")
             return False

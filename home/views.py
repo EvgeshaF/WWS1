@@ -11,8 +11,8 @@ def home(request):
         return redirect('mongo_connection')
     elif config_status == 'login_required' or config_status == 'login_failed':
         return redirect('mongo_login')
-    # elif config_status == 'db_required':
-    #     return redirect('create_database')
+    elif config_status == 'db_required':
+        return redirect('create_database')
     # else:
         #messages.success(request, language.mess_server_connect_success)
         #return redirect('user_login')
