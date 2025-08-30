@@ -61,15 +61,15 @@
                                 <div class="invalid-feedback d-block">{{ form.db_name.errors }}</div>
                             {% endif %}
                             <div class="form-text">
-                                <i class="bi bi-lightbulb me-1"></i>
-                                Standardmäßig 'admin' für die Authentifizierung verwenden
+                                <i class="bi bi-lock me-1"></i>
+                                Für die Administratorauthentifizierung wird 'admin' verwendet (nicht änderbar)
                             </div>
                         </div>
 
                         <!-- Прогрессбар для авторизации -->
-                        <div class="mb-3" style="display:none;" id="auth-progress-container">
-                            <label class="form-label">Authentifizierung läuft...</label>
-                            <div class="progress">
+                        <div class="mb-3" id="auth-progress-container">
+                            <label class="form-label" style="visibility: hidden;" id="auth-progress-label">Authentifizierung läuft...</label>
+                            <div class="progress" style="visibility: hidden;" id="auth-progress-bar-container">
                                 <div id="auth-progress" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
@@ -110,7 +110,10 @@
             // Отслеживаем начало HTMX запроса
             form.addEventListener('htmx:beforeRequest', () => {
                 submitBtn.disabled = true;       // Деактивируем кнопку
-                container.style.display = 'block';
+
+                // Показываем прогресс-бар
+                document.getElementById('auth-progress-label').style.visibility = 'visible';
+                document.getElementById('auth-progress-bar-container').style.visibility = 'visible';
                 bar.style.width = '0%';
 
                 let progress = 0;
@@ -137,7 +140,9 @@
                 }
 
                 setTimeout(() => {
-                    container.style.display = 'none';
+                    // Скрываем прогресс-бар
+                    document.getElementById('auth-progress-label').style.visibility = 'hidden';
+                    document.getElementById('auth-progress-bar-container').style.visibility = 'hidden';
                     bar.style.width = '0%';
                     bar.classList.remove('bg-danger', 'bg-primary');
                     submitBtn.disabled = false;   // Включаем кнопку обратно

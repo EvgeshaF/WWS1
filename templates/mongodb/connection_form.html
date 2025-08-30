@@ -60,12 +60,12 @@
                         </div>
 
                         <!-- Прогрессбар -->
-                        <div class="mb-3" style="display:none;" id="connection-progress-container">
-                            <label class="form-label">
+                        <div class="mb-3" id="connection-progress-container">
+                            <label class="form-label" style="visibility: hidden;" id="progress-label">
                                 <i class="bi bi-arrow-repeat me-1"></i>
                                 Verbindungstest läuft...
                             </label>
-                            <div class="progress">
+                            <div class="progress" style="visibility: hidden;" id="progress-bar-container">
                                 <div id="connection-progress" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
@@ -103,7 +103,10 @@
             form.addEventListener('htmx:beforeRequest', () => {
                 submitBtn.disabled = true;       // Деактивируем кнопку
                 submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm me-1" role="status"></i>Verbindung wird getestet...';
-                container.style.display = 'block';
+
+                // Показываем прогресс-бар
+                document.getElementById('progress-label').style.visibility = 'visible';
+                document.getElementById('progress-bar-container').style.visibility = 'visible';
                 bar.style.width = '0%';
 
                 let progress = 0;
@@ -122,17 +125,19 @@
                 if (event.detail.xhr.status === 200) {
                     bar.style.width = '100%';
                     bar.classList.remove('bg-danger');
-                    bar.classList.add('bg-success');
+                    bar.classList.add('bg-primary');
                 } else {
-                    bar.classList.remove('bg-success');
+                    bar.classList.remove('bg-primary');
                     bar.classList.add('bg-danger');
                     bar.style.width = '100%';
                 }
 
                 setTimeout(() => {
-                    container.style.display = 'none';
+                    // Скрываем прогресс-бар
+                    document.getElementById('progress-label').style.visibility = 'hidden';
+                    document.getElementById('progress-bar-container').style.visibility = 'hidden';
                     bar.style.width = '0%';
-                    bar.classList.remove('bg-danger', 'bg-success');
+                    bar.classList.remove('bg-danger', 'bg-primary');
                     bar.classList.add('bg-primary');
                     submitBtn.disabled = false;   // Включаем кнопку обратно
                     submitBtn.innerHTML = '<i class="bi bi-wifi me-1"></i>{{ text.btn }}';

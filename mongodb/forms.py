@@ -56,6 +56,7 @@ class MongoLoginForm(forms.Form):
         initial='admin',
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Standard: admin'
+            'placeholder': 'Standard: admin',
+            'readonly': True
         })
     )

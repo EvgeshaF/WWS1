@@ -1,0 +1,479 @@
+/* Main Styles - в стиле модальных окон */
+
+/* Основные цвета и переменные */
+:root {
+    --primary-color: #0d6efd;
+    --primary-dark: #0056b3;
+    --primary-light: rgba(13, 110, 253, 0.1);
+    --surface-color: #ffffff;
+    --background-color: #f8f9fa;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --border-radius: 15px;
+    --border-radius-sm: 8px;
+}
+
+/* Body и общие стили */
+.modern-body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Контейнер */
+.main-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ==================== NAVBAR STYLES ==================== */
+.modern-navbar {
+    background: var(--surface-color) !important;
+    box-shadow: var(--shadow-md);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 0;
+}
+
+.modern-brand {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    color: var(--primary-color) !important;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.modern-brand:hover {
+    color: var(--primary-dark) !important;
+    transform: translateY(-1px);
+}
+
+.brand-text {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.brand-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    align-self: flex-end;
+}
+
+.modern-toggler {
+    border: none;
+    padding: 0.5rem;
+    border-radius: var(--border-radius-sm);
+    background-color: var(--primary-light);
+}
+
+.modern-nav-link {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+    padding: 0.75rem 1rem !important;
+    border-radius: var(--border-radius-sm);
+    margin: 0 0.25rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.modern-nav-link:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color) !important;
+    transform: translateY(-1px);
+}
+
+.modern-nav-link.active {
+    background-color: var(--primary-color);
+    color: white !important;
+}
+
+.modern-dropdown {
+    border: none;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.modern-dropdown .dropdown-item {
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 1rem;
+    margin: 0.25rem 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.modern-dropdown .dropdown-item:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    transform: translateX(5px);
+}
+
+/* Поиск */
+.modern-search {
+    width: 300px;
+}
+
+.modern-search-input {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
+    padding: 0.6rem 1rem;
+    background-color: var(--background-color);
+}
+
+.modern-search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem var(--primary-light);
+    background-color: white;
+}
+
+.modern-search-btn {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+}
+
+.modern-search-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Иконки уведомлений */
+.modern-icon-link {
+    position: relative;
+    color: var(--text-secondary) !important;
+    padding: 0.75rem !important;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s ease;
+}
+
+.modern-icon-link:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color) !important;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* Пользователь */
+.modern-user-link {
+    color: var(--text-primary) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s ease;
+}
+
+.modern-user-link:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color) !important;
+}
+
+.user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    object-fit: cover;
+}
+
+.user-avatar-small {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    object-fit: cover;
+}
+
+.user-info {
+    text-align: left;
+    line-height: 1.2;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* ==================== HEADER STYLES ==================== */
+.main-header {
+    background: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    text-align: center;
+}
+
+.header-title {
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==================== MAIN CONTENT ==================== */
+.main-content {
+    flex: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    width: 100%;
+}
+
+/* ==================== HOME PAGE CARDS ==================== */
+.welcome-section {
+    margin-bottom: 3rem;
+}
+
+.welcome-card {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.welcome-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.welcome-header {
+    display: flex;
+    align-items: center;
+}
+
+.welcome-header i {
+    font-size: 2.5rem;
+}
+
+.welcome-header h3 {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.welcome-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.action-card {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.action-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.action-header i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-right: 1rem;
+}
+
+.action-header h5 {
+    margin: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.action-text {
+    color: var(--text-secondary);
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 1.5rem;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.info-card {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    height: 100%;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-header i {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+}
+
+.info-header h5 {
+    margin: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-item i {
+    width: 20px;
+    margin-right: 0.75rem;
+}
+
+.status-item span:nth-child(2) {
+    flex: 1;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.quick-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.quick-link:last-child {
+    border-bottom: none;
+}
+
+.quick-link:hover {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+    border-radius: var(--border-radius-sm);
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.quick-link i:first-child {
+    width: 20px;
+    margin-right: 0.75rem;
+}
+
+.quick-link span {
+    flex: 1;
+    font-weight: 500;
+}
+
+.quick-link i:last-child {
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.quick-link:hover i:last-child {
+    opacity: 1;
+    transform: translateX(5px);
+}
+
+/* ==================== FOOTER ==================== */
+.main-footer {
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .modern-search {
+        width: 200px;
+    }
+
+    .header-title {
+        font-size: 2rem;
+    }
+}
