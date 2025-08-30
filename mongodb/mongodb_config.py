@@ -146,8 +146,10 @@ class MongoConfig:
                 logger.error(f"  - {error}")
 
         basic_config = {'host', 'port'}
+        auth_config = {'host', 'port', 'admin_user', 'admin_password'}
         full_config = {'host', 'port', 'admin_user', 'admin_password', 'db_name'}
 
+        # Проверяем базовое подключение
         if not basic_config.issubset(config.keys()):
             logger.error(language.mess_server_configuration_warning)
             return 'connection_required'
@@ -159,7 +161,7 @@ class MongoConfig:
             logger.error("Неверный формат порта в конфигурации")
             return 'connection_required'
 
-        # Тестируем подключение
+        # Тестируем подключение к серверу
         try:
             connection_uri = f"mongodb://{host}:{port}/"
             client = MongoClient(connection_uri, serverSelectionTimeoutMS=3000)
@@ -169,20 +171,16 @@ class MongoConfig:
             logger.error(f"{host}:{port} — {language.mess_server_ping_error}: {str(e)}")
             return 'ping_failed'
 
-        if not full_config.issubset(config.keys()):
+        # Проверяем авторизацию администратора
+        if not auth_config.issubset(config.keys()):
             return 'login_required'
 
-        if config['db_name'].lower() == "admin":
-            logger.warning(language.mess_db_name_admin_warning)
-            return 'db_required'
-
-        # Тестируем аутентификацию
-        db_name = config['db_name']
+        # Тестируем аутентификацию админа
         try:
             username = config['admin_user']
             password = quote_plus(config['admin_password'])
             auth_db = config.get('auth_source', 'admin')
-            connection_uri = f"mongodb://{username}:{password}@{host}:{port}/{db_name}?authSource={auth_db}"
+            connection_uri = f"mongodb://{username}:{password}@{host}:{port}/admin?authSource={auth_db}"
             client = MongoClient(connection_uri, serverSelectionTimeoutMS=3000)
             client.admin.command('ping')
             logger.success(language.mess_server_auth_success)
@@ -190,6 +188,16 @@ class MongoConfig:
             logger.error(f"{language.mess_server_auth_error}: {str(e)}")
             return 'login_failed'
 
+        # Проверяем наличие рабочей базы данных
+        if not config.get('db_name') or config.get('db_name') == 'admin':
+            logger.warning("Рабочая база данных не настроена")
+            return 'db_required'
+
+        # Проверяем завершенность настройки
+        if not config.get('setup_completed'):
+            return 'db_required'
+
+        logger.success("Конфигурация MongoDB полностью настроена")
         return 'complete'
 
     @staticmethod
@@ -204,3 +212,4 @@ class MongoConfig:
                 logger.error(f"Ошибка удаления файла конфигурации: {e}")
                 return False
         return True
+

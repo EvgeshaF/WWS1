@@ -49,13 +49,13 @@ mess_admin_rights_verified = "Administratorrechte verifiziert"
 # Create Database Form (Neue Datenbank)
 # ========================================
 text_create_db_form = {
-    'title': "Erstellen einer neuen Datenbank",
+    'title': "Neue Datenbank erstellen",
     'header': "Erstellen einer neuen Datenbank",
-    'desc': "Geben Sie einen Namen für eine neue Datenbank ein",
-    'db_name': "neuer Datenbankname:",
-    'btn': "Erstellen",
-    'btn_warten': "Warten...",
-    'notification': "* Nach dem Erstellen einer Datenbank können Sie sich beim System anmelden."
+    'desc': "Geben Sie einen Namen für eine neue Datenbank ein:",
+    'db_name': "Neuer Datenbankname:",
+    'btn': "Datenbank erstellen",
+    'btn_warten': "Wird erstellt...",
+    'notification': "* Nach dem Erstellen einer Datenbank ist die Konfiguration abgeschlossen."
 }
 
 mess_server_create_db = "Die Datenbank '"
