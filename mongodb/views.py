@@ -194,7 +194,7 @@ def create_database(request):
                         'setup_completed': True
                     })
 
-                    success_msg = f"Datenbank '{db_name}' erfolgreich erstellt"
+                    success_msg = f"Datenbank '{db_name}' mit allen Kollektionen erfolgreich erstellt"
                     logger.success(success_msg)
                     messages.success(request, success_msg)
 

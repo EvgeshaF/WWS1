@@ -136,7 +136,7 @@ class MongoConnection:
 
     @classmethod
     def create_database(cls, db_name):
-        """Создает простую базу данных с минимальными коллекциями"""
+        """Создает базу данных с коллекциями из JSON файлов"""
         if not db_name:
             logger.error("Имя базы данных обязательно")
             return False
@@ -151,16 +151,61 @@ class MongoConnection:
                 logger.warning(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_warning2}")
                 return False
 
-            # Создаем базу данных и базовую коллекцию
+            # Создаем базу данных
             db = client[db_name]
-
-            # Создаем простую коллекцию для инициализации БД
             now = datetime.datetime.now()
-            db.system_info.insert_one({
+
+            # Путь к JSON файлам
+            base_path = os.path.join('static', 'defaults', 'data')
+
+            if os.path.exists(base_path):
+                # Получаем список всех JSON файлов
+                json_files = [f for f in os.listdir(base_path) if f.endswith('.json')]
+
+                for file_name in json_files:
+                    # Создаем имя коллекции: db_name + "_" + имя_файла_без_расширения
+                    base_collection_name = file_name.replace('.json', '')
+                    collection_name = f"{db_name}_{base_collection_name}"
+                    json_path = os.path.join(base_path, file_name)
+
+                    try:
+                        with open(json_path, 'r', encoding='utf-8') as file:
+                            data = json.load(file)
+
+                        # Создание коллекции, если не существует
+                        if collection_name not in db.list_collection_names():
+                            db.create_collection(collection_name)
+
+                        # Добавляем метаданные к каждому документу
+                        if isinstance(data, list):
+                            for item in data:
+                                item['created_at'] = now
+                                item['modified_at'] = now
+                                item['deleted'] = False
+                            db[collection_name].insert_many(data)
+                            logger.success(f"Коллекция '{collection_name}' создана с {len(data)} элементами")
+                        else:
+                            data['created_at'] = now
+                            data['modified_at'] = now
+                            data['deleted'] = False
+                            db[collection_name].insert_one(data)
+                            logger.success(f"Коллекция '{collection_name}' создана с 1 элементом")
+
+                    except (FileNotFoundError, json.JSONDecodeError) as e:
+                        logger.error(f"Ошибка обработки файла {file_name}: {e}")
+                        continue
+                    except Exception as e:
+                        logger.error(f"Ошибка создания коллекции {collection_name}: {e}")
+                        continue
+
+            # Создаем системную коллекцию для информации о БД
+            system_collection_name = f"{db_name}_system_info"
+            db[system_collection_name].insert_one({
                 'database_name': db_name,
                 'created_at': now,
                 'version': '1.0',
-                'status': 'active'
+                'status': 'active',
+                'collections_count': len(db.list_collection_names())
             })
 
             logger.success(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_success2}")

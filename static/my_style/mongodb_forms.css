@@ -1,4 +1,92 @@
-/* MongoDB Forms Styles - обновленные для соответствия общему стилю */
+/* Стили для детального прогресса */
+#collection-progress {
+    background-color: rgba(13, 110, 253, 0.05);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    border-left: 3px solid var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+#collection-progress small {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+#current-collection {
+    transition: opacity 0.3s ease, color 0.3s ease;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}/* MongoDB Forms Styles - обновленные для соответствия общему стилю */
+
+:root {
+    --primary-color: #0d6efd;
+    --primary-dark: #0056b3;
+    --primary-light: rgba(13, 110, 253, 0.1);
+    --surface-color: #ffffff;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --border-radius: 15px;
+    --border-radius-sm: 8px;
+}
+
+/* ==================== MODAL PAGE STYLES ==================== */
+.modal-page {
+    overflow: hidden;
+}
+
+.modal-page .main-header,
+.modal-page .main-footer {
+    display: none !important;
+}
+
+.modal-page .main-content {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+}
+
+.modal-page .main-container {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%) !important;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-page .welcome-section,
+.modal-page .container > *:not(.modal) {
+    display: none !important;
+}
+
+/* ==================== MODAL STYLES ==================== */
+.modal-content {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    border: none;
+    backdrop-filter: blur(10px);
+}
+
+.modal-header {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    padding: 1.5rem 2rem;
+}
+
+.modal-body {
+    padding: 2rem;
+    background: var(--surface-color);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    background: #f8f9fa;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    padding: 1rem 2rem;
+}/* MongoDB Forms Styles - обновленные для соответствия общему стилю */
 
 :root {
     --primary-color: #0d6efd;
