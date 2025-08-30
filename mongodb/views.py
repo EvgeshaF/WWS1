@@ -3,8 +3,9 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from loguru import logger
+from urllib.parse import quote_plus
 
-from .forms import MongoConnectionForm
+from .forms import MongoConnectionForm, MongoLoginForm
 from .mongodb_config import MongoConfig
 from .mongodb_utils import MongoConnection
 from . import language
@@ -27,6 +28,7 @@ def render_toast_response(request):
     # Важно! Устанавливаем правильный Content-Type
     response['Content-Type'] = 'application/json'
     return response
+
 
 @ratelimit(key='ip', rate='5/m', method='POST')
 def mongo_connection(request):
@@ -57,7 +59,7 @@ def mongo_connection(request):
 
                 if is_htmx:
                     return render_toast_response(request)
-                return redirect('home')  # Перенаправляем на главную после успеха
+                return redirect('mongo_login')  # Перенаправляем на форму логина
             else:
                 # Детальная диагностика для лучшего сообщения об ошибке
                 if host == 'ef-soft.local':
@@ -98,4 +100,65 @@ def mongo_connection(request):
         'form': form,
         'text': language.text_server_conf,
         'step': 1
+    })
+
+
+@ratelimit(key='ip', rate='5/m', method='POST')
+def mongo_login(request):
+    """Форма авторизации администратора MongoDB"""
+    is_htmx = request.headers.get('HX-Request') == 'true'
+
+    # Проверяем, что базовая конфигурация существует
+    config = MongoConfig.read_config()
+    if not config.get('host') or not config.get('port'):
+        messages.error(request, "Сначала настройте подключение к серверу")
+        return redirect('mongo_connection')
+
+    if request.method == 'POST':
+        form = MongoLoginForm(request.POST)
+        if form.is_valid():
+            admin_user = form.cleaned_data['admin_user']
+            admin_password = form.cleaned_data['admin_password']
+            db_name = form.cleaned_data['db_name']
+
+            # Проверяем авторизацию администратора
+            if MongoConnection.authenticate_admin(admin_user, admin_password):
+                # Сохраняем данные авторизации в конфигурацию
+                MongoConfig.update_config({
+                    'admin_user': admin_user,
+                    'admin_password': admin_password,
+                    'db_name': db_name,
+                    'auth_source': 'admin'
+                })
+
+                success_msg = f"{language.mess_login_success1}{admin_user}{language.mess_login_success2}"
+                logger.success(success_msg)
+                messages.success(request, success_msg)
+
+                if is_htmx:
+                    return render_toast_response(request)
+                return redirect('create_database')  # Переход к созданию БД
+            else:
+                messages.error(request, language.mess_login_admin_error)
+                if is_htmx:
+                    return render_toast_response(request)
+        else:
+            messages.error(request, language.mess_form_invalid)
+            if is_htmx:
+                return render_toast_response(request)
+
+    else:  # GET-запрос
+        # Предварительно заполняем форму из конфигурации, если данные есть
+        initial_data = {}
+        if config.get('admin_user'):
+            initial_data['admin_user'] = config['admin_user']
+        if config.get('db_name'):
+            initial_data['db_name'] = config['db_name']
+
+        form = MongoLoginForm(initial=initial_data)
+
+    return render(request, 'mongodb/login_form.html', {
+        'form': form,
+        'text': language.text_login_form,
+        'step': 2
     })

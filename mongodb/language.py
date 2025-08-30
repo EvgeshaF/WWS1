@@ -42,6 +42,8 @@ mess_login_success2 = " hat sich erfolgreich angemeldet."
 mess_user_login_error = "Falscher Benutzername oder falsches Passwort."
 mess_login_parameter_info = mess_server_configuration_info
 mess_login_admin_error = "Falsche Administratoranmeldeinformationen."
+mess_admin_auth_in_progress = "Authentifizierung läuft..."
+mess_admin_rights_verified = "Administratorrechte verifiziert"
 
 # ========================================
 # Create Database Form (Neue Datenbank)
@@ -66,3 +68,10 @@ mess_default_data_loaded_success = "Standarddaten erfolgreich geladen"
 mess_default_data_loaded_error = " Hinzufügen der Standarddaten ist fehlgeschlagen"
 mess_default_data_reading_error = " Fehler beim Lesen der Datei"
 mess_form_invalid = "Das Formular wurde ungültig ausgefüllt. Bitte überprüfen Sie die eingegebenen Daten."
+
+# ========================================
+# General Messages
+# ========================================
+mess_connection_setup_required = "Zuerst müssen Sie die Serververbindung konfigurieren"
+mess_unexpected_error = "Ein unerwarteter Fehler ist aufgetreten"
+mess_operation_cancelled = "Vorgang abgebrochen"

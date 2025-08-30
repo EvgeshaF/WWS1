@@ -10,7 +10,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="mongoModalLabel">
-                        <i class="bi bi-server me-2"></i>
+                        <i class="bi bi-shield-check me-2"></i>
                         {{ text.title }}
                     </h5>
                     <!-- Индикатор шага справа -->
@@ -23,56 +23,64 @@
                         {{ text.desc }}
                     </div>
 
-                    <form id="mongo-form" method="post"
-                          hx-post="{% url 'mongo_connection' %}"
+                    <form id="mongo-login-form" method="post"
+                          hx-post="{% url 'mongo_login' %}"
                           hx-target="#toast-container"
                           hx-swap="beforeend">
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label for="{{ form.host.id_for_label }}" class="form-label">
-                                <i class="bi bi-hdd-network me-1"></i>
-                                {{ text.host }}
+                            <label for="{{ form.admin_user.id_for_label }}" class="form-label">
+                                <i class="bi bi-person me-1"></i>
+                                {{ text.username }}
                             </label>
-                            {{ form.host }}
-                            {% if form.host.errors %}
-                                <div class="invalid-feedback d-block">{{ form.host.errors }}</div>
+                            {{ form.admin_user }}
+                            {% if form.admin_user.errors %}
+                                <div class="invalid-feedback d-block">{{ form.admin_user.errors }}</div>
                             {% endif %}
-                            <div class="form-text">
-                                <i class="bi bi-lightbulb me-1"></i>
-                                z.B. localhost, 192.168.1.100 oder domain.com
-                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.port.id_for_label }}" class="form-label">
-                                <i class="bi bi-plug me-1"></i>
-                                {{ text.port }}
+                            <label for="{{ form.admin_password.id_for_label }}" class="form-label">
+                                <i class="bi bi-key me-1"></i>
+                                {{ text.password }}
                             </label>
-                            {{ form.port }}
-                            {% if form.port.errors %}
-                                <div class="invalid-feedback d-block">{{ form.port.errors }}</div>
+                            {{ form.admin_password }}
+                            {% if form.admin_password.errors %}
+                                <div class="invalid-feedback d-block">{{ form.admin_password.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.db_name.id_for_label }}" class="form-label">
+                                <i class="bi bi-database me-1"></i>
+                                {{ text.db_name }}
+                            </label>
+                            {{ form.db_name }}
+                            {% if form.db_name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.db_name.errors }}</div>
                             {% endif %}
                             <div class="form-text">
                                 <i class="bi bi-lightbulb me-1"></i>
-                                Standard MongoDB Port: 27017
+                                Standardmäßig 'admin' für die Authentifizierung verwenden
                             </div>
                         </div>
 
-                        <!-- Прогрессбар -->
-                        <div class="mb-3" style="display:none;" id="connection-progress-container">
-                            <label class="form-label">
-                                <i class="bi bi-arrow-repeat me-1"></i>
-                                Verbindungstest läuft...
-                            </label>
+                        <!-- Прогрессбар для авторизации -->
+                        <div class="mb-3" style="display:none;" id="auth-progress-container">
+                            <label class="form-label">Authentifizierung läuft...</label>
                             <div class="progress">
-                                <div id="connection-progress" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                <div id="auth-progress" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end mt-4">
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'mongo_connection' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Zurück
+                            </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-wifi me-1"></i>
+                                <i class="bi bi-box-arrow-in-right me-1"></i>
                                 {{ text.btn }}
                             </button>
                         </div>
@@ -94,37 +102,36 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('mongo-form');
+            const form = document.getElementById('mongo-login-form');
             const submitBtn = form.querySelector('button[type="submit"]');
-            const container = document.getElementById('connection-progress-container');
-            const bar = document.getElementById('connection-progress');
+            const container = document.getElementById('auth-progress-container');
+            const bar = document.getElementById('auth-progress');
 
             // Отслеживаем начало HTMX запроса
             form.addEventListener('htmx:beforeRequest', () => {
                 submitBtn.disabled = true;       // Деактивируем кнопку
-                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm me-1" role="status"></i>Verbindung wird getestet...';
                 container.style.display = 'block';
                 bar.style.width = '0%';
 
                 let progress = 0;
-                window.progressInterval = setInterval(() => {
-                    progress += Math.floor(Math.random() * 10) + 5;
-                    if (progress > 90) progress = 90;
+                window.authProgressInterval = setInterval(() => {
+                    progress += Math.floor(Math.random() * 15) + 10;
+                    if (progress > 85) progress = 85;
                     bar.style.width = progress + '%';
-                }, 200);
+                }, 300);
             });
 
             // Отслеживаем завершение HTMX запроса
             form.addEventListener('htmx:afterRequest', (event) => {
-                clearInterval(window.progressInterval);
+                clearInterval(window.authProgressInterval);
 
                 // Проверяем успешность запроса
                 if (event.detail.xhr.status === 200) {
                     bar.style.width = '100%';
                     bar.classList.remove('bg-danger');
-                    bar.classList.add('bg-success');
+                    bar.classList.add('bg-primary');
                 } else {
-                    bar.classList.remove('bg-success');
+                    bar.classList.remove('bg-primary');
                     bar.classList.add('bg-danger');
                     bar.style.width = '100%';
                 }
@@ -132,16 +139,14 @@
                 setTimeout(() => {
                     container.style.display = 'none';
                     bar.style.width = '0%';
-                    bar.classList.remove('bg-danger', 'bg-success');
-                    bar.classList.add('bg-primary');
+                    bar.classList.remove('bg-danger', 'bg-primary');
                     submitBtn.disabled = false;   // Включаем кнопку обратно
-                    submitBtn.innerHTML = '<i class="bi bi-wifi me-1"></i>{{ text.btn }}';
                 }, 1000);
             });
 
-            // Обработка успешного подключения для перенаправления
+            // Обработка успешной авторизации для перенаправления
             document.body.addEventListener('htmx:afterRequest', function(event) {
-                if (event.target.id === 'mongo-form') {
+                if (event.target.id === 'mongo-login-form') {
                     try {
                         const response = JSON.parse(event.detail.xhr.responseText);
                         if (response && response.messages) {
@@ -150,7 +155,7 @@
                             if (hasSuccess) {
                                 // Перенаправляем через небольшую задержку
                                 setTimeout(() => {
-                                    window.location.href = '{% url "mongo_login" %}';
+                                    window.location.href = '/';
                                 }, 2000);
                             }
                         }

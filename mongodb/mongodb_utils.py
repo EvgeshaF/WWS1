@@ -1,17 +1,20 @@
 import datetime
 import json
 import os
-#from django.core.cache import cache
+# from django.core.cache import cache
 
 import pymongo
 from pymongo import errors
 from pymongo.errors import ConnectionFailure, OperationFailure
+from urllib.parse import quote_plus
 
 from .mongodb_config import MongoConfig, hash_password, verify_password
 from loguru import logger
 
 from . import language
-#from user import language as lang_user
+
+
+# from user import language as lang_user
 
 
 class MongoConnection:
@@ -44,7 +47,9 @@ class MongoConnection:
             if host and port:
                 try:
                     if admin_user and admin_password:
-                        connection_string = f"mongodb://{admin_user}:{admin_password}@{host}:{port}/admin"
+                        # Экранируем пароль для URL
+                        escaped_password = quote_plus(admin_password)
+                        connection_string = f"mongodb://{admin_user}:{escaped_password}@{host}:{port}/admin"
                     else:
                         connection_string = f"mongodb://{host}:{port}/"
 
@@ -75,10 +80,10 @@ class MongoConnection:
         try:
             client = pymongo.MongoClient(f"mongodb://{host}:{port}/", serverSelectionTimeoutMS=5000)
             client.admin.command('ping')
-            logger.success(language.mess_server_ping_success)
+            logger.success(f"{host}:{port} — {language.mess_server_ping_success}")
             return True
         except Exception as e:
-            logger.error(f"{language.mess_server_ping_error}: {e}")
+            logger.error(f"{host}:{port} — {language.mess_server_ping_error}: {e}")
             return False
 
     @classmethod
@@ -89,17 +94,44 @@ class MongoConnection:
             host = config.get('host')
             port = config.get('port')
 
+            if not host or not port:
+                logger.error("Host и Port должны быть настроены перед авторизацией")
+                return False
+
+            # Экранируем пароль и имя пользователя для URL
+            escaped_username = quote_plus(username)
+            escaped_password = quote_plus(password)
+
             auth_client = pymongo.MongoClient(
-                f"mongodb://{username}:{password}@{host}:{port}/admin",
+                f"mongodb://{escaped_username}:{escaped_password}@{host}:{port}/admin",
                 serverSelectionTimeoutMS=5000
             )
+
+            # Проверяем подключение
             auth_client.admin.command('ping')
-            return True
-        except OperationFailure:
-            logger.warning(language.mess_login_admin_error)
+
+            # Дополнительно проверяем права администратора
+            try:
+                # Пытаемся получить список баз данных (требует админских прав)
+                databases = auth_client.list_database_names()
+                logger.success(f"Администратор '{username}' успешно авторизован. Доступных БД: {len(databases)}")
+                return True
+            except OperationFailure as e:
+                logger.warning(f"Пользователь '{username}' авторизован, но без админских прав: {e}")
+                return True  # Возвращаем True, так как авторизация прошла
+
+        except OperationFailure as e:
+            error_code = e.details.get('code', 0) if hasattr(e, 'details') else 0
+            if error_code == 18:  # Authentication failed
+                logger.warning(f"Неверные учетные данные для '{username}': {language.mess_login_admin_error}")
+            else:
+                logger.error(f"Ошибка авторизации '{username}': {e}")
+            return False
+        except ConnectionFailure as e:
+            logger.error(f"Ошибка подключения при авторизации '{username}': {e}")
             return False
         except Exception as e:
-            logger.error(f"Administratorauthentifizierungsfehler: {e}")
+            logger.error(f"Неожиданная ошибка при авторизации '{username}': {e}")
             return False
 
     @classmethod

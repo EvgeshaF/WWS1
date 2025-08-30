@@ -9,8 +9,8 @@ def home(request):
 
     if config_status == 'connection_required' or config_status == 'ping_failed':
         return redirect('mongo_connection')
-    # elif config_status == 'login_failed':
-    #     return redirect('mongo_login')
+    elif config_status == 'login_required' or config_status == 'login_failed':
+        return redirect('mongo_login')
     # elif config_status == 'db_required':
     #     return redirect('create_database')
     # else:

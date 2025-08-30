@@ -30,3 +30,32 @@ class MongoConnectionForm(forms.Form):
             'placeholder': '27017'
         })
     )
+
+
+class MongoLoginForm(forms.Form):
+    """Форма для авторизации администратора MongoDB"""
+    admin_user = forms.CharField(
+        label="Serveradministrator",
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'autofocus': True,
+            'placeholder': 'Administrator Benutzername'
+        })
+    )
+    admin_password = forms.CharField(
+        label="Administrator Passwort",
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Administrator Passwort'
+        })
+    )
+    db_name = forms.CharField(
+        label="Datenbankname",
+        max_length=50,
+        initial='admin',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Standard: admin'
+        })
+    )
