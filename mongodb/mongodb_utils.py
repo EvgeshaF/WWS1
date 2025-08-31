@@ -198,6 +198,83 @@ class MongoConnection:
                         logger.error(f"Ошибка создания коллекции {collection_name}: {e}")
                         continue
 
+            # Создаем коллекцию пользователей на основе JSON-файла
+            users_collection_name = f"{db_name}_users"
+            if users_collection_name not in db.list_collection_names():
+                # Ищем JSON-файл с пользователями для получения структуры
+                users_json_path = os.path.join(base_path, 'users.json')
+
+                if os.path.exists(users_json_path):
+                    try:
+                        with open(users_json_path, 'r', encoding='utf-8') as file:
+                            users_data = json.load(file)
+
+                        # Создаем коллекцию и добавляем данные из JSON
+                        db.create_collection(users_collection_name)
+
+                        if isinstance(users_data, list):
+                            # Добавляем метаданные к каждому пользователю
+                            for user in users_data:
+                                user['created_at'] = now
+                                user['modified_at'] = now
+                                if 'deleted' not in user:
+                                    user['deleted'] = False
+
+                            if users_data:  # Если есть данные для вставки
+                                db[users_collection_name].insert_many(users_data)
+                                logger.success(f"Коллекция '{users_collection_name}' создана с {len(users_data)} пользователями из JSON")
+                            else:
+                                logger.success(f"Пустая коллекция '{users_collection_name}' создана (пустой массив в JSON)")
+                        else:
+                            # Если JSON содержит один объект
+                            users_data['created_at'] = now
+                            users_data['modified_at'] = now
+                            if 'deleted' not in users_data:
+                                users_data['deleted'] = False
+                            db[users_collection_name].insert_one(users_data)
+                            logger.success(f"Коллекция '{users_collection_name}' создана с 1 пользователем из JSON")
+
+                    except (FileNotFoundError, json.JSONDecodeError) as e:
+                        logger.error(f"Ошибка чтения {users_json_path}: {e}")
+                        # Создаем пустую коллекцию если JSON недоступен
+                        db.create_collection(users_collection_name)
+                        logger.success(f"Создана пустая коллекция '{users_collection_name}' (JSON недоступен)")
+                    except Exception as e:
+                        logger.error(f"Ошибка создания коллекции пользователей: {e}")
+                        return False
+                else:
+                    # Если файла users.json нет, создаем пустую коллекцию
+                    db.create_collection(users_collection_name)
+                    logger.success(f"Создана пустая коллекция '{users_collection_name}' (файл users.json не найден)")
+
+                # Создаем базовые индексы для производительности
+                users_collection = db[users_collection_name]
+                try:
+                    # Уникальные индексы (могут не сработать если есть дубликаты в JSON)
+                    try:
+                        users_collection.create_index("username", unique=True, name="idx_username_unique")
+                        logger.success("Создан уникальный индекс для username")
+                    except Exception as e:
+                        users_collection.create_index("username", name="idx_username")
+                        logger.warning(f"Создан обычный индекс для username (не уникальный): {e}")
+
+                    try:
+                        users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
+                        logger.success("Создан уникальный индекс для email")
+                    except Exception as e:
+                        users_collection.create_index("profile.email", name="idx_email")
+                        logger.warning(f"Создан обычный индекс для email (не уникальный): {e}")
+
+                    # Основные индексы
+                    users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
+                    users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
+                    users_collection.create_index("created_at", name="idx_created_at")
+
+                    logger.success(f"Созданы индексы для коллекции '{users_collection_name}'")
+
+                except Exception as e:
+                    logger.warning(f"Частичная ошибка создания индексов: {e}")
+
             # Создаем системную коллекцию для информации о БД
             system_collection_name = f"{db_name}_system_info"
             db[system_collection_name].insert_one({
@@ -235,7 +312,10 @@ class MongoConnection:
         try:
             db = client[db_name]
 
-            user = db.users.find_one({'username': username, 'deleted': False})
+            # Используем правильное имя коллекции пользователей
+            users_collection_name = f"{db_name}_users"
+            user = db[users_collection_name].find_one({'username': username, 'deleted': False})
+
             if user and verify_password(password, user['password']):
                 logger.success(f"Пользователь '{username}' успешно авторизован.")
                 return user

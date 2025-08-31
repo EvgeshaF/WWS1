@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ text.title }} - Schritt {{ step }}{% endblock %}
+{% block header %}{{ text.header }}{% endblock %}
+
+{% block content %}
+    <!-- Скрываем основной контент -->
+    <style>
+        .main-content .welcome-section,
+        .main-header .header-content,
+        .main-footer {
+            display: none !important;
+        }
+        .main-container {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+        }
+    </style>
+
+    <!-- Модальное окно -->
+    <div class="modal fade show" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-modal="true" role="dialog" style="display: block;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="adminModalLabel">
+                        <i class="bi bi-shield-check me-2"></i>
+                        {{ text.title }}
+                    </h5>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 3</span>
+                </div>
+                <div class="modal-body">
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {{ text.desc }}
+                        <br><small class="text-muted mt-1">Administrator: <strong>{{ full_name }}</strong> ({{ username }})</small>
+                    </div>
+
+                    <form id="admin-step3-form" method="post"
+                          hx-post="{% url 'create_admin_step3' %}"
+                          hx-target="#toast-container"
+                          hx-swap="beforeend">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <!-- Systemberechtigungen -->
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-gear me-1"></i>
+                                            {{ text.permissions_title }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check mb-3">
+                                            {{ form.is_super_admin }}
+                                            <label class="form-check-label" for="{{ form.is_super_admin.id_for_label }}">
+                                                <strong>{{ form.is_super_admin.label }}</strong>
+                                            </label>
+                                            <div class="form-text">{{ form.is_super_admin.help_text }}</div>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            {{ form.can_manage_users }}
+                                            <label class="form-check-label" for="{{ form.can_manage_users.id_for_label }}">
+                                                {{ form.can_manage_users.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.can_manage_users.help_text }}</div>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            {{ form.can_manage_database }}
+                                            <label class="form-check-label" for="{{ form.can_manage_database.id_for_label }}">
+                                                {{ form.can_manage_database.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.can_manage_database.help_text }}</div>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            {{ form.can_view_logs }}
+                                            <label class="form-check-label" for="{{ form.can_view_logs.id_for_label }}">
+                                                {{ form.can_view_logs.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.can_view_logs.help_text }}</div>
+                                        </div>
+
+                                        <div class="form-check">
+                                            {{ form.can_manage_settings }}
+                                            <label class="form-check-label" for="{{ form.can_manage_settings.id_for_label }}">
+                                                {{ form.can_manage_settings.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.can_manage_settings.help_text }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sicherheitseinstellungen -->
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-shield-lock me-1"></i>
+                                            {{ text.security_title }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check mb-3">
+                                            {{ form.password_expires }}
+                                            <label class="form-check-label" for="{{ form.password_expires.id_for_label }}">
+                                                {{ form.password_expires.label }}
+                                            </label>
+                                            <div class="form-text">{{ form.password_expires.help_text }}</div>
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            {{ form.two_factor_required }}
+                                            <label class="form-check-label" for="{{ form.two_factor_required.id_for_label }}">
+                                                <strong>{{ form.two_factor_required.label }}</strong>
+                                            </label>
+                                            <div class="form-text">{{ form.two_factor_required.help_text }}</div>
+                                        </div>
+
+                                        <!-- Sicherheitshinweise -->
+                                        <div class="alert alert-warning" role="alert">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <strong>Sicherheitshinweise:</strong>
+                                            <ul class="mb-0 mt-2">
+                                                <li>Super-Administrator hat Vollzugriff</li>
+                                                <li>2FA wird dringend empfohlen</li>
+                                                <li>Regelmäßige Passwort-Änderung erhöht die Sicherheit</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prüfung der Eingaben -->
+                        {% if form.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Bitte korrigieren Sie die folgenden Fehler:
+                                <ul class="mb-0 mt-2">
+                                    {% for field, errors in form.errors.items %}
+                                        <li>{{ field }}: {{ errors|join:", " }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'create_admin_step2' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                {{ text.btn_back }}
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-person-plus me-1"></i>
+                                {{ text.btn }}
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        {{ text.notification }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Полупрозрачный фон -->
+    <div class="modal-backdrop fade show"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('admin-step3-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            // Отслеживаем начало HTMX запроса
+            form.addEventListener('htmx:beforeRequest', () => {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-person-plus spinner-border spinner-border-sm me-1" role="status"></i>Wird erstellt...';
+            });
+
+            // Отслеживаем завершение HTMX запроса
+            form.addEventListener('htmx:afterRequest', (event) => {
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-person-plus me-1"></i>{{ text.btn }}';
+                }, 1000);
+            });
+
+            // Обработка успешного создания администратора для перенаправления
+            document.body.addEventListener('htmx:afterRequest', function(event) {
+                if (event.target.id === 'admin-step3-form') {
+                    try {
+                        const response = JSON.parse(event.detail.xhr.responseText);
+                        if (response && response.messages) {
+                            // Проверяем, есть ли сообщение об успехе
+                            const hasSuccess = response.messages.some(msg => msg.tags === 'success');
+                            if (hasSuccess) {
+                                // Перенаправляем через задержку на главную страницу
+                                setTimeout(() => {
+                                    window.location.href = '/';
+                                }, 3000);
+                            }
+                        }
+                    } catch (e) {
+                        // Если не JSON, игнорируем
+                    }
+                }
+            });
+
+            // Включаем/отключаем зависимые чекбоксы
+            const superAdminCheckbox = document.getElementById('{{ form.is_super_admin.id_for_label }}');
+            const dependentCheckboxes = [
+                document.getElementById('{{ form.can_manage_users.id_for_label }}'),
+                document.getElementById('{{ form.can_manage_database.id_for_label }}'),
+                document.getElementById('{{ form.can_view_logs.id_for_label }}'),
+                document.getElementById('{{ form.can_manage_settings.id_for_label }}')
+            ];
+
+            superAdminCheckbox.addEventListener('change', function() {
+                dependentCheckboxes.forEach(checkbox => {
+                    if (checkbox) {
+                        checkbox.checked = this.checked;
+                        checkbox.disabled = this.checked;
+
+                        // Визуальная индикация
+                        const label = checkbox.closest('.form-check');
+                        if (this.checked) {
+                            label.style.opacity = '0.6';
+                        } else {
+                            label.style.opacity = '1';
+                        }
+                    }
+                });
+            });
+
+            // Инициализация состояния при загрузке
+            if (superAdminCheckbox.checked) {
+                superAdminCheckbox.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+
+{% endblock %}
+                    '

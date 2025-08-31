@@ -51,7 +51,7 @@
                             {% endif %}
                             <div class="form-text">
                                 <i class="bi bi-lightbulb me-1"></i>
-                                Muss mit Buchstaben beginnen, nur Buchstaben, Zahlen und Unterstriche
+                                3-50 Zeichen, beginnt mit Buchstaben, nur Buchstaben, Zahlen und Unterstriche
                             </div>
                         </div>
 
@@ -66,7 +66,7 @@
                             {% endif %}
                             <div class="form-text">
                                 <i class="bi bi-shield-check me-1"></i>
-                                Mindestens 8 Zeichen, Groß-/Kleinbuchstaben, Zahlen
+                                Mindestens 8 Zeichen mit Groß-/Kleinbuchstaben, Zahlen
                             </div>
                         </div>
 
@@ -81,15 +81,70 @@
                             {% endif %}
                         </div>
 
-                        <!-- Прогрессбар -->
-                        <div class="mb-3" id="admin-step1-progress-container">
-                            <label class="form-label" style="visibility: hidden;" id="step1-progress-label">
-                                <i class="bi bi-person-check me-1"></i>
-                                Benutzerdaten werden validiert...
-                            </label>
-                            <div class="progress" style="visibility: hidden;" id="step1-progress-bar-container">
-                                <div id="step1-progress" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                            </div>
-                        </div>
 
-                        <div class="d-flex
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                {{ text.btn }}
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        {{ text.notification }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Полупрозрачный фон -->
+    <div class="modal-backdrop fade show"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('admin-step1-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            // Отслеживаем начало HTMX запроса
+            form.addEventListener('htmx:beforeRequest', () => {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-person-check spinner-border spinner-border-sm me-1" role="status"></i>Wird validiert...';
+            });
+
+            // Отслеживаем завершение HTMX запроса
+            form.addEventListener('htmx:afterRequest', (event) => {
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                }, 1000);
+            });
+
+            // Обработка успешной валидации для перенаправления
+            document.body.addEventListener('htmx:afterRequest', function(event) {
+                if (event.target.id === 'admin-step1-form') {
+                    try {
+                        const response = JSON.parse(event.detail.xhr.responseText);
+                        if (response && response.messages) {
+                            // Проверяем, есть ли сообщение об успехе
+                            const hasSuccess = response.messages.some(msg => msg.tags === 'success');
+                            if (hasSuccess) {
+                                // Перенаправляем через небольшую задержку
+                                setTimeout(() => {
+                                    window.location.href = '{% url "create_admin_step2" %}';
+                                }, 2000);
+                            }
+                        }
+                    } catch (e) {
+                        // Если не JSON, игнорируем
+                    }
+                }
+            });
+        });
+    </script>
+
+{% endblock %}

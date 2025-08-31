@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ text.title }} - Schritt {{ step }}{% endblock %}
+{% block header %}{{ text.header }}{% endblock %}
+
+{% block content %}
+    <!-- Скрываем основной контент -->
+    <style>
+        .main-content .welcome-section,
+        .main-header .header-content,
+        .main-footer {
+            display: none !important;
+        }
+        .main-container {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+        }
+    </style>
+
+    <!-- Модальное окно -->
+    <div class="modal fade show" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-modal="true" role="dialog" style="display: block;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="adminModalLabel">
+                        <i class="bi bi-person-vcard me-2"></i>
+                        {{ text.title }}
+                    </h5>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 3</span>
+                </div>
+                <div class="modal-body">
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {{ text.desc }}
+                        <br><small class="text-muted mt-1">Benutzer: <strong>{{ username }}</strong></small>
+                    </div>
+
+                    <form id="admin-step2-form" method="post"
+                          hx-post="{% url 'create_admin_step2' %}"
+                          hx-target="#toast-container"
+                          hx-swap="beforeend">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <!-- Linke Spalte -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.salutation.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person me-1"></i>
+                                        {{ text.salutation }}
+                                    </label>
+                                    {{ form.salutation }}
+                                    {% if form.salutation.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.salutation.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                                        <i class="bi bi-mortarboard me-1"></i>
+                                        {{ text.title_field }}
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.title.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person-badge me-1"></i>
+                                        {{ text.first_name }}
+                                    </label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.first_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Правая Spalte -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person-badge-fill me-1"></i>
+                                        {{ text.last_name }}
+                                    </label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.last_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        <i class="bi bi-envelope me-1"></i>
+                                        {{ text.email }}
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Wird für Systembenachrichtigungen verwendet
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                        <i class="bi bi-telephone me-1"></i>
+                                        {{ text.phone }}
+                                    </label>
+                                    {{ form.phone }}
+                                    {% if form.phone.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.phone.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Optional - für Notfallkontakt oder 2FA
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'create_admin_step1' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                {{ text.btn_back }}
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                {{ text.btn }}
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        {{ text.notification }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Полупрозрачный фон -->
+    <div class="modal-backdrop fade show"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('admin-step2-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            // Отслеживаем начало HTMX запроса
+            form.addEventListener('htmx:beforeRequest', () => {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-person-check spinner-border spinner-border-sm me-1" role="status"></i>Wird validiert...';
+            });
+
+            // Отслеживаем завершение HTMX запроса
+            form.addEventListener('htmx:afterRequest', (event) => {
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                }, 1000);
+            });
+
+            // Обработка успешной валидации для перенаправления
+            document.body.addEventListener('htmx:afterRequest', function(event) {
+                if (event.target.id === 'admin-step2-form') {
+                    try {
+                        const response = JSON.parse(event.detail.xhr.responseText);
+                        if (response && response.messages) {
+                            // Проверяем, есть ли сообщение об успехе
+                            const hasSuccess = response.messages.some(msg => msg.tags === 'success');
+                            if (hasSuccess) {
+                                // Перенаправляем через небольшую задержку
+                                setTimeout(() => {
+                                    window.location.href = '{% url "create_admin_step3" %}';
+                                }, 2000);
+                            }
+                        }
+                    } catch (e) {
+                        // Если не JSON, игнорируем
+                    }
+                }
+            });
+        });
+    </script>
+
+{% endblock %}
