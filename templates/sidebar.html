@@ -1,0 +1,55 @@
+{% load static %}
+<style>
+  .sidebar {
+    position: fixed;
+    top: 56px; /* отступ под верхним navbar */
+    left: 0;
+    height: calc(100vh - 56px);
+    width: 220px;
+    background-color: #0d6efd; /* bg-primary */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+  .sidebar .nav-link {
+    color: #fff;
+    padding: 0.75rem 1rem;
+  }
+  .sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  .sidebar .user-block {
+    margin-top: auto;
+    padding: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+  }
+</style>
+
+<nav class="sidebar">
+  <ul class="nav flex-column">
+    <li class="nav-item"><a class="nav-link active" href="#">🏠 Главная</a></li>
+    <li class="nav-item"><a class="nav-link" href="#">📊 Отчёты</a></li>
+    <li class="nav-item"><a class="nav-link" href="#">⚙️ Настройки</a></li>
+  </ul>
+
+{#  <div class="user-block dropdown">#}
+{#    <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#" id="sidebarUserDropdown"#}
+{#       data-bs-toggle="dropdown" aria-expanded="false">#}
+{#      <img src="{% static 'defaults/img/default-avatar.png' %}" alt="Аватар" class="avatar">#}
+{#      Иван Иванов#}
+{#    </a>#}
+{#    <ul class="dropdown-menu dropdown-menu-dark">#}
+{#      <li><a class="dropdown-item" href="#">Профиль</a></li>#}
+{#      <li><a class="dropdown-item" href="#">Настройки</a></li>#}
+{#      <li><hr class="dropdown-divider"></li>#}
+{#      <li><a class="dropdown-item" href="#">Выйти</a></li>#}
+{#    </ul>#}
+{#  </div>#}
+</nav>
