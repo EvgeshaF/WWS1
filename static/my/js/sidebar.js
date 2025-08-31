@@ -1,13 +1,13 @@
 // static/js/sidebar.js - Управление sidebar на мобильных устройствах
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.querySelector('.sidebar');
     const navbarToggler = document.querySelector('.navbar-toggler');
     const mainContent = document.querySelector('.main-content');
 
     // Переключение sidebar на мобильных устройствах
     if (navbarToggler) {
-        navbarToggler.addEventListener('click', function() {
+        navbarToggler.addEventListener('click', function () {
             if (window.innerWidth <= 768) {
                 sidebar?.classList.toggle('show');
 
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         // Закрытие при клике на overlay
-        overlay.addEventListener('click', function() {
+        overlay.addEventListener('click', function () {
             sidebar?.classList.remove('show');
             removeOverlay();
         });
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Закрытие sidebar при изменении размера окна
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         if (window.innerWidth > 768) {
             sidebar?.classList.remove('show');
             removeOverlay();
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Закрытие sidebar при клике на ссылки на мобильных
     const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
     sidebarLinks.forEach(link => {
-        link.addEventListener('click', function() {
+        link.addEventListener('click', function () {
             if (window.innerWidth <= 768) {
                 sidebar?.classList.remove('show');
                 removeOverlay();
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Плавная прокрутка к началу при клике на логотип
     const brandLink = document.querySelector('.modern-brand');
     if (brandLink) {
-        brandLink.addEventListener('click', function(e) {
+        brandLink.addEventListener('click', function (e) {
             if (this.getAttribute('href') === window.location.pathname) {
                 e.preventDefault();
                 window.scrollTo({

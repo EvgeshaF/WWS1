@@ -1,16 +1,13 @@
-# mongodb/mongodb_utils.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с правильными проверками MongoDB объектов
-
 import datetime
 import json
 import os
-# from django.core.cache import cache
 
 import pymongo
-from pymongo import errors
+#from pymongo import errors
 from pymongo.errors import ConnectionFailure, OperationFailure
 from urllib.parse import quote_plus
 
-from .mongodb_config import MongoConfig, hash_password, verify_password
+from .mongodb_config import MongoConfig, verify_password #,hash_password,
 from loguru import logger
 
 from . import language
@@ -134,7 +131,7 @@ class MongoConnection:
             return False
 
     @classmethod
-    def create_database(cls, db_name):
+    def create_database_step3(cls, db_name):
         """Создает базу данных с коллекциями из JSON файлов"""
         if not db_name:
             logger.error("Имя базы данных обязательно")

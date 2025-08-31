@@ -1,6 +1,6 @@
 // static/my_toasts/toasts.js - обновленная версия с цветной шапкой
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Обрабатываем Django сообщения при загрузке страницы
     const djangoMessages = document.getElementById('django-messages');
     if (djangoMessages) {
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Обрабатываем HTMX ответы
-    document.body.addEventListener('htmx:afterRequest', function(event) {
+    document.body.addEventListener('htmx:afterRequest', function (event) {
         const response = event.detail.xhr.responseText;
 
         // Проверяем, является ли ответ JSON с сообщениями
@@ -162,7 +162,7 @@ function getTitle(type) {
 // Глобальная функция для создания toast из любого места
 window.showToast = showToast;// static/my_toasts/toasts.js - обновленная версия в едином стиле
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Обрабатываем Django сообщения при загрузке страницы
     const djangoMessages = document.getElementById('django-messages');
     if (djangoMessages) {
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Обрабатываем HTMX ответы
-    document.body.addEventListener('htmx:afterRequest', function(event) {
+    document.body.addEventListener('htmx:afterRequest', function (event) {
         const response = event.detail.xhr.responseText;
 
         // Проверяем, является ли ответ JSON с сообщениями
@@ -278,7 +278,7 @@ function closeToast(toastId) {
 function limitToasts() {
     const container = document.getElementById('toast-container');
     const toasts = container.querySelectorAll('.toast');
-    
+
     // Оставляем только последние 4 toast'а
     if (toasts.length > 4) {
         for (let i = 0; i < toasts.length - 4; i++) {
@@ -301,7 +301,7 @@ function getBootstrapClass(type) {
 function getIcon(type) {
     const iconMap = {
         'success': 'bi bi-check-circle-fill',
-        'error': 'bi bi-exclamation-triangle-fill', 
+        'error': 'bi bi-exclamation-triangle-fill',
         'warning': 'bi bi-exclamation-triangle',
         'info': 'bi bi-info-circle-fill',
         'debug': 'bi bi-gear-fill'

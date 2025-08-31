@@ -23,55 +23,55 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="modern-body">
-    <!-- Верхняя навигация -->
-    {% block navbar %}{% include 'includes/navbar.html' %}{% endblock %}
+<!-- Верхняя навигация -->
+{% block navbar %}{% include 'includes/navbar.html' %}{% endblock %}
 
-    <!-- Основной контейнер с боковой панелью и контентом -->
-    <div class="main-container d-flex">
-        <!-- Боковая панель -->
-        {% block navmenu %}{% include 'includes/sidebar.html' %}{% endblock %}
+<!-- Основной контейнер с боковой панелью и контентом -->
+<div class="main-container d-flex">
+    <!-- Боковая панель -->
+    {% block navmenu %}{% include 'includes/sidebar.html' %}{% endblock %}
 
-        <!-- Основной контент -->
-        <div class="main-content flex-grow-1">
-            <!-- Заголовок страницы -->
-            {% block header_section %}
+    <!-- Основной контент -->
+    <div class="main-content flex-grow-1">
+        <!-- Заголовок страницы -->
+        {% block header_section %}
             <header class="main-header">
                 <div class="header-content">
                     <h1 class="header-title">{% block header %}WWS1{% endblock %}</h1>
                     <p class="header-subtitle">{% block subtitle %}Warehouse Management System{% endblock %}</p>
                 </div>
             </header>
-            {% endblock %}
+        {% endblock %}
 
-            <!-- Основной контент страницы -->
-            <main class="content-wrapper">
-                {% block content %}{% endblock %}
-            </main>
+        <!-- Основной контент страницы -->
+        <main class="content-wrapper">
+            {% block content %}{% endblock %}
+        </main>
 
-            <!-- Подвал -->
-            <footer class="main-footer">
-                <div class="footer-content">
-                    <p class="text-muted text-center">&copy; 2025 WWS1 EF-SOFT</p>
-                </div>
-            </footer>
-        </div>
+        <!-- Подвал -->
+        <footer class="main-footer">
+            <div class="footer-content">
+                <p class="text-muted text-center">&copy; 2025 WWS1 EF-SOFT</p>
+            </div>
+        </footer>
     </div>
+</div>
 
-    <!-- Контейнер тостов -->
-    <div id="toast-container"></div>
+<!-- Контейнер тостов -->
+<div id="toast-container"></div>
 
-    <!-- Скрытые Django сообщения -->
-    <div id="django-messages" style="display: none;">
-        {% for message in messages %}
+<!-- Скрытые Django сообщения -->
+<div id="django-messages" style="display: none;">
+    {% for message in messages %}
         <div data-tags="{{ message.tags }}" data-text="{{ message|force_escape }}" data-delay="5000"></div>
-        {% endfor %}
-    </div>
+    {% endfor %}
+</div>
 
-    <script src="{% static 'my/js/toasts.js' %}"></script>
-    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    <script src="{% static 'htmx/js/htmx.min.js' %}"></script>
-    <script src="{% static 'my/js/sidebar.js' %}"></script>
+<script src="{% static 'my/js/toasts.js' %}"></script>
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'htmx/js/htmx.min.js' %}"></script>
+<script src="{% static 'my/js/sidebar.js' %}"></script>
 
-    {% block extra_js %}{% endblock %}
+{% block extra_js %}{% endblock %}
 </body>
 </html>

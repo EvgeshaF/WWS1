@@ -9,11 +9,11 @@ def home(request):
     config_status = MongoConfig.check_config_completeness()
 
     if config_status == 'connection_required' or config_status == 'ping_failed':
-        return redirect('mongo_connection')
+        return redirect('create_database_step1')
     elif config_status == 'login_required' or config_status == 'login_failed':
-        return redirect('mongo_login')
+        return redirect('create_database_step2')
     elif config_status == 'db_required':
-        return redirect('create_database')
+        return redirect('create_database_step3')
     elif config_status == 'complete':
         # Проверяем, есть ли администраторы в системе
         user_manager = UserManager()

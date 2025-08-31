@@ -1,9 +1,10 @@
 
-        .main-content .welcome-section,
-        .main-header .header-content,
-        .main-footer {
-            display: none !important;
-        }
-        .main-container {
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
-        }
+.main-content .welcome-section,
+.main-header .header-content,
+.main-footer {
+    display: none !important;
+}
+
+.main-container {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+}

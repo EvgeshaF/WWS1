@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from loguru import logger
 
+
 class InterceptHandler(logging.Handler):
     def emit(self, record):
         try:
@@ -11,6 +12,7 @@ class InterceptHandler(logging.Handler):
         except ValueError:
             level = record.levelno
         logger.opt(depth=6, exception=record.exc_info).log(level, record.getMessage())
+
 
 def setup_logger():
     logger.remove()
@@ -28,13 +30,13 @@ def setup_logger():
     logger.add(
         "logs/wws_{time:YYYYMMDD}.log",  # лог будет автоматически сжат в zip
         rotation="1 days",  # новый лог раз в 1 дней
-        retention=timedelta(days=7),   # удаляет архивы старше 7 дней
+        retention=timedelta(days=7),  # удаляет архивы старше 7 дней
         compression="zip",  # архивировать
-        level="INFO",       # только INFO и выше (без DEBUG)
+        level="INFO",  # только INFO и выше (без DEBUG)
         encoding="utf-8",
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {message}",
     )
-    #logger.add("logs/{time:YYYYMMDD_HH:mm:ss}_wws.log", rotation="10 MB", retention="10 days", compression="zip", level="DEBUG")
+    # logger.add("logs/{time:YYYYMMDD_HH:mm:ss}_wws.log", rotation="10 MB", retention="10 days", compression="zip", level="DEBUG")
 
     logging.basicConfig(handlers=[InterceptHandler()], level=logging.DEBUG, force=True)
 

@@ -11,6 +11,7 @@ from . import language
 def hash_password(password):
     return make_password(password)
 
+
 def verify_password(password, hashed):
     return check_password(password, hashed)
 
@@ -212,4 +213,3 @@ class MongoConfig:
                 logger.error(f"Ошибка удаления файла конфигурации: {e}")
                 return False
         return True
-

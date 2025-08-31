@@ -17,7 +17,9 @@
     transition: opacity 0.3s ease, color 0.3s ease;
     font-family: 'Courier New', monospace;
     font-weight: 600;
-}/* MongoDB Forms Styles - обновленные для соответствия общему стилю */
+}
+
+/* MongoDB Forms Styles - обновленные для соответствия общему стилю */
 
 :root {
     --primary-color: #0d6efd;
@@ -86,7 +88,9 @@
     background: #f8f9fa;
     border-radius: 0 0 var(--border-radius) var(--border-radius);
     padding: 1rem 2rem;
-}/* MongoDB Forms Styles - обновленные для соответствия общему стилю */
+}
+
+/* MongoDB Forms Styles - обновленные для соответствия общему стилю */
 
 :root {
     --primary-color: #0d6efd;
@@ -166,11 +170,11 @@
     right: 0;
     bottom: 0;
     background: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 5px,
-        rgba(108, 117, 125, 0.1) 5px,
-        rgba(108, 117, 125, 0.1) 10px
+            45deg,
+            transparent,
+            transparent 5px,
+            rgba(108, 117, 125, 0.1) 5px,
+            rgba(108, 117, 125, 0.1) 10px
     );
     pointer-events: none;
     border-radius: var(--border-radius-sm);
@@ -271,8 +275,12 @@
 }
 
 @keyframes progress-bar-stripes {
-    0% { background-position-x: 1rem; }
-    100% { background-position-x: 0; }
+    0% {
+        background-position-x: 1rem;
+    }
+    100% {
+        background-position-x: 0;
+    }
 }
 
 .alert {
@@ -391,8 +399,12 @@
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .form-label i {

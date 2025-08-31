@@ -11,6 +11,7 @@
         .main-footer {
             display: none !important;
         }
+
         .main-container {
             background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
         }
@@ -36,7 +37,7 @@
                     </div>
 
                     <form id="create-db-form" method="post"
-                          hx-post="{% url 'create_database' %}"
+                          hx-post="{% url 'create_database_step3' %}"
                           hx-target="#toast-container"
                           hx-swap="beforeend">
                         {% csrf_token %}
@@ -75,7 +76,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'mongo_login' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'create_database_step2' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>
                                 Zurück
                             </a>

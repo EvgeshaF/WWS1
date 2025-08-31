@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('mongo_connection/', views.mongo_connection, name='mongo_connection'),
-    path('mongo_login/', views.mongo_login, name='mongo_login'),
-    path('create_database/', views.create_database, name='create_database'),
+    path('create-database/step1/', views.create_database_step1, name='create_database_step1'),
+    path('create-database/step2/', views.create_database_step2, name='create_database_step2'),
+    path('create-database/step3/', views.create_database_step3, name='create_database_step3'),
 ]

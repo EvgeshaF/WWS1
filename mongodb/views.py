@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
-from django.template.loader import render_to_string
+#from django.template.loader import render_to_string
 from loguru import logger
-from urllib.parse import quote_plus
+#from urllib.parse import quote_plus
 
 from .forms import MongoConnectionForm, MongoLoginForm, CreateDatabaseForm
 from .mongodb_config import MongoConfig
@@ -31,7 +31,7 @@ def render_toast_response(request):
 
 
 @ratelimit(key='ip', rate='5/m', method='POST')
-def mongo_connection(request):
+def create_database_step1(request):
     """Форма конфигурации сервера MongoDB (хост, порт)"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
@@ -59,7 +59,7 @@ def mongo_connection(request):
 
                 if is_htmx:
                     return render_toast_response(request)
-                return redirect('mongo_login')  # Перенаправляем на форму логина
+                return redirect('create_database_step2')  # Перенаправляем на форму логина
             else:
                 # Детальная диагностика для лучшего сообщения об ошибке
                 if host == 'ef-soft.local':
@@ -104,7 +104,7 @@ def mongo_connection(request):
 
 
 @ratelimit(key='ip', rate='5/m', method='POST')
-def mongo_login(request):
+def create_database_step2(request):
     """Форма авторизации администратора MongoDB"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
@@ -112,7 +112,7 @@ def mongo_login(request):
     config = MongoConfig.read_config()
     if not config.get('host') or not config.get('port'):
         messages.error(request, "Сначала настройте подключение к серверу")
-        return redirect('mongo_connection')
+        return redirect('create_database_step1')
 
     if request.method == 'POST':
         form = MongoLoginForm(request.POST)
@@ -137,7 +137,7 @@ def mongo_login(request):
 
                 if is_htmx:
                     return render_toast_response(request)
-                return redirect('create_database')  # Переход к созданию БД
+                return redirect('create_database_step3')  # Переход к созданию БД
             else:
                 messages.error(request, language.mess_login_admin_error)
                 if is_htmx:
@@ -165,7 +165,7 @@ def mongo_login(request):
 
 
 @ratelimit(key='ip', rate='3/m', method='POST')
-def create_database(request):
+def create_database_step3(request):
     """Форма создания новой базы данных - упрощенная"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
@@ -173,7 +173,7 @@ def create_database(request):
     config = MongoConfig.read_config()
     if not all([config.get('host'), config.get('port'), config.get('admin_user'), config.get('admin_password')]):
         messages.error(request, "Vorherige Konfigurationsschritte sind unvollständig")
-        return redirect('mongo_connection')
+        return redirect('create_database_step1')
 
     if request.method == 'POST':
         form = CreateDatabaseForm(request.POST)
@@ -187,7 +187,7 @@ def create_database(request):
                     return render_toast_response(request)
             else:
                 # Создаем простую базу данных
-                if MongoConnection.create_database(db_name):
+                if MongoConnection.create_database_step3(db_name):
                     # Обновляем конфигурацию с новой БД
                     MongoConfig.update_config({
                         'db_name': db_name,

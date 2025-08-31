@@ -1,25 +1,25 @@
 [
-    {
-        "username": "demo_user",
-        "password": "pbkdf2_sha256$260000$...",
-        "profile": {
-            "salutation": "herr",
-            "title": "",
-            "first_name": "Demo",
-            "last_name": "Benutzer",
-            "email": "demo@example.com",
-            "phone": "+49 123 456789"
-        },
-        "permissions": {
-            "is_super_admin": false,
-            "can_manage_users": false,
-            "can_manage_database": false,
-            "can_view_logs": false,
-            "can_manage_settings": false,
-            "password_expires": true,
-            "two_factor_required": false
-        },
-        "is_admin": false,
-        "is_active": true
-    }
+  {
+    "username": "demo_user",
+    "password": "pbkdf2_sha256$260000$...",
+    "profile": {
+      "salutation": "herr",
+      "title": "",
+      "first_name": "Demo",
+      "last_name": "Benutzer",
+      "email": "demo@example.com",
+      "phone": "+49 123 456789"
+    },
+    "permissions": {
+      "is_super_admin": false,
+      "can_manage_users": false,
+      "can_manage_database": false,
+      "can_view_logs": false,
+      "can_manage_settings": false,
+      "password_expires": true,
+      "two_factor_required": false
+    },
+    "is_admin": false,
+    "is_active": true
+  }
 ]

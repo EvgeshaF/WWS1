@@ -4,32 +4,32 @@
 {% endcomment %}
 
 {% for message in messages %}
-<div class="toast mb-2 fade show" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000">
-    <div class="toast-header
+    <div class="toast mb-2 fade show" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000">
+        <div class="toast-header
         {% if message.tags == 'success' %}bg-success text-white{% endif %}
         {% if message.tags == 'error' %}bg-danger text-white{% endif %}
         {% if message.tags == 'warning' %}bg-warning text-dark{% endif %}
         {% if message.tags == 'info' %}bg-info text-white{% endif %}">
 
-        <i class="bi
+            <i class="bi
             {% if message.tags == 'success' %}bi-check-circle-fill{% endif %}
             {% if message.tags == 'error' %}bi-x-circle-fill{% endif %}
             {% if message.tags == 'warning' %}bi-exclamation-triangle-fill{% endif %}
             {% if message.tags == 'info' %}bi-info-circle-fill{% endif %}
             me-2"></i>
 
-        <strong class="me-auto">
-            {% if message.tags == 'success' %}Erfolg
-            {% elif message.tags == 'error' %}Fehler
-            {% elif message.tags == 'warning' %}Warnung
-            {% else %}Info
-            {% endif %}
-        </strong>
+            <strong class="me-auto">
+                {% if message.tags == 'success' %}Erfolg
+                {% elif message.tags == 'error' %}Fehler
+                {% elif message.tags == 'warning' %}Warnung
+                {% else %}Info
+                {% endif %}
+            </strong>
 
-        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Schließen"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Schließen"></button>
+        </div>
+        <div class="toast-body toast-body-{{ message.tags }}">
+            {{ message }}
+        </div>
     </div>
-    <div class="toast-body toast-body-{{ message.tags }}">
-        {{ message }}
-    </div>
-</div>
 {% endfor %}

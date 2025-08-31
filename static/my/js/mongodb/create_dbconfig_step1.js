@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (hasSuccess) {
                         // Перенаправляем через небольшую задержку
                         setTimeout(() => {
-                            window.location.href = '{% url "mongo_login" %}';
+                            window.location.href = '{% url "create_database_step2" %}';
                         }, 2000);
                     }
                 }

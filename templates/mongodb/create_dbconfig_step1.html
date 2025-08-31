@@ -21,7 +21,7 @@
                     </div>
 
                     <form id="mongo-form" method="post"
-                          hx-post="{% url 'mongo_connection' %}"
+                          hx-post="{% url 'create_database_step1' %}"
                           hx-target="#toast-container"
                           hx-swap="beforeend">
                         {% csrf_token %}
