@@ -44,7 +44,7 @@ def mongo_connection(request):
             except (ValueError, TypeError):
                 messages.error(request, language.mess_form_invalid)
                 return render_toast_response(request) if is_htmx else render(
-                    request, 'mongodb/connection_form.html',
+                    request, 'mongodb/create_dbconfig_step1.html',
                     {'form': form, 'text': language.text_server_conf, 'step': 1}
                 )
 
@@ -96,7 +96,7 @@ def mongo_connection(request):
             if is_htmx:
                 return render_toast_response(request)
 
-    return render(request, 'mongodb/connection_form.html', {
+    return render(request, 'mongodb/create_dbconfig_step1.html', {
         'form': form,
         'text': language.text_server_conf,
         'step': 1
@@ -157,7 +157,7 @@ def mongo_login(request):
 
         form = MongoLoginForm(initial=initial_data)
 
-    return render(request, 'mongodb/login_form.html', {
+    return render(request, 'mongodb/create_dbconfig_step2.html', {
         'form': form,
         'text': language.text_login_form,
         'step': 2
@@ -213,7 +213,7 @@ def create_database(request):
     else:  # GET-запрос
         form = CreateDatabaseForm()
 
-    return render(request, 'mongodb/create_database_form.html', {
+    return render(request, 'mongodb/create_dbconfig_step3.html', {
         'form': form,
         'text': language.text_create_db_form,
         'step': 3
