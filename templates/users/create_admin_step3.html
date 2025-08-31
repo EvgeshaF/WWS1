@@ -11,6 +11,7 @@
         .main-footer {
             display: none !important;
         }
+
         .main-container {
             background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
         }
@@ -18,7 +19,7 @@
 
     <!-- Модальное окно -->
     <div class="modal fade show" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-modal="true" role="dialog" style="display: block;">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="adminModalLabel">
@@ -122,10 +123,12 @@
                                         </div>
 
                                         <!-- Sicherheitshinweise -->
-                                        <div class="alert alert-warning" role="alert">
-                                            <i class="bi bi-exclamation-triangle me-2"></i>
-                                            <strong>Sicherheitshinweise:</strong>
-                                            <ul class="mb-0 mt-2">
+                                        <div class="alert alert-warning d-flex flex-column" role="alert">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                                                <strong>Sicherheitshinweise</strong>
+                                            </div>
+                                            <ul class="mb-0 ps-3 small text-muted">
                                                 <li>Super-Administrator hat Vollzugriff</li>
                                                 <li>2FA wird dringend empfohlen</li>
                                                 <li>Regelmäßige Passwort-Änderung erhöht die Sicherheit</li>
@@ -195,7 +198,7 @@
             });
 
             // ИСПРАВЛЕННАЯ обработка успешного создания администратора
-            document.body.addEventListener('htmx:afterRequest', function(event) {
+            document.body.addEventListener('htmx:afterRequest', function (event) {
                 if (event.target.id === 'admin-step3-form') {
                     const xhr = event.detail.xhr;
 
@@ -268,7 +271,7 @@
             ];
 
             if (superAdminCheckbox) {
-                superAdminCheckbox.addEventListener('change', function() {
+                superAdminCheckbox.addEventListener('change', function () {
                     dependentCheckboxes.forEach(checkbox => {
                         if (checkbox) {
                             checkbox.checked = this.checked;
