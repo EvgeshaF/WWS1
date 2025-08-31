@@ -13,43 +13,64 @@
 
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'bootstrap/icons/bootstrap-icons.css' %}">
-    <link rel="stylesheet" href="{% static 'my_style/mongodb_forms.css' %}">
+    <link rel="stylesheet" href="{% static 'my_style/layout-heights.css' %}">
     <link rel="stylesheet" href="{% static 'my_style/main_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'my_style/mongodb_forms.css' %}">
     <link rel="stylesheet" href="{% static 'my_style/components.css' %}">
     <link rel="stylesheet" href="{% static 'my_toasts/toasts.css' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-{% block navbar %}{% include 'navbar.html' %}{% endblock %}
-{% block navmenu %}{% include 'sidebar.html' %}{% endblock %}
+<body class="modern-body">
+    <!-- Верхняя навигация -->
+    {% block navbar %}{% include 'navbar.html' %}{% endblock %}
 
-<div class="container">
-    <header class="mb-4 text-center">
-        <h1 class="display-4">{% block header %}{% endblock %}</h1>
-    </header>
+    <!-- Основной контейнер с боковой панелью и контентом -->
+    <div class="main-container d-flex">
+        <!-- Боковая панель -->
+        {% block navmenu %}{% include 'sidebar.html' %}{% endblock %}
 
-    <main>{% block content %}{% endblock %}</main>
+        <!-- Основной контент -->
+        <div class="main-content flex-grow-1">
+            <!-- Заголовок страницы -->
+            {% block header_section %}
+            <header class="main-header">
+                <div class="header-content">
+                    <h1 class="header-title">{% block header %}WWS1{% endblock %}</h1>
+                    <p class="header-subtitle">{% block subtitle %}Warehouse Management System{% endblock %}</p>
+                </div>
+            </header>
+            {% endblock %}
 
-    <footer class="mt-5 py-3 text-center">
-        <p class="text-muted">&copy; 2025 WWS1 EF-SOFT</p>
-    </footer>
-</div>
+            <!-- Основной контент страницы -->
+            <main class="content-wrapper">
+                {% block content %}{% endblock %}
+            </main>
 
-<!-- Контейнер тостов -->
-<div id="toast-container"></div>
+            <!-- Подвал -->
+            <footer class="main-footer">
+                <div class="footer-content">
+                    <p class="text-muted text-center">&copy; 2025 WWS1 EF-SOFT</p>
+                </div>
+            </footer>
+        </div>
+    </div>
 
-<!-- Скрытые Django сообщения -->
-<div id="django-messages" style="display: none;">
-    {% for message in messages %}
-    <div data-tags="{{ message.tags }}" data-text="{{ message|force_escape }}" data-delay="5000"></div>
-    {% endfor %}
-</div>
+    <!-- Контейнер тостов -->
+    <div id="toast-container"></div>
 
-<script src="{% static 'my_toasts/toasts.js' %}"></script>
-<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'htmx/js/htmx.min.js' %}"></script>
+    <!-- Скрытые Django сообщения -->
+    <div id="django-messages" style="display: none;">
+        {% for message in messages %}
+        <div data-tags="{{ message.tags }}" data-text="{{ message|force_escape }}" data-delay="5000"></div>
+        {% endfor %}
+    </div>
 
-{% block extra_js %}{% endblock %}
+    <script src="{% static 'my_toasts/toasts.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'htmx/js/htmx.min.js' %}"></script>
+    <script src="{% static 'js/sidebar.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

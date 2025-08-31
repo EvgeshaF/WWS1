@@ -1,4 +1,4 @@
-/* Main Styles - в стиле модальных окон */
+/* Main Styles - обновленный layout с правильным позиционированием */
 
 /* Основные цвета и переменные */
 :root {
@@ -15,6 +15,8 @@
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
     --border-radius: 15px;
     --border-radius-sm: 8px;
+    --navbar-height: 60px; /* ИСПРАВЛЕНО: увеличена высота navbar */
+    --sidebar-width: 250px;
 }
 
 /* Body и общие стили */
@@ -22,13 +24,13 @@
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding-top: var(--navbar-height); /* Отступ для fixed navbar */
 }
 
-/* Контейнер */
+/* Главный контейнер */
 .main-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    min-height: calc(100vh - var(--navbar-height));
+    position: relative;
 }
 
 /* ==================== NAVBAR STYLES ==================== */
@@ -36,7 +38,9 @@
     background: var(--surface-color) !important;
     box-shadow: var(--shadow-md);
     border-bottom: 1px solid var(--border-color);
-    padding: 1rem 0;
+    padding: 1rem 0; /* ИСПРАВЛЕНО: увеличен padding */
+    height: var(--navbar-height);
+    z-index: 1030; /* ИСПРАВЛЕНО: уменьшен z-index чтобы sidebar был выше */
 }
 
 .modern-brand {
@@ -62,7 +66,6 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
     font-weight: 400;
-    align-self: flex-end;
 }
 
 .modern-toggler {
@@ -197,14 +200,6 @@
     object-fit: cover;
 }
 
-.user-avatar-small {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 2px solid var(--border-color);
-    object-fit: cover;
-}
-
 .user-info {
     text-align: left;
     line-height: 1.2;
@@ -221,18 +216,28 @@
     color: var(--text-secondary);
 }
 
+/* ==================== MAIN CONTENT AREA ==================== */
+.main-content {
+    margin-left: var(--sidebar-width);
+    min-height: calc(100vh - var(--navbar-height)); /* ИСПРАВЛЕНО: используем переменную */
+    display: flex;
+    flex-direction: column;
+    background: var(--background-color);
+    /* ИСПРАВЛЕНО: убираем дополнительные отступы, так как body уже имеет padding-top */
+}
+
 /* ==================== HEADER STYLES ==================== */
 .main-header {
     background: var(--surface-color);
     box-shadow: var(--shadow-sm);
     padding: 2rem 0;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
 }
 
 .header-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
     text-align: center;
 }
 
@@ -251,23 +256,18 @@
     color: var(--text-secondary);
     font-size: 1.1rem;
     font-weight: 400;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin: 0;
 }
 
-/* ==================== MAIN CONTENT ==================== */
-.main-content {
+/* ==================== CONTENT WRAPPER ==================== */
+.content-wrapper {
     flex: 1;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    width: 100%;
+    padding: 2rem;
 }
 
 /* ==================== HOME PAGE CARDS ==================== */
 .welcome-section {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
 }
 
 .welcome-card {
@@ -457,23 +457,121 @@
 .main-footer {
     background: var(--surface-color);
     border-top: 1px solid var(--border-color);
-    padding: 2rem 0;
-    margin-top: 3rem;
+    padding: 1.5rem 0;
+    margin-top: auto;
 }
 
 .footer-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
 }
 
-/* ==================== RESPONSIVE ==================== */
+/* ==================== RESPONSIVE DESIGN ==================== */
+
+/* Планшеты */
+@media (max-width: 992px) {
+    .main-content {
+        margin-left: 0;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 1050; /* ИСПРАВЛЕНО: sidebar должен быть выше navbar */
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .header-title {
+        font-size: 2rem;
+    }
+
+    .content-wrapper {
+        padding: 1.5rem;
+    }
+}
+
+/* Мобильные устройства */
 @media (max-width: 768px) {
+    :root {
+        --sidebar-width: 0px;
+    }
+
     .modern-search {
         width: 200px;
     }
 
     .header-title {
+        font-size: 1.8rem;
+    }
+
+    .header-content {
+        padding: 0 1rem;
+    }
+
+    .content-wrapper {
+        padding: 1rem;
+    }
+
+    .welcome-card,
+    .action-card,
+    .info-card {
+        padding: 1.25rem;
+    }
+
+    .action-header i {
+        font-size: 1.5rem;
+    }
+
+    .welcome-header i {
         font-size: 2rem;
+    }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 576px) {
+    .content-wrapper {
+        padding: 0.75rem;
+    }
+
+    .header-content {
+        padding: 0 0.75rem;
+    }
+
+    .welcome-card,
+    .action-card,
+    .info-card {
+        padding: 1rem;
+    }
+
+    .header-title {
+        font-size: 1.5rem;
+    }
+
+    .header-subtitle {
+        font-size: 1rem;
+    }
+}
+
+/* ==================== PRINT STYLES ==================== */
+@media print {
+    .modern-navbar,
+    .sidebar,
+    .main-footer {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    .welcome-card,
+    .action-card,
+    .info-card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
     }
 }

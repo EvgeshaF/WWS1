@@ -1,8 +1,178 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}WWS1 - Hauptseite{% endblock %}
+{% block header %}Warehouse Management System{% endblock %}
+{% block subtitle %}Willkommen im WWS1 System{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h3>Добро пожаловать!</h3>
-    <p>MongoDB успешно настроен и подключен. Добро пожаловать в ваш проект!</p>
+<div class="container-fluid p-4">
+    <!-- Willkommensnachricht -->
+    <div class="welcome-section mb-4">
+        <div class="welcome-card">
+            <div class="welcome-header mb-3">
+                <i class="bi bi-check-circle-fill text-success me-3"></i>
+                <h3 class="mb-0">System bereit!</h3>
+            </div>
+            <p class="welcome-text mb-0">
+                MongoDB wurde erfolgreich konfiguriert und die Datenbankverbindung ist aktiv.
+                Das Warehouse Management System ist einsatzbereit.
+            </p>
+        </div>
+    </div>
+
+    <!-- Aktionscards -->
+    <div class="row g-4 mb-4">
+        <!-- Lagerverwaltung -->
+        <div class="col-lg-4 col-md-6">
+            <div class="action-card">
+                <div class="action-header">
+                    <i class="bi bi-box-seam"></i>
+                    <h5>Lagerverwaltung</h5>
+                </div>
+                <p class="action-text">
+                    Verwalten Sie Ihr Lager, fügen Sie Produkte hinzu und verfolgen Sie Bestände in Echtzeit.
+                </p>
+                <a href="#" class="action-btn btn btn-primary">
+                    <i class="bi bi-arrow-right me-1"></i>
+                    Lager öffnen
+                </a>
+            </div>
+        </div>
+
+        <!-- Benutzerverwaltung -->
+        <div class="col-lg-4 col-md-6">
+            <div class="action-card">
+                <div class="action-header">
+                    <i class="bi bi-people"></i>
+                    <h5>Benutzerverwaltung</h5>
+                </div>
+                <p class="action-text">
+                    Verwalten Sie Benutzerkonten, Rollen und Berechtigungen für das System.
+                </p>
+                <a href="#" class="action-btn btn btn-primary">
+                    <i class="bi bi-arrow-right me-1"></i>
+                    Benutzer verwalten
+                </a>
+            </div>
+        </div>
+
+        <!-- Berichte -->
+        <div class="col-lg-4 col-md-6">
+            <div class="action-card">
+                <div class="action-header">
+                    <i class="bi bi-graph-up"></i>
+                    <h5>Berichte & Analytics</h5>
+                </div>
+                <p class="action-text">
+                    Erstellen Sie detaillierte Berichte und analysieren Sie Ihre Lagerdaten.
+                </p>
+                <a href="#" class="action-btn btn btn-primary">
+                    <i class="bi bi-arrow-right me-1"></i>
+                    Berichte anzeigen
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informationscards -->
+    <div class="row g-4">
+        <!-- Systemstatus -->
+        <div class="col-lg-6">
+            <div class="info-card">
+                <div class="info-header">
+                    <i class="bi bi-activity text-success"></i>
+                    <h5>Systemstatus</h5>
+                </div>
+                <div class="status-item">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span>MongoDB Verbindung</span>
+                    <span class="text-success fw-bold">Aktiv</span>
+                </div>
+                <div class="status-item">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span>Datenbank</span>
+                    <span class="text-success fw-bold">Bereit</span>
+                </div>
+                <div class="status-item">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span>Benutzer System</span>
+                    <span class="text-success fw-bold">{% if admin_count > 0 %}{{ admin_count }} Administrator(en){% else %}Konfiguriert{% endif %}</span>
+                </div>
+                <div class="status-item">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span>Web Interface</span>
+                    <span class="text-success fw-bold">Online</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schnellzugriff -->
+        <div class="col-lg-6">
+            <div class="info-card">
+                <div class="info-header">
+                    <i class="bi bi-lightning-charge text-primary"></i>
+                    <h5>Schnellzugriff</h5>
+                </div>
+                <a href="#" class="quick-link">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Neues Produkt hinzufügen</span>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                <a href="#" class="quick-link">
+                    <i class="bi bi-search"></i>
+                    <span>Produkt suchen</span>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                <a href="#" class="quick-link">
+                    <i class="bi bi-clipboard-data"></i>
+                    <span>Lagerbestand prüfen</span>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                <a href="#" class="quick-link">
+                    <i class="bi bi-gear"></i>
+                    <span>Systemeinstellungen</span>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                <a href="#" class="quick-link">
+                    <i class="bi bi-question-circle"></i>
+                    <span>Hilfe & Dokumentation</span>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Дополнительные стили для домашней страницы -->
+<style>
+.content-wrapper {
+    padding-top: 0; /* ИСПРАВЛЕНО: убираем верхний отступ */
+    min-height: calc(100vh - var(--navbar-height) - 140px); /* ИСПРАВЛЕНО: учитываем высоту header и footer */
+}
+
+.main-header {
+    margin-bottom: 1rem; /* ИСПРАВЛЕНО: уменьшен отступ */
+}
+
+.container-fluid {
+    max-width: 1400px;
+    padding-top: 1rem; /* ИСПРАВЛЕНО: добавлен верхний отступ */
+    padding-bottom: 2rem; /* ИСПРАВЛЕНО: добавлен нижний отступ */
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem !important;
+    }
+
+    .col-lg-4 {
+        margin-bottom: 1rem;
+    }
+
+    .content-wrapper {
+        min-height: calc(100vh - var(--navbar-height) - 120px); /* ИСПРАВЛЕНО: меньше для мобильных */
+    }
+}
+</style>
 {% endblock %}

@@ -1,0 +1,194 @@
+/* static/my_style/layout-heights.css - Правильное управление высотами */
+
+/* ==================== ДИНАМИЧЕСКОЕ УПРАВЛЕНИЕ ВЫСОТАМИ ==================== */
+
+/* CSS Custom Properties для различных высот */
+:root {
+    --navbar-height: 60px;
+    --sidebar-width: 250px;
+    --header-height: 140px; /* Примерная высота main-header */
+    --footer-height: 80px;  /* Примерная высота footer */
+    --content-padding: 2rem; /* Стандартный padding контента */
+}
+
+/* Базовая настройка viewport */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Body с правильным отступом под navbar */
+.modern-body {
+    padding-top: var(--navbar-height);
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Navbar - фиксированная высота */
+.modern-navbar {
+    height: var(--navbar-height);
+    min-height: var(--navbar-height);
+    max-height: var(--navbar-height);
+    overflow: hidden;
+}
+
+/* Sidebar - полная высота под navbar */
+.sidebar {
+    top: var(--navbar-height);
+    height: calc(100vh - var(--navbar-height));
+    width: var(--sidebar-width);
+}
+
+/* Main container - полная высота */
+.main-container {
+    min-height: calc(100vh - var(--navbar-height));
+    height: calc(100vh - var(--navbar-height));
+    overflow: hidden; /* Предотвращаем переполнение */
+}
+
+/* Main content - с учетом sidebar */
+.main-content {
+    margin-left: var(--sidebar-width);
+    height: 100%;
+    min-height: calc(100vh - var(--navbar-height));
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Прокрутка только для контента */
+}
+
+/* Header секция */
+.main-header {
+    flex-shrink: 0; /* Не сжимается */
+    min-height: var(--header-height);
+}
+
+/* Content wrapper - занимает оставшееся пространство */
+.content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--content-padding);
+    min-height: 0; /* Важно для flexbox */
+}
+
+/* Footer - фиксированная высота */
+.main-footer {
+    flex-shrink: 0; /* Не сжимается */
+    height: var(--footer-height);
+    min-height: var(--footer-height);
+}
+
+/* ==================== АДАПТИВНЫЕ ВЫСОТЫ ==================== */
+
+/* Планшеты и большие мобильные */
+@media (max-width: 992px) {
+    :root {
+        --header-height: 120px;
+        --content-padding: 1.5rem;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 1050;
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+}
+
+/* Мобильные устройства */
+@media (max-width: 768px) {
+    :root {
+        --navbar-height: 56px;
+        --header-height: 100px;
+        --footer-height: 60px;
+        --content-padding: 1rem;
+        --sidebar-width: 280px; /* Чуть шире на мобильных */
+    }
+
+    .modern-body {
+        padding-top: var(--navbar-height);
+    }
+
+    .sidebar {
+        width: var(--sidebar-width);
+    }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 576px) {
+    :root {
+        --header-height: 80px;
+        --footer-height: 50px;
+        --content-padding: 0.75rem;
+    }
+}
+
+/* ==================== УТИЛИТЫ ДЛЯ ВЫСОТ ==================== */
+
+/* Полная высота viewport под navbar */
+.full-height {
+    height: calc(100vh - var(--navbar-height)) !important;
+}
+
+/* Полная высота с учетом header и footer */
+.content-height {
+    height: calc(100vh - var(--navbar-height) - var(--header-height) - var(--footer-height)) !important;
+}
+
+/* Минимальная высота контента */
+.min-content-height {
+    min-height: calc(100vh - var(--navbar-height) - var(--header-height) - var(--footer-height));
+}
+
+/* Flexbox утилиты */
+.flex-fill-height {
+    flex: 1;
+    min-height: 0;
+}
+
+/* Scroll утилиты */
+.scroll-y {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.no-scroll {
+    overflow: hidden;
+}
+
+/* ==================== DEBUG (удалить в production) ==================== */
+/*
+.debug-heights * {
+    outline: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.debug-heights .modern-navbar {
+    background: rgba(255, 0, 0, 0.2) !important;
+}
+
+.debug-heights .sidebar {
+    background: rgba(0, 255, 0, 0.2) !important;
+}
+
+.debug-heights .main-content {
+    background: rgba(0, 0, 255, 0.2) !important;
+}
+
+.debug-heights .main-header {
+    background: rgba(255, 255, 0, 0.2) !important;
+}
+
+.debug-heights .content-wrapper {
+    background: rgba(255, 0, 255, 0.2) !important;
+}
+
+.debug-heights .main-footer {
+    background: rgba(0, 255, 255, 0.2) !important;
+}
+*/
