@@ -1,3 +1,5 @@
+# mongodb/mongodb_utils.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с правильными проверками MongoDB объектов
+
 import datetime
 import json
 import os
@@ -12,9 +14,6 @@ from .mongodb_config import MongoConfig, hash_password, verify_password
 from loguru import logger
 
 from . import language
-
-
-# from user import language as lang_user
 
 
 class MongoConnection:
@@ -66,7 +65,7 @@ class MongoConnection:
     def get_database(cls):
         """Возвращает объект базы данных"""
         client = cls.get_client()
-        if client is not None:
+        if client is not None:  # ИСПРАВЛЕНО: используем 'is not None'
             config = MongoConfig.read_config()
             db_name = config.get('db_name')
             if db_name:
@@ -142,7 +141,7 @@ class MongoConnection:
             return False
 
         client = cls.get_client()
-        if not client:
+        if client is None:  # ИСПРАВЛЕНО: используем 'is None'
             return False
 
         try:
@@ -182,8 +181,11 @@ class MongoConnection:
                                 item['created_at'] = now
                                 item['modified_at'] = now
                                 item['deleted'] = False
-                            db[collection_name].insert_many(data)
-                            logger.success(f"Коллекция '{collection_name}' создана с {len(data)} элементами")
+                            if data:  # Проверяем что список не пустой
+                                db[collection_name].insert_many(data)
+                                logger.success(f"Коллекция '{collection_name}' создана с {len(data)} элементами")
+                            else:
+                                logger.success(f"Пустая коллекция '{collection_name}' создана")
                         else:
                             data['created_at'] = now
                             data['modified_at'] = now
@@ -301,7 +303,7 @@ class MongoConnection:
             return False
 
         client = cls.get_client()
-        if not client:
+        if client is None:  # ИСПРАВЛЕНО: используем 'is None'
             return False
 
         db_name = config.get('db_name')
@@ -330,7 +332,7 @@ class MongoConnection:
     def database_exists(cls, db_name):
         """Проверяет наличие базы данных"""
         client = cls.get_client()
-        if not client:
+        if client is None:  # ИСПРАВЛЕНО: используем 'is None'
             return False
         try:
             return db_name in client.list_database_names()
