@@ -1,20 +1,11 @@
 {% extends 'base.html' %}
 
-{#{% block title %}{{ text.title }} - Schritt {{ step }}{% endblock %}#}
-{#{% block header %}{{ text.header }}{% endblock %}#}
-
 {% block content %}
-    <!-- Скрываем основной контент -->
-    <style>
-        .main-content .welcome-section,
-        .main-header .header-content,
-        .main-footer {
-            display: none !important;
-        }
-        .main-container {
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
-        }
-    </style>
+
+    {# Подключаем CSS файл #}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'my/css/users/create_admin_step1-3.css' %}">
+
 
     <!-- Модальное окно -->
     <div class="modal fade show" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-modal="true" role="dialog" style="display: block;">
@@ -151,46 +142,8 @@
     <!-- Полупрозрачный фон -->
     <div class="modal-backdrop fade show"></div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('admin-step2-form');
-            const submitBtn = form.querySelector('button[type="submit"]');
-
-            // Отслеживаем начало HTMX запроса
-            form.addEventListener('htmx:beforeRequest', () => {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="bi bi-person-check spinner-border spinner-border-sm me-1" role="status"></i>Wird validiert...';
-            });
-
-            // Отслеживаем завершение HTMX запроса
-            form.addEventListener('htmx:afterRequest', (event) => {
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                }, 1000);
-            });
-
-            // Обработка успешной валидации для перенаправления
-            document.body.addEventListener('htmx:afterRequest', function(event) {
-                if (event.target.id === 'admin-step2-form') {
-                    try {
-                        const response = JSON.parse(event.detail.xhr.responseText);
-                        if (response && response.messages) {
-                            // Проверяем, есть ли сообщение об успехе
-                            const hasSuccess = response.messages.some(msg => msg.tags === 'success');
-                            if (hasSuccess) {
-                                // Перенаправляем через небольшую задержку
-                                setTimeout(() => {
-                                    window.location.href = '{% url "create_admin_step3" %}';
-                                }, 2000);
-                            }
-                        }
-                    } catch (e) {
-                        // Если не JSON, игнорируем
-                    }
-                }
-            });
-        });
-    </script>
+    {# Подключаем JS файл #}
+    {% load static %}
+    <script src="{% static 'my/js/users/create_admin_step2.js' %}"></script>
 
 {% endblock %}

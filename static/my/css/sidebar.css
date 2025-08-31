@@ -1,0 +1,86 @@
+/* Стили для sidebar */
+
+.sidebar {
+    position: fixed;
+    top: var(--navbar-height, 56px); /* ИСПРАВЛЕНО: используем CSS переменную */
+    left: 0;
+    width: 250px;
+    height: calc(100vh - var(--navbar-height, 56px)); /* ИСПРАВЛЕНО: динамический расчет */
+    z-index: 1040;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+}
+
+.sidebar .nav-link {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+.sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-nav {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 1050;
+        /* На мобильных занимаем всю высоту экрана под navbar */
+        top: var(--navbar-height, 56px);
+        height: calc(100vh - var(--navbar-height, 56px));
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
+
+/* Основной контент должен учитывать ширину sidebar */
+.main-content {
+    margin-left: 250px;
+    min-height: calc(100vh - var(--navbar-height, 56px)); /* ИСПРАВЛЕНО: используем переменную */
+    margin-top: 0; /* ИСПРАВЛЕНО: убираем margin-top так как body уже имеет padding-top */
+    padding: 0;
+}
+
+/* Настройки для больших экранов */
+@media (min-width: 769px) {
+    .main-content {
+        margin-left: 250px;
+    }
+}
+
+/* Настройки для планшетов и мобильных */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+    }
+}

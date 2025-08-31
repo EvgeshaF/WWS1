@@ -13,22 +13,23 @@
 
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'bootstrap/icons/bootstrap-icons.css' %}">
-    <link rel="stylesheet" href="{% static 'my_style/layout-heights.css' %}">
-    <link rel="stylesheet" href="{% static 'my_style/main_styles.css' %}">
-    <link rel="stylesheet" href="{% static 'my_style/mongodb_forms.css' %}">
-    <link rel="stylesheet" href="{% static 'my_style/components.css' %}">
-    <link rel="stylesheet" href="{% static 'my_toasts/toasts.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/layout-heights.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/main_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/mongodb_forms.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/toasts.css' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
 <body class="modern-body">
     <!-- Верхняя навигация -->
-    {% block navbar %}{% include 'navbar.html' %}{% endblock %}
+    {% block navbar %}{% include 'includes/navbar.html' %}{% endblock %}
 
     <!-- Основной контейнер с боковой панелью и контентом -->
     <div class="main-container d-flex">
         <!-- Боковая панель -->
-        {% block navmenu %}{% include 'sidebar.html' %}{% endblock %}
+        {% block navmenu %}{% include 'includes/sidebar.html' %}{% endblock %}
 
         <!-- Основной контент -->
         <div class="main-content flex-grow-1">
@@ -66,10 +67,10 @@
         {% endfor %}
     </div>
 
-    <script src="{% static 'my_toasts/toasts.js' %}"></script>
+    <script src="{% static 'my/js/toasts.js' %}"></script>
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'htmx/js/htmx.min.js' %}"></script>
-    <script src="{% static 'js/sidebar.js' %}"></script>
+    <script src="{% static 'my/js/sidebar.js' %}"></script>
 
     {% block extra_js %}{% endblock %}
 </body>
