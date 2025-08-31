@@ -46,20 +46,22 @@ def create_admin_step1(request):
         return redirect('home')
 
     if request.method == 'POST':
+        logger.info("Обработка POST запроса для шага 1")
+
         form = CreateAdminUserForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
 
+            logger.info(f"Валидация формы прошла для: {username}")
+
             # Используем UserManager для проверки
             user_manager = UserManager()
-
-            # Отладочная информация
-            user_manager.debug_collection_info()
 
             # Проверяем, что пользователь с таким именем не существует
             existing_user = user_manager.find_user_by_username(username)
             if existing_user:
+                logger.warning(f"Пользователь {username} уже существует")
                 messages.error(request, f"Benutzer '{username}' existiert bereits")
                 if is_htmx:
                     return render_toast_response(request)
@@ -71,12 +73,18 @@ def create_admin_step1(request):
                     'step': 1
                 }
 
+                logger.success(f"Данные сохранены в сессии: {username}")
                 messages.success(request, f"Benutzerdaten für '{username}' erfolgreich validiert")
+
                 if is_htmx:
                     return render_toast_response(request)
-                return redirect('create_admin_step2')
+                else:
+                    # Прямой redirect для не-HTMX запросов
+                    logger.info("Перенаправляем на шаг 2 (не HTMX)")
+                    return redirect('create_admin_step2')
         else:
-            messages.error(request, language.mess_form_invalid)
+            logger.error(f"Форма невалидна: {form.errors}")
+            messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
             if is_htmx:
                 return render_toast_response(request)
 
@@ -102,6 +110,8 @@ def create_admin_step2(request):
         return redirect('create_admin_step1')
 
     if request.method == 'POST':
+        logger.info("Обработка POST запроса для шага 2")
+
         form = AdminProfileForm(request.POST)
         if form.is_valid():
             # Обновляем данные в сессии
@@ -116,12 +126,16 @@ def create_admin_step2(request):
             })
             request.session['admin_creation'] = admin_creation
 
+            logger.success("Данные профиля сохранены в сессии")
             messages.success(request, "Profildaten erfolgreich erfasst")
+
             if is_htmx:
                 return render_toast_response(request)
-            return redirect('create_admin_step3')
+            else:
+                return redirect('create_admin_step3')
         else:
-            messages.error(request, language.mess_form_invalid)
+            logger.error(f"Форма шага 2 невалидна: {form.errors}")
+            messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
             if is_htmx:
                 return render_toast_response(request)
 
@@ -139,9 +153,8 @@ def create_admin_step2(request):
 @ratelimit(key='ip', rate='3/m', method='POST')
 def create_admin_step3(request):
     """Шаг 3: Разрешения и создание администратора"""
-    is_htmx = request.headers.get('HX-Request') == 'true'
 
-    # Проверяем, что предыдущие шаги завершены
+    # Проверяем сессию
     admin_creation = request.session.get('admin_creation')
     if not admin_creation or admin_creation.get('step') != 2:
         messages.error(request, "Bitte vollenden Sie die vorherigen Schritte")
@@ -152,90 +165,73 @@ def create_admin_step3(request):
 
         form = AdminPermissionsForm(request.POST)
         if form.is_valid():
-            # Собираем все данные для создания пользователя
-            user_data = {
-                'username': admin_creation['username'],
-                'password': make_password(admin_creation['password']),
-                'profile': {
-                    'salutation': admin_creation['salutation'],
-                    'title': admin_creation['title'],
-                    'first_name': admin_creation['first_name'],
-                    'last_name': admin_creation['last_name'],
-                    'email': admin_creation['email'],
-                    'phone': admin_creation['phone'],
-                },
-                'permissions': {
-                    'is_super_admin': form.cleaned_data['is_super_admin'],
-                    'can_manage_users': form.cleaned_data['can_manage_users'],
-                    'can_manage_database': form.cleaned_data['can_manage_database'],
-                    'can_view_logs': form.cleaned_data['can_view_logs'],
-                    'can_manage_settings': form.cleaned_data['can_manage_settings'],
-                    'password_expires': form.cleaned_data['password_expires'],
-                    'two_factor_required': form.cleaned_data['two_factor_required'],
-                },
-                'is_admin': True,
-                'is_active': True
-            }
+            try:
+                # Подготавливаем данные пользователя
+                user_data = {
+                    'username': admin_creation['username'],
+                    'password': make_password(admin_creation['password']),
+                    'profile': {
+                        'salutation': admin_creation.get('salutation', ''),
+                        'title': admin_creation.get('title', ''),
+                        'first_name': admin_creation.get('first_name', ''),
+                        'last_name': admin_creation.get('last_name', ''),
+                        'email': admin_creation.get('email', ''),
+                        'phone': admin_creation.get('phone', ''),
+                    },
+                    'permissions': {
+                        'is_super_admin': form.cleaned_data.get('is_super_admin', False),
+                        'can_manage_users': form.cleaned_data.get('can_manage_users', False),
+                        'can_manage_database': form.cleaned_data.get('can_manage_database', False),
+                        'can_view_logs': form.cleaned_data.get('can_view_logs', False),
+                        'can_manage_settings': form.cleaned_data.get('can_manage_settings', False),
+                        'password_expires': form.cleaned_data.get('password_expires', True),
+                        'two_factor_required': form.cleaned_data.get('two_factor_required', False),
+                    },
+                    'is_admin': True,
+                    'is_active': True
+                }
 
-            # Логируем данные (без пароля)
-            log_data = {k: v for k, v in user_data.items() if k != 'password'}
-            logger.info(f"Данные для создания пользователя: {log_data}")
+                logger.info("Данные пользователя подготовлены")
 
-            # Используем UserManager для создания пользователя
-            user_manager = UserManager()
+                # Создаем пользователя
+                user_manager = UserManager()
+                creation_result = user_manager.create_user(user_data)
 
-            # Создаем пользователя
-            creation_result = user_manager.create_user(user_data)
-            logger.info(f"Результат создания пользователя: {creation_result}")
+                if creation_result:
+                    # Двойная проверка создания
+                    verification = user_manager.find_user_by_username(user_data['username'])
+                    if verification:
+                        # Очищаем сессию
+                        if 'admin_creation' in request.session:
+                            del request.session['admin_creation']
 
-            if creation_result:
-                # Очищаем сессию
-                if 'admin_creation' in request.session:
-                    del request.session['admin_creation']
-                    logger.info("Сессия очищена")
+                        success_msg = f"Administrator '{admin_creation['username']}' wurde erfolgreich erstellt!"
+                        logger.success(success_msg)
+                        messages.success(request, success_msg)
 
-                success_msg = f"Administrator '{admin_creation['username']}' erfolgreich erstellt"
-                logger.success(success_msg)
-                messages.success(request, success_msg)
-
-                if is_htmx:
-                    logger.info("Отправляем HTMX ответ с сообщением об успехе")
-                    return render_toast_response(request)
+                        return redirect('home')
+                    else:
+                        logger.error("Пользователь не найден после создания")
+                        messages.error(request, "Administrator wurde nicht korrekt gespeichert")
                 else:
-                    logger.info("Перенаправляем на главную страницу (не HTMX)")
-                    return redirect('home')
-            else:
-                error_msg = f"Fehler beim Erstellen des Administrators '{admin_creation['username']}'"
-                logger.error(error_msg)
-                messages.error(request, error_msg)
-                if is_htmx:
-                    return render_toast_response(request)
+                    logger.error("Создание пользователя не удалось")
+                    messages.error(request, "Fehler beim Erstellen des Administrators")
+
+            except Exception as e:
+                logger.exception(f"Ошибка при создании администратора: {e}")
+                messages.error(request, f"Fehler: {str(e)}")
+
         else:
             logger.error(f"Форма невалидна: {form.errors}")
-            messages.error(request, language.mess_form_invalid)
-            if is_htmx:
-                return render_toast_response(request)
+            messages.error(request, "Bitte korrigieren Sie die Formularfehler")
 
-    else:  # GET-запрос
+    else:  # GET
         form = AdminPermissionsForm()
 
     return render(request, 'users/create_admin_step3.html', {
         'form': form,
         'text': language.text_create_admin_step3,
         'step': 3,
-        'username': admin_creation['username'],
+        'username': admin_creation.get('username', ''),
         'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}"
     })
-
-
-# Удаляем старые функции, так как теперь используем UserManager
-def _user_exists(username):
-    """Проверяет существование пользователя (deprecated - использовать UserManager)"""
-    user_manager = UserManager()
-    return user_manager.find_user_by_username(username) is not None
-
-
-def _create_admin_user(user_data):
-    """Создает администратора в MongoDB (deprecated - использовать UserManager)"""
-    user_manager = UserManager()
-    return user_manager.create_user(user_data)

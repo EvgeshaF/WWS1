@@ -1,32 +1,35 @@
 {% extends 'base.html' %}
 
-{#{% block title %}{{ text.title }}{% endblock %}#}
-{#{% block header %}{{ text.header }}{% endblock %}#}
-
 {% block content %}
-    <!-- Модальное окно открыто сразу -->
-    <div class="modal fade show" id="mongoModal" tabindex="-1" aria-labelledby="mongoModalLabel" aria-modal="true" role="dialog" style="display: block;">
+    <style>
+        .main-content .welcome-section,
+        .main-header .header-content,
+        .main-footer {
+            display: none !important;
+        }
+        .main-container {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+        }
+    </style>
+
+    <div class="modal fade show" id="adminModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="mongoModalLabel">
+                    <h5 class="modal-title">
                         <i class="bi bi-person-plus me-2"></i>
                         {{ text.title }}
                     </h5>
-                    <!-- Индикатор шага справа -->
                     <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 3</span>
                 </div>
-                <div class="modal-body">
 
+                <div class="modal-body">
                     <div class="alert alert-info" role="alert">
                         <i class="bi bi-info-circle me-2"></i>
                         {{ text.desc }}
                     </div>
 
-                    <form id="admin-step1-form" method="post"
-                          hx-post="{% url 'create_admin_step1' %}"
-                          hx-target="#toast-container"
-                          hx-swap="beforeend">
+                    <form method="post" id="admin-step1-form">
                         {% csrf_token %}
 
                         <div class="mb-3">
@@ -77,8 +80,8 @@
                             </button>
                         </div>
                     </form>
-
                 </div>
+
                 <div class="modal-footer">
                     <small class="text-muted">
                         <i class="bi bi-exclamation-circle me-1"></i>
@@ -89,7 +92,6 @@
         </div>
     </div>
 
-    <!-- Полупрозрачный фон -->
     <div class="modal-backdrop fade show"></div>
 
     <script>
@@ -97,98 +99,10 @@
             const form = document.getElementById('admin-step1-form');
             const submitBtn = document.getElementById('submit-btn');
 
-            console.log('Инициализация формы шага 1');
-
-            // Отслеживаем начало HTMX запроса
-            form.addEventListener('htmx:beforeRequest', () => {
-                console.log('Начинаем отправку формы...');
+            form.addEventListener('submit', (e) => {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="bi bi-person-check spinner-border spinner-border-sm me-1" role="status"></i>Wird validiert...';
-            });
-
-            // Отслеживаем завершение HTMX запроса
-            form.addEventListener('htmx:afterRequest', (event) => {
-                console.log('Запрос завершен, статус:', event.detail.xhr.status);
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                }, 1000);
-            });
-
-            // ИСПРАВЛЕННАЯ обработка успешной валидации
-            document.body.addEventListener('htmx:afterRequest', function(event) {
-                if (event.target.id === 'admin-step1-form') {
-                    const xhr = event.detail.xhr;
-                    console.log('Обработка ответа для формы шага 1');
-                    console.log('Статус HTTP:', xhr.status);
-                    console.log('Текст ответа:', xhr.responseText);
-
-                    // Проверяем статус ответа
-                    if (xhr.status === 200) {
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            console.log('Parsed response:', response);
-
-                            // Проверяем структуру ответа
-                            if (response && response.messages && Array.isArray(response.messages)) {
-                                console.log('Найдены сообщения:', response.messages);
-
-                                // Ищем сообщение об успехе
-                                const hasSuccess = response.messages.some(msg => {
-                                    console.log('Проверяем сообщение:', msg.tags, '|', msg.text);
-                                    return msg.tags === 'success' && (
-                                        msg.text.includes('erfolgreich validiert') ||
-                                        msg.text.includes('validiert') ||
-                                        msg.text.includes('Benutzerdaten')
-                                    );
-                                });
-
-                                if (hasSuccess) {
-                                    console.log('✓ Найдено сообщение об успехе! Перенаправляем на шаг 2...');
-
-                                    // Показываем дополнительное сообщение
-                                    showToast('Weiterleitung zu Schritt 2...', 'info', 2000);
-
-                                    // Перенаправляем через 2 секунды
-                                    setTimeout(() => {
-                                        console.log('Выполняем перенаправление на шаг 2');
-                                        window.location.href = '{% url "create_admin_step2" %}';
-                                    }, 2000);
-                                } else {
-                                    console.log('✗ Сообщение об успехе не найдено');
-
-                                    // Проверяем наличие ошибок
-                                    const hasError = response.messages.some(msg =>
-                                        msg.tags === 'error' || msg.tags === 'danger'
-                                    );
-
-                                    if (hasError) {
-                                        console.log('Найдены ошибки в ответе');
-                                    } else {
-                                        console.log('Неопределенное состояние ответа');
-                                    }
-                                }
-                            } else {
-                                console.log('Неожиданная структура ответа:', response);
-                            }
-                        } catch (e) {
-                            console.error('Ошибка парсинга JSON:', e);
-                            console.log('Сырой ответ сервера:', xhr.responseText);
-
-                            // Если JSON не парсится, но статус 200, возможно это обычный redirect
-                            if (xhr.responseText.includes('validiert') || xhr.responseText.includes('success')) {
-                                console.log('Обнаружен успех в тексте ответа, перенаправляем...');
-                                setTimeout(() => {
-                                    window.location.href = '{% url "create_admin_step2" %}';
-                                }, 2000);
-                            }
-                        }
-                    } else {
-                        console.error('HTTP ошибка:', xhr.status, xhr.statusText);
-                    }
-                }
+                submitBtn.innerHTML = '<i class="bi bi-person-check spinner-border spinner-border-sm me-1"></i>Wird validiert...';
             });
         });
     </script>
-
 {% endblock %}
