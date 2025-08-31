@@ -12,14 +12,35 @@ class UserManager:
     def __init__(self):
         self.db = MongoConnection.get_database()
         config = MongoConfig.read_config()
-        db_name = config.get('db_name', 'app')
-        self.users_collection_name = f"{db_name}_users"
+        db_name = config.get('db_name')
+        if not db_name:
+            logger.error("Имя базы данных не найдено в конфигурации")
+            self.users_collection_name = None
+        else:
+            self.users_collection_name = f"{db_name}_users"
 
     def get_collection(self):
         """Получает коллекцию пользователей"""
         if not self.db:
+            logger.error("База данных недоступна")
             return None
-        return self.db[self.users_collection_name]
+
+        if not self.users_collection_name:
+            logger.error("Имя коллекции пользователей не определено")
+            return None
+
+        try:
+            collection = self.db[self.users_collection_name]
+
+            # Проверяем, существует ли коллекция
+            if self.users_collection_name not in self.db.list_collection_names():
+                logger.warning(f"Коллекция '{self.users_collection_name}' не существует. Создаем...")
+                self.db.create_collection(self.users_collection_name)
+
+            return collection
+        except Exception as e:
+            logger.error(f"Ошибка получения коллекции '{self.users_collection_name}': {e}")
+            return None
 
     def create_user(self, user_data: Dict[str, Any]) -> bool:
         """
@@ -34,6 +55,24 @@ class UserManager:
         try:
             collection = self.get_collection()
             if not collection:
+                logger.error("Коллекция пользователей недоступна")
+                return False
+
+            # Проверяем обязательные поля
+            required_fields = ['username']
+            for field in required_fields:
+                if not user_data.get(field):
+                    logger.error(f"Обязательное поле '{field}' отсутствует")
+                    return False
+
+            # Проверяем, что пользователь с таким именем не существует
+            existing_user = collection.find_one({
+                'username': user_data['username'],
+                'deleted': False
+            })
+
+            if existing_user:
+                logger.error(f"Пользователь '{user_data['username']}' уже существует")
                 return False
 
             # Добавляем системные поля
@@ -48,15 +87,29 @@ class UserManager:
                 'password_changed_at': now
             })
 
+            # Логируем данные перед вставкой (без пароля)
+            log_data = {k: v for k, v in user_data.items() if k != 'password'}
+            logger.info(f"Создание пользователя: {log_data}")
+
             result = collection.insert_one(user_data)
 
             if result.inserted_id:
                 logger.success(f"Пользователь '{user_data.get('username')}' создан с ID: {result.inserted_id}")
-                return True
-            return False
+
+                # Проверяем, что пользователь действительно создан
+                verification = collection.find_one({'_id': result.inserted_id})
+                if verification:
+                    logger.success("Создание пользователя подтверждено")
+                    return True
+                else:
+                    logger.error("Пользователь не найден после создания")
+                    return False
+            else:
+                logger.error("Не удалось получить ID созданного пользователя")
+                return False
 
         except Exception as e:
-            logger.error(f"Ошибка создания пользователя: {e}")
+            logger.exception(f"Ошибка создания пользователя: {e}")
             return False
 
     def find_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
@@ -322,6 +375,7 @@ class UserManager:
         try:
             collection = self.get_collection()
             if not collection:
+                logger.error("Коллекция недоступна для подсчета администраторов")
                 return 0
 
             count = collection.count_documents({
@@ -329,8 +383,42 @@ class UserManager:
                 'deleted': False,
                 'is_active': True
             })
+
+            logger.info(f"Найдено администраторов: {count}")
             return count
 
         except Exception as e:
             logger.error(f"Ошибка подсчета администраторов: {e}")
             return 0
+
+    def debug_collection_info(self):
+        """Отладочная информация о коллекции"""
+        try:
+            if not self.db:
+                logger.error("База данных недоступна")
+                return
+
+            logger.info(f"Имя коллекции: {self.users_collection_name}")
+
+            # Список всех коллекций
+            collections = self.db.list_collection_names()
+            logger.info(f"Доступные коллекции: {collections}")
+
+            # Проверяем существование коллекции пользователей
+            if self.users_collection_name in collections:
+                collection = self.db[self.users_collection_name]
+                count = collection.count_documents({})
+                logger.info(f"Коллекция '{self.users_collection_name}' содержит {count} документов")
+
+                # Показываем один документ как пример структуры
+                sample = collection.find_one({})
+                if sample:
+                    # Убираем пароль из вывода
+                    if 'password' in sample:
+                        sample['password'] = '***скрыто***'
+                    logger.info(f"Пример документа: {sample}")
+            else:
+                logger.warning(f"Коллекция '{self.users_collection_name}' не найдена")
+
+        except Exception as e:
+            logger.error(f"Ошибка получения отладочной информации: {e}")

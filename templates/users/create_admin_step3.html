@@ -149,8 +149,6 @@
                             </div>
                         {% endif %}
 
-
-
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'create_admin_step2' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>
@@ -196,23 +194,66 @@
                 }, 1000);
             });
 
-            // Обработка успешного создания администратора для перенаправления
+            // ИСПРАВЛЕННАЯ обработка успешного создания администратора
             document.body.addEventListener('htmx:afterRequest', function(event) {
                 if (event.target.id === 'admin-step3-form') {
-                    try {
-                        const response = JSON.parse(event.detail.xhr.responseText);
-                        if (response && response.messages) {
-                            // Проверяем, есть ли сообщение об успехе
-                            const hasSuccess = response.messages.some(msg => msg.tags === 'success');
-                            if (hasSuccess) {
-                                // Перенаправляем через задержку на главную страницу
+                    const xhr = event.detail.xhr;
+
+                    // Проверяем статус ответа
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+
+                            // Проверяем структуру ответа
+                            if (response && response.messages && Array.isArray(response.messages)) {
+                                console.log('Получены сообщения:', response.messages);
+
+                                // Ищем сообщение об успехе
+                                const hasSuccess = response.messages.some(msg => {
+                                    console.log('Проверяем сообщение:', msg.tags, msg.text);
+                                    return msg.tags === 'success' && msg.text.includes('erfolgreich erstellt');
+                                });
+
+                                if (hasSuccess) {
+                                    console.log('Найдено сообщение об успехе, перенаправляем...');
+
+                                    // Показываем финальное сообщение
+                                    showToast('Administrator wurde erfolgreich erstellt! Weiterleitung zur Startseite...', 'success', 3000);
+
+                                    // Перенаправляем через 3 секунды
+                                    setTimeout(() => {
+                                        console.log('Выполняем перенаправление...');
+                                        window.location.href = '/';
+                                    }, 3000);
+                                } else {
+                                    console.log('Сообщение об успехе не найдено');
+
+                                    // Проверяем наличие ошибок
+                                    const hasError = response.messages.some(msg =>
+                                        msg.tags === 'error' || msg.tags === 'danger'
+                                    );
+
+                                    if (hasError) {
+                                        console.log('Найдены ошибки в ответе');
+                                    }
+                                }
+                            } else {
+                                console.log('Неожиданная структура ответа:', response);
+                            }
+                        } catch (e) {
+                            console.error('Ошибка парсинга JSON:', e);
+                            console.log('Ответ сервера:', xhr.responseText);
+
+                            // Если JSON не парсится, но статус 200, возможно это redirect
+                            if (xhr.responseText.includes('erfolgreich') || xhr.responseText.includes('success')) {
+                                console.log('Обнаружен успех в тексте ответа, перенаправляем...');
                                 setTimeout(() => {
                                     window.location.href = '/';
-                                }, 3000);
+                                }, 2000);
                             }
                         }
-                    } catch (e) {
-                        // Если не JSON, игнорируем
+                    } else {
+                        console.error('HTTP ошибка:', xhr.status, xhr.statusText);
                     }
                 }
             });
@@ -226,29 +267,30 @@
                 document.getElementById('{{ form.can_manage_settings.id_for_label }}')
             ];
 
-            superAdminCheckbox.addEventListener('change', function() {
-                dependentCheckboxes.forEach(checkbox => {
-                    if (checkbox) {
-                        checkbox.checked = this.checked;
-                        checkbox.disabled = this.checked;
+            if (superAdminCheckbox) {
+                superAdminCheckbox.addEventListener('change', function() {
+                    dependentCheckboxes.forEach(checkbox => {
+                        if (checkbox) {
+                            checkbox.checked = this.checked;
+                            checkbox.disabled = this.checked;
 
-                        // Визуальная индикация
-                        const label = checkbox.closest('.form-check');
-                        if (this.checked) {
-                            label.style.opacity = '0.6';
-                        } else {
-                            label.style.opacity = '1';
+                            // Визуальная индикация
+                            const label = checkbox.closest('.form-check');
+                            if (this.checked) {
+                                label.style.opacity = '0.6';
+                            } else {
+                                label.style.opacity = '1';
+                            }
                         }
-                    }
+                    });
                 });
-            });
 
-            // Инициализация состояния при загрузке
-            if (superAdminCheckbox.checked) {
-                superAdminCheckbox.dispatchEvent(new Event('change'));
+                // Инициализация состояния при загрузке
+                if (superAdminCheckbox.checked) {
+                    superAdminCheckbox.dispatchEvent(new Event('change'));
+                }
             }
         });
     </script>
 
 {% endblock %}
-                    '
