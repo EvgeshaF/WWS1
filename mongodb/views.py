@@ -28,26 +28,52 @@ def render_toast_response(request):
     return response
 
 
-def render_form_with_messages(request, template_name, context):
-    """Рендерит форму с сообщениями для HTMX"""
+def render_with_messages(request, template_name, context, success_redirect=None):
+    """Универсальная функция для рендеринга с поддержкой HTMX"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
     if is_htmx:
-        return render_toast_response(request)
+        response = render_toast_response(request)
+        if success_redirect:
+            response['HX-Redirect'] = success_redirect
+        return response
     else:
+        if success_redirect:
+            # Извлекаем имя URL из полного пути
+            url_name = success_redirect.split('/')[-2] if '/' in success_redirect else success_redirect
+            return redirect(url_name)
         return render(request, template_name, context)
 
 
 def validate_previous_steps(step):
-    """Проверяет завершенность предыдущих шагов"""
+    """Проверяет завершенность предыдущих шагов с реальными проверками"""
     config = MongoConfig.read_config()
 
     if step >= 2:
+        # Проверяем шаг 1 (подключение)
         if not config.get('host') or not config.get('port'):
+            logger.warning("Шаг 1 не завершен: отсутствуют host/port")
+            return False, 'create_database_step1'
+
+        # Дополнительно проверяем успешность подключения
+        try:
+            port = int(config.get('port', 27017))
+            if not MongoConnection.test_connection(config.get('host'), port):
+                logger.warning("Шаг 1 не завершен: подключение недоступно")
+                return False, 'create_database_step1'
+        except (ValueError, TypeError):
+            logger.warning("Шаг 1 не завершен: неверный формат порта")
             return False, 'create_database_step1'
 
     if step >= 3:
+        # Проверяем шаг 2 (авторизация)
         if not all([config.get('admin_user'), config.get('admin_password')]):
+            logger.warning("Шаг 2 не завершен: отсутствуют учетные данные")
+            return False, 'create_database_step2'
+
+        # Дополнительно проверяем авторизацию
+        if not MongoConnection.authenticate_admin(config.get('admin_user'), config.get('admin_password')):
+            logger.warning("Шаг 2 не завершен: авторизация неуспешна")
             return False, 'create_database_step2'
 
     return True, None
@@ -66,25 +92,26 @@ def create_database_step1(request):
                 port = int(form.cleaned_data['port'])
             except (ValueError, TypeError):
                 messages.error(request, language.mess_form_invalid)
-                return render_form_with_messages(request, 'mongodb/create_dbconfig_step1.html', {
-                    'form': form, 'text': language.text_server_conf, 'step': 1
-                })
+                context = {'form': form, 'text': language.text_server_conf, 'step': 1}
+                return render_with_messages(request, 'mongodb/create_dbconfig_step1.html', context)
 
             # Проверяем соединение с сервером
+            logger.info(f"Тестируем подключение к {host}:{port}")
             if MongoConnection.test_connection(host, port):
                 # Сохраняем конфигурацию
                 MongoConfig.update_config({'host': host, 'port': port})
 
-                mess = f"{host}:{port} — {language.mess_server_ping_success}"
-                logger.success(mess)
-                messages.success(request, mess)
+                success_msg = f"{host}:{port} — {language.mess_server_ping_success}"
+                logger.success(success_msg)
+                messages.success(request, success_msg)
 
-                # ИСПРАВЛЕНО: правильный редирект для HTMX
-                if is_htmx:
-                    response = render_toast_response(request)
-                    response['HX-Redirect'] = reverse('create_database_step2')
-                    return response
-                return redirect('create_database_step2')
+                # Корректный редирект для HTMX и обычных запросов
+                return render_with_messages(
+                    request,
+                    'mongodb/create_dbconfig_step1.html',
+                    {'form': form, 'text': language.text_server_conf, 'step': 1},
+                    reverse('create_database_step2')
+                )
             else:
                 # Детальная диагностика для лучшего сообщения об ошибке
                 if host == 'ef-soft.local':
@@ -92,39 +119,34 @@ def create_database_step1(request):
                 else:
                     error_msg = f"{language.mess_server_ping_error}. Überprüfen Sie, ob MongoDB auf {host}:{port} läuft."
 
+                logger.error(error_msg)
                 messages.error(request, error_msg)
-                return render_form_with_messages(request, 'mongodb/create_dbconfig_step1.html', {
-                    'form': form, 'text': language.text_server_conf, 'step': 1
-                })
         else:
             messages.error(request, language.mess_form_invalid)
-            return render_form_with_messages(request, 'mongodb/create_dbconfig_step1.html', {
-                'form': form, 'text': language.text_server_conf, 'step': 1
-            })
 
-    else:  # GET-запрос
-        config = MongoConfig.read_config() or {}
+        # Рендерим форму с ошибками
+        context = {'form': form, 'text': language.text_server_conf, 'step': 1}
+        return render_with_messages(request, 'mongodb/create_dbconfig_step1.html', context)
 
-        if config:
-            # Если конфиг есть — используем его
-            form = MongoConnectionForm(initial={
-                'host': config.get('host', 'localhost'),
-                'port': config.get('port', 27017),
-            })
-        else:
-            # Если конфиг отсутствует — используем дефолты формы
-            form = MongoConnectionForm()
+    # GET-запрос
+    config = MongoConfig.read_config() or {}
 
-            # Показываем предупреждение только для GET-запросов без конфига
-            logger.warning(language.mess_server_configuration_warning)
-            messages.warning(request, language.mess_server_configuration_warning)
-            messages.info(request, "Standardwerte: localhost:27017. Stellen Sie sicher, dass MongoDB läuft.")
+    if config:
+        # Если конфиг есть — используем его
+        form = MongoConnectionForm(initial={
+            'host': config.get('host', 'localhost'),
+            'port': config.get('port', 27017),
+        })
+    else:
+        # Если конфиг отсутствует — используем дефолты формы
+        form = MongoConnectionForm()
+        # Показываем предупреждение только для GET-запросов без конфига
+        logger.warning(language.mess_server_configuration_warning)
+        messages.warning(request, language.mess_server_configuration_warning)
+        messages.info(request, "Standardwerte: localhost:27017. Stellen Sie sicher, dass MongoDB läuft.")
 
-    return render(request, 'mongodb/create_dbconfig_step1.html', {
-        'form': form,
-        'text': language.text_server_conf,
-        'step': 1
-    })
+    context = {'form': form, 'text': language.text_server_conf, 'step': 1}
+    return render(request, 'mongodb/create_dbconfig_step1.html', context)
 
 
 @ratelimit(key='ip', rate='5/m', method='POST')
@@ -132,7 +154,7 @@ def create_database_step2(request):
     """Форма авторизации администратора MongoDB"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
-    # ИСПРАВЛЕНО: Проверяем предыдущие шаги
+    # Проверяем предыдущие шаги
     is_valid, redirect_to = validate_previous_steps(2)
     if not is_valid:
         messages.error(request, "Bitte vollenden Sie zuerst die vorherigen Schritte")
@@ -147,6 +169,7 @@ def create_database_step2(request):
             admin_password = form.cleaned_data['admin_password']
             db_name = form.cleaned_data['db_name']
 
+            logger.info(f"Проверяем авторизацию администратора: {admin_user}")
             # Проверяем авторизацию администратора
             if MongoConnection.authenticate_admin(admin_user, admin_password):
                 # Сохраняем данные авторизации в конфигурацию
@@ -161,38 +184,32 @@ def create_database_step2(request):
                 logger.success(success_msg)
                 messages.success(request, success_msg)
 
-                # ИСПРАВЛЕНО: правильный редирект для HTMX
-                if is_htmx:
-                    response = render_toast_response(request)
-                    response['HX-Redirect'] = reverse('create_database_step3')
-                    return response
-                return redirect('create_database_step3')
+                # Корректный редирект
+                return render_with_messages(
+                    request,
+                    'mongodb/create_dbconfig_step2.html',
+                    {'form': form, 'text': language.text_login_form, 'step': 2},
+                    reverse('create_database_step3')
+                )
             else:
                 messages.error(request, language.mess_login_admin_error)
-                return render_form_with_messages(request, 'mongodb/create_dbconfig_step2.html', {
-                    'form': form, 'text': language.text_login_form, 'step': 2
-                })
         else:
             messages.error(request, language.mess_form_invalid)
-            return render_form_with_messages(request, 'mongodb/create_dbconfig_step2.html', {
-                'form': form, 'text': language.text_login_form, 'step': 2
-            })
 
-    else:  # GET-запрос
-        # Предварительно заполняем форму из конфигурации, если данные есть
-        initial_data = {}
-        if config.get('admin_user'):
-            initial_data['admin_user'] = config['admin_user']
-        if config.get('db_name'):
-            initial_data['db_name'] = config['db_name']
+        # Рендерим форму с ошибками
+        context = {'form': form, 'text': language.text_login_form, 'step': 2}
+        return render_with_messages(request, 'mongodb/create_dbconfig_step2.html', context)
 
-        form = MongoLoginForm(initial=initial_data)
+    # GET-запрос - предварительно заполняем форму из конфигурации
+    initial_data = {}
+    if config.get('admin_user'):
+        initial_data['admin_user'] = config['admin_user']
+    if config.get('db_name'):
+        initial_data['db_name'] = config['db_name']
 
-    return render(request, 'mongodb/create_dbconfig_step2.html', {
-        'form': form,
-        'text': language.text_login_form,
-        'step': 2
-    })
+    form = MongoLoginForm(initial=initial_data)
+    context = {'form': form, 'text': language.text_login_form, 'step': 2}
+    return render(request, 'mongodb/create_dbconfig_step2.html', context)
 
 
 @ratelimit(key='ip', rate='3/m', method='POST')
@@ -200,7 +217,7 @@ def create_database_step3(request):
     """Форма создания новой базы данных"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
-    # ИСПРАВЛЕНО: Проверяем предыдущие шаги
+    # Проверяем предыдущие шаги
     is_valid, redirect_to = validate_previous_steps(3)
     if not is_valid:
         messages.error(request, "Bitte vollenden Sie zuerst die vorherigen Schritte")
@@ -211,12 +228,16 @@ def create_database_step3(request):
         if form.is_valid():
             db_name = form.cleaned_data['db_name']
 
+            logger.info(f"Создаем базу данных: {db_name}")
+
             # Проверяем, что база данных не существует
             if MongoConnection.database_exists(db_name):
-                messages.error(request, f"Datenbank '{db_name}' existiert bereits")
-                return render_form_with_messages(request, 'mongodb/create_dbconfig_step3.html', {
-                    'form': form, 'text': language.text_create_db_form, 'step': 3
-                })
+                error_msg = f"Datenbank '{db_name}' existiert bereits"
+                logger.warning(error_msg)
+                messages.error(request, error_msg)
+
+                context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
+                return render_with_messages(request, 'mongodb/create_dbconfig_step3.html', context)
             else:
                 # Создаем базу данных
                 if MongoConnection.create_database_step3(db_name):
@@ -230,28 +251,25 @@ def create_database_step3(request):
                     logger.success(success_msg)
                     messages.success(request, success_msg)
 
-                    # ИСПРАВЛЕНО: правильный редирект для HTMX
-                    if is_htmx:
-                        response = render_toast_response(request)
-                        response['HX-Redirect'] = reverse('home')
-                        return response
-                    return redirect('home')
+                    # Корректный редирект на главную страницу
+                    return render_with_messages(
+                        request,
+                        'mongodb/create_dbconfig_step3.html',
+                        {'form': form, 'text': language.text_create_db_form, 'step': 3},
+                        reverse('home')
+                    )
                 else:
-                    messages.error(request, f"Fehler beim Erstellen der Datenbank '{db_name}'")
-                    return render_form_with_messages(request, 'mongodb/create_dbconfig_step3.html', {
-                        'form': form, 'text': language.text_create_db_form, 'step': 3
-                    })
+                    error_msg = f"Fehler beim Erstellen der Datenbank '{db_name}'"
+                    logger.error(error_msg)
+                    messages.error(request, error_msg)
         else:
             messages.error(request, language.mess_form_invalid)
-            return render_form_with_messages(request, 'mongodb/create_dbconfig_step3.html', {
-                'form': form, 'text': language.text_create_db_form, 'step': 3
-            })
 
-    else:  # GET-запрос
-        form = CreateDatabaseForm()
+        # Рендерим форму с ошибками
+        context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
+        return render_with_messages(request, 'mongodb/create_dbconfig_step3.html', context)
 
-    return render(request, 'mongodb/create_dbconfig_step3.html', {
-        'form': form,
-        'text': language.text_create_db_form,
-        'step': 3
-    })
+    # GET-запрос
+    form = CreateDatabaseForm()
+    context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
+    return render(request, 'mongodb/create_dbconfig_step3.html', context)

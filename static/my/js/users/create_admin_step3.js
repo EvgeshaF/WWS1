@@ -1,208 +1,200 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('admin-step3-form');
+    if (!form) return;
+
     const submitBtn = document.getElementById('create-admin-btn');
     const progressContainer = document.getElementById('create-admin-progress-container');
+    const progressLabel = document.getElementById('admin-progress-label');
     const progressBar = document.getElementById('admin-progress');
-    const currentStepSpan = document.getElementById('current-step');
+    const creationDetails = document.getElementById('admin-creation-details');
+    const currentStep = document.getElementById('current-step');
 
-    // Отслеживаем начало HTMX запроса
-    form.addEventListener('htmx:beforeRequest', () => {
-        console.log('🚀 Начинаем создание администратора...');
+    let progressInterval = null;
+    let creationSteps = [
+        'Validierung der Eingaben...',
+        'Benutzer wird erstellt...',
+        'Berechtigungen werden gesetzt...',
+        'Profildaten werden gespeichert...',
+        'Sicherheitseinstellungen werden angewendet...',
+        'Administrator wird aktiviert...'
+    ];
+    let currentStepIndex = 0;
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-hourglass-split spinner-border spinner-border-sm me-1" role="status"></i>Wird erstellt...';
-
-        // Показываем прогресс-бар
-        progressContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        currentStepSpan.textContent = 'Validierung der Eingaben...';
-
-        // Симулируем прогресс
-        let progress = 0;
-        const steps = [
-            'Validierung der Eingaben...',
-            'Verbindung zur Datenbank...',
-            'Überprüfung auf doppelte Benutzer...',
-            'Erstelle Administrator...',
-            'Speichern in der Datenbank...',
-            'Überprüfung der Speicherung...',
-            'Abschluss...'
-        ];
-
-        let stepIndex = 0;
-        window.adminProgressInterval = setInterval(() => {
-            progress += Math.floor(Math.random() * 12) + 8;
-            if (progress > 95) progress = 95;
-
-            progressBar.style.width = progress + '%';
-
-            // Обновляем текущий шаг
-            const expectedStepIndex = Math.floor((progress / 100) * steps.length);
-            if (expectedStepIndex !== stepIndex && expectedStepIndex < steps.length) {
-                stepIndex = expectedStepIndex;
-                currentStepSpan.textContent = steps[stepIndex];
-
-                // Анимация смены шага
-                currentStepSpan.style.opacity = '0.6';
-                setTimeout(() => {
-                    currentStepSpan.style.opacity = '1';
-                }, 200);
-            }
-        }, 400);
-    });
-
-    // Отслеживаем завершение HTMX запроса
-    form.addEventListener('htmx:afterRequest', (event) => {
-        console.log('📋 HTMX запрос завершен:', event.detail.xhr.status);
-
-        clearInterval(window.adminProgressInterval);
-
-        const xhr = event.detail.xhr;
-
-        if (xhr.status === 200) {
-            console.log('✅ HTTP 200 - запрос успешен');
-
-            progressBar.style.width = '100%';
-            progressBar.classList.remove('bg-danger');
-            progressBar.classList.add('bg-success');
-            currentStepSpan.textContent = 'Administrator erfolgreich erstellt!';
-            currentStepSpan.style.color = '#198754';
-
-        } else {
-            console.log('❌ HTTP ошибка:', xhr.status);
-
-            progressBar.classList.remove('bg-success');
-            progressBar.classList.add('bg-danger');
-            progressBar.style.width = '100%';
-            currentStepSpan.textContent = 'Fehler beim Erstellen!';
-            currentStepSpan.style.color = '#dc3545';
-        }
-
-        // Скрываем прогресс через 2 секунды
-        setTimeout(() => {
-            progressContainer.style.display = 'none';
-            progressBar.style.width = '0%';
-            progressBar.classList.remove('bg-danger', 'bg-success');
-            progressBar.classList.add('bg-success');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-person-plus me-1"></i>{{ text.btn }}';
-
-            // Сброс стилей
-            currentStepSpan.style.color = '';
-            currentStepSpan.textContent = 'Validierung...';
-        }, 2000);
-    });
-
-    // УЛУЧШЕННАЯ обработка успешного создания администратора
-    document.body.addEventListener('htmx:afterRequest', function (event) {
-        if (event.target.id === 'admin-step3-form') {
-            const xhr = event.detail.xhr;
-            console.log('🔍 Анализируем ответ...', {
-                status: xhr.status,
-                responseText: xhr.responseText.substring(0, 200) + '...'
-            });
-
-            if (xhr.status === 200) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    console.log('📄 JSON ответ:', response);
-
-                    if (response && response.messages && Array.isArray(response.messages)) {
-                        // Ищем сообщение об успехе
-                        const hasSuccess = response.messages.some(msg => {
-                            const isSuccess = msg.tags === 'success' &&
-                                (msg.text.includes('erfolgreich erstellt') ||
-                                    msg.text.includes('successfully created'));
-                            console.log('🔍 Проверяем сообщение:', {
-                                tags: msg.tags,
-                                text: msg.text.substring(0, 50) + '...',
-                                isSuccess: isSuccess
-                            });
-                            return isSuccess;
-                        });
-
-                        if (hasSuccess) {
-                            console.log('🎉 УСПЕХ! Администратор создан, перенаправляем...');
-
-                            // Показываем финальное уведомление
-                            showToast(
-                                'Administrator wurde erfolgreich erstellt! Weiterleitung zur Startseite...',
-                                'success',
-                                4000
-                            );
-
-                            // Перенаправляем через 4 секунды
-                            setTimeout(() => {
-                                console.log('🔄 Выполняем перенаправление на главную...');
-                                window.location.href = '/';
-                            }, 4000);
-                        } else {
-                            console.log('⚠️  Сообщение об успехе не найдено');
-
-                            // Проверяем наличие ошибок
-                            const hasError = response.messages.some(msg =>
-                                msg.tags === 'error' || msg.tags === 'danger'
-                            );
-
-                            if (hasError) {
-                                console.log('❌ Найдены ошибки в ответе');
-                            }
-                        }
-                    } else {
-                        console.log('⚠️  Неожиданная структура ответа:', response);
-                    }
-                } catch (e) {
-                    console.error('❌ Ошибка парсинга JSON:', e);
-                    console.log('📄 Сырой ответ:', xhr.responseText);
-
-                    // Если JSON не парсится, но статус 200, возможно произошел редирект
-                    if (xhr.responseText.includes('erfolgreich') ||
-                        xhr.responseText.includes('success') ||
-                        xhr.responseText.includes('Administrator')) {
-                        console.log('🔍 Обнаружен успех в тексте ответа');
-                        setTimeout(() => {
-                            console.log('🔄 Перенаправляем по тексту...');
-                            window.location.href = '/';
-                        }, 3000);
-                    }
-                }
-            } else {
-                console.error('❌ HTTP ошибка:', xhr.status, xhr.statusText);
-            }
-        }
-    });
-
-    // Включаем/отключаем зависимые чекбоксы
-    const superAdminCheckbox = document.getElementById('{{ form.is_super_admin.id_for_label }}');
-    const dependentCheckboxes = [
-        document.getElementById('{{ form.can_manage_users.id_for_label }}'),
-        document.getElementById('{{ form.can_manage_database.id_for_label }}'),
-        document.getElementById('{{ form.can_view_logs.id_for_label }}'),
-        document.getElementById('{{ form.can_manage_settings.id_for_label }}')
+    // Обработчик изменения чекбоксов для зависимостей
+    const superAdminCheckbox = form.querySelector('input[name="is_super_admin"]');
+    const otherPermissions = [
+        'can_manage_users',
+        'can_manage_database',
+        'can_view_logs',
+        'can_manage_settings'
     ];
 
     if (superAdminCheckbox) {
-        superAdminCheckbox.addEventListener('change', function () {
-            dependentCheckboxes.forEach(checkbox => {
-                if (checkbox) {
-                    checkbox.checked = this.checked;
-                    checkbox.disabled = this.checked;
-
-                    // Визуальная индикация
-                    const label = checkbox.closest('.form-check');
-                    if (this.checked) {
-                        label.style.opacity = '0.6';
-                    } else {
-                        label.style.opacity = '1';
+        superAdminCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // При выборе Super Admin автоматически выбираем все остальные права
+                otherPermissions.forEach(permName => {
+                    const checkbox = form.querySelector(`input[name="${permName}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        checkbox.disabled = true;
                     }
-                }
-            });
+                });
+            } else {
+                // При снятии Super Admin разблокируем остальные права
+                otherPermissions.forEach(permName => {
+                    const checkbox = form.querySelector(`input[name="${permName}"]`);
+                    if (checkbox) {
+                        checkbox.disabled = false;
+                    }
+                });
+            }
         });
 
-        // Инициализация состояния при загрузке
+        // Инициализируем состояние при загрузке
         if (superAdminCheckbox.checked) {
             superAdminCheckbox.dispatchEvent(new Event('change'));
         }
     }
-});
 
+    // Обработчик отправки формы
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Показываем прогресс и блокируем форму
+        showProgress();
+
+        // Создаем FormData для отправки
+        const formData = new FormData(form);
+
+        // Отправляем запрос через fetch
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'HX-Request': 'true'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideProgress();
+
+            // Обрабатываем сообщения
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(message => {
+                    showToast(message.text, message.tags, message.delay);
+                });
+
+                // Если есть успешное сообщение, перенаправляем на главную
+                const hasSuccess = data.messages.some(msg => msg.tags === 'success');
+                if (hasSuccess) {
+                    // Показываем финальный шаг
+                    if (currentStep) {
+                        currentStep.textContent = 'Administrator erfolgreich erstellt!';
+                    }
+
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка создания администратора:', error);
+            hideProgress();
+            showToast('Kritischer Fehler beim Erstellen des Administrators', 'error');
+        });
+    });
+
+    function showProgress() {
+        if (!submitBtn) return;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird erstellt...';
+
+        if (progressContainer) {
+            progressContainer.style.display = 'block';
+        }
+
+        if (progressLabel) {
+            progressLabel.style.visibility = 'visible';
+        }
+
+        if (creationDetails) {
+            creationDetails.style.visibility = 'visible';
+        }
+
+        let progress = 0;
+        currentStepIndex = 0;
+
+        progressInterval = setInterval(() => {
+            progress += Math.random() * 10;
+            if (progress > 90) progress = 90;
+
+            if (progressBar) {
+                progressBar.style.width = progress + '%';
+            }
+
+            // Обновляем текущий шаг
+            if (currentStep && currentStepIndex < creationSteps.length - 1) {
+                if (progress > (currentStepIndex + 1) * 15) {
+                    currentStepIndex++;
+                    currentStep.textContent = creationSteps[currentStepIndex];
+                }
+            }
+        }, 400);
+    }
+
+    function hideProgress() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Administrator erstellen';
+        }
+
+        // Завершаем прогресс-бар
+        if (progressBar) {
+            progressBar.style.width = '100%';
+        }
+
+        setTimeout(() => {
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+            }
+            if (progressBar) {
+                progressBar.style.width = '0%';
+            }
+        }, 2000);
+    }
+
+    // Глобальная функция для показа тостов (если не определена)
+    if (typeof window.showToast === 'undefined') {
+        window.showToast = function(message, type = 'info', delay = 5000) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, delay);
+        };
+    }
+});

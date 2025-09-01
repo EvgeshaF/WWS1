@@ -30,31 +30,44 @@ def render_toast_response(request):
     return response
 
 
-def render_form_with_messages(request, template_name, context, redirect_url=None):
-    """Унифицированная обработка форм для HTMX и обычных запросов"""
+def render_with_messages(request, template_name, context, success_redirect=None):
+    """Универсальная функция для рендеринга с поддержкой HTMX"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
     if is_htmx:
         response = render_toast_response(request)
-        if redirect_url:
-            response['HX-Redirect'] = redirect_url
+        if success_redirect:
+            response['HX-Redirect'] = success_redirect
         return response
     else:
-        if redirect_url:
-            return redirect(redirect_url.split('/')[-2])  # Извлекаем имя URL
+        if success_redirect:
+            # Извлекаем имя URL из полного пути
+            return redirect(success_redirect)
         return render(request, template_name, context)
 
 
 def validate_admin_creation_step(request, required_step):
-    """Проверяет корректность шага создания администратора"""
+    """Проверяет корректность шага создания администратора с дополнительными проверками"""
     admin_creation = request.session.get('admin_creation')
 
     if not admin_creation:
+        logger.warning("Данные создания администратора не найдены в сессии")
         return False, 'create_admin_step1'
 
     current_step = admin_creation.get('step', 0)
     if current_step < required_step - 1:
+        logger.warning(f"Текущий шаг ({current_step}) меньше требуемого ({required_step})")
         return False, f'create_admin_step{current_step + 1}'
+
+    # Дополнительные проверки данных
+    if required_step >= 2 and not admin_creation.get('username'):
+        logger.warning("Шаг 2: отсутствует username")
+        return False, 'create_admin_step1'
+
+    if required_step >= 3:
+        if not admin_creation.get('first_name') or not admin_creation.get('last_name'):
+            logger.warning("Шаг 3: отсутствуют имя/фамилия")
+            return False, 'create_admin_step2'
 
     return True, None
 
@@ -67,6 +80,8 @@ def create_admin_step1(request):
     if not config.get('setup_completed'):
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
+
+    is_htmx = request.headers.get('HX-Request') == 'true'
 
     if request.method == 'POST':
         logger.info("Обработка POST запроса для шага 1")
@@ -85,9 +100,8 @@ def create_admin_step1(request):
             if existing_user:
                 logger.warning(f"Пользователь {username} уже существует")
                 messages.error(request, f"Benutzer '{username}' existiert bereits")
-                return render_form_with_messages(request, 'users/create_admin_step1.html', {
-                    'form': form, 'text': language.text_create_admin_step1, 'step': 1
-                })
+                context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
+                return render_with_messages(request, 'users/create_admin_step1.html', context)
             else:
                 # Сохраняем данные в сессии для следующих шагов
                 request.session['admin_creation'] = {
@@ -95,12 +109,13 @@ def create_admin_step1(request):
                     'password': password,
                     'step': 1
                 }
+                request.session.modified = True  # Принудительно сохраняем сессию
 
                 logger.success(f"Данные сохранены в сессии: {username}")
                 messages.success(request, f"Benutzerdaten für '{username}' erfolgreich validiert")
 
-                # ✅ ИСПРАВЛЕНО: правильный редирект для HTMX
-                return render_form_with_messages(
+                # Корректный редирект для HTMX и обычных запросов
+                return render_with_messages(
                     request,
                     'users/create_admin_step1.html',
                     {'form': form, 'text': language.text_create_admin_step1, 'step': 1},
@@ -109,30 +124,28 @@ def create_admin_step1(request):
         else:
             logger.error(f"Форма невалидна: {form.errors}")
             messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
-            return render_form_with_messages(request, 'users/create_admin_step1.html', {
-                'form': form, 'text': language.text_create_admin_step1, 'step': 1
-            })
 
-    else:  # GET-запрос
-        form = CreateAdminUserForm()
+        # Рендерим форму с ошибками
+        context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
+        return render_with_messages(request, 'users/create_admin_step1.html', context)
 
-    return render(request, 'users/create_admin_step1.html', {
-        'form': form,
-        'text': language.text_create_admin_step1,
-        'step': 1
-    })
+    # GET-запрос
+    form = CreateAdminUserForm()
+    context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
+    return render(request, 'users/create_admin_step1.html', context)
 
 
 @ratelimit(key='ip', rate='3/m', method='POST')
 def create_admin_step2(request):
     """Шаг 2: Профиль администратора"""
-    # ✅ ИСПРАВЛЕНО: проверка предыдущего шага
+    # Проверка предыдущего шага
     is_valid, redirect_to = validate_admin_creation_step(request, 2)
     if not is_valid:
         messages.error(request, "Bitte vollenden Sie zuerst die vorherigen Schritte")
         return redirect(redirect_to)
 
     admin_creation = request.session.get('admin_creation')
+    is_htmx = request.headers.get('HX-Request') == 'true'
 
     if request.method == 'POST':
         logger.info("Обработка POST запроса для шага 2")
@@ -150,12 +163,13 @@ def create_admin_step2(request):
                 'step': 2
             })
             request.session['admin_creation'] = admin_creation
+            request.session.modified = True
 
             logger.success("Данные профиля сохранены в сессии")
             messages.success(request, "Profildaten erfolgreich erfasst")
 
-            # ✅ ИСПРАВЛЕНО: правильный редирект для HTMX
-            return render_form_with_messages(
+            # Корректный редирект
+            return render_with_messages(
                 request,
                 'users/create_admin_step2.html',
                 {
@@ -167,32 +181,36 @@ def create_admin_step2(request):
         else:
             logger.error(f"Форма шага 2 невалидна: {form.errors}")
             messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
-            return render_form_with_messages(request, 'users/create_admin_step2.html', {
-                'form': form, 'text': language.text_create_admin_step2,
-                'step': 2, 'username': admin_creation['username']
-            })
 
-    else:  # GET-запрос
-        form = AdminProfileForm()
+        # Рендерим форму с ошибками
+        context = {
+            'form': form, 'text': language.text_create_admin_step2,
+            'step': 2, 'username': admin_creation['username']
+        }
+        return render_with_messages(request, 'users/create_admin_step2.html', context)
 
-    return render(request, 'users/create_admin_step2.html', {
+    # GET-запрос
+    form = AdminProfileForm()
+    context = {
         'form': form,
         'text': language.text_create_admin_step2,
         'step': 2,
         'username': admin_creation['username']
-    })
+    }
+    return render(request, 'users/create_admin_step2.html', context)
 
 
 @ratelimit(key='ip', rate='2/m', method='POST')
 def create_admin_step3(request):
     """Шаг 3: Разрешения и создание администратора"""
-    # ✅ ИСПРАВЛЕНО: проверка предыдущих шагов
+    # Проверка предыдущих шагов
     is_valid, redirect_to = validate_admin_creation_step(request, 3)
     if not is_valid:
         messages.error(request, "Bitte vollenden Sie die vorherigen Schritte")
         return redirect(redirect_to)
 
     admin_creation = request.session.get('admin_creation')
+    is_htmx = request.headers.get('HX-Request') == 'true'
 
     if request.method == 'POST':
         logger.info(f"НАЧАЛО создания администратора: {admin_creation['username']}")
@@ -200,7 +218,7 @@ def create_admin_step3(request):
         form = AdminPermissionsForm(request.POST)
         if form.is_valid():
             try:
-                # Создание пользователя (существующий код...)
+                # Создание пользователя
                 user_manager = UserManager()
 
                 # Подготовка данных пользователя
@@ -236,18 +254,20 @@ def create_admin_step3(request):
                     'password_changed_at': now
                 }
 
-                # ✅ ИСПРАВЛЕНО: используем UserManager.create_user
+                logger.info("Вызываем UserManager.create_user")
+                # Используем UserManager.create_user
                 if user_manager.create_user(user_data):
                     # Очищаем сессию
                     if 'admin_creation' in request.session:
                         del request.session['admin_creation']
+                        request.session.modified = True
 
                     success_msg = f"Administrator '{user_data['username']}' wurde erfolgreich erstellt!"
                     logger.success(success_msg)
                     messages.success(request, success_msg)
 
-                    # ✅ ИСПРАВЛЕНО: правильный редирект для HTMX
-                    return render_form_with_messages(
+                    # Корректный редирект на главную страницу
+                    return render_with_messages(
                         request,
                         'users/create_admin_step3.html',
                         {
@@ -264,28 +284,25 @@ def create_admin_step3(request):
                 logger.exception(f"КРИТИЧЕСКАЯ ОШИБКА при создании администратора: {e}")
                 messages.error(request, f"Kritischer Fehler: {str(e)}")
 
-            return render_form_with_messages(request, 'users/create_admin_step3.html', {
-                'form': form, 'text': language.text_create_admin_step3,
-                'step': 3, 'username': admin_creation.get('username', ''),
-                'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}"
-            })
-
         else:
             logger.error(f"Форма невалидна: {form.errors}")
             messages.error(request, "Bitte korrigieren Sie die Formularfehler")
-            return render_form_with_messages(request, 'users/create_admin_step3.html', {
-                'form': form, 'text': language.text_create_admin_step3,
-                'step': 3, 'username': admin_creation.get('username', ''),
-                'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}"
-            })
 
-    else:  # GET
-        form = AdminPermissionsForm()
+        # Рендерим форму с ошибками
+        context = {
+            'form': form, 'text': language.text_create_admin_step3,
+            'step': 3, 'username': admin_creation.get('username', ''),
+            'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}"
+        }
+        return render_with_messages(request, 'users/create_admin_step3.html', context)
 
-    return render(request, 'users/create_admin_step3.html', {
+    # GET запрос
+    form = AdminPermissionsForm()
+    context = {
         'form': form,
         'text': language.text_create_admin_step3,
         'step': 3,
         'username': admin_creation.get('username', ''),
         'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}"
-    })
+    }
+    return render(request, 'users/create_admin_step3.html', context)

@@ -1,121 +1,151 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('create-db-form');
+    if (!form) return;
+
     const submitBtn = form.querySelector('button[type="submit"]');
-    const container = document.getElementById('create-db-progress-container');
-    const bar = document.getElementById('db-progress');
+    const progressContainer = document.getElementById('create-db-progress-container');
+    const progressLabel = document.getElementById('db-progress-label');
+    const progressBar = document.getElementById('db-progress');
+    const progressBarContainer = document.getElementById('db-progress-bar-container');
+    const collectionProgress = document.getElementById('collection-progress');
+    const currentCollection = document.getElementById('current-collection');
 
-    // Отслеживаем начало HTMX запроса
-    form.addEventListener('htmx:beforeRequest', () => {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-database-gear spinner-border spinner-border-sm me-1" role="status"></i>Wird erstellt...';
+    let progressInterval = null;
+    let collectionSteps = [
+        'Initialisierung...',
+        'Datenbank wird erstellt...',
+        'Benutzer-Kollektion wird erstellt...',
+        'Standard-Kollektionen werden erstellt...',
+        'Indizes werden erstellt...',
+        'Abschließende Konfiguration...'
+    ];
+    let currentStep = 0;
 
-        // Показываем прогресс-бар и детали
-        document.getElementById('db-progress-label').style.visibility = 'visible';
-        document.getElementById('db-progress-bar-container').style.visibility = 'visible';
-        document.getElementById('collection-progress').style.visibility = 'visible';
-        bar.style.width = '0%';
+    // Обработчик отправки формы
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        showProgress();
 
-        // Список коллекций для симуляции
-        const collections = [
-            'Initialisierung...',
-            'basic_communications',
-            'basic_countrys',
-            'basic_payments',
-            'basic_roles',
-            'basic_salutations',
-            'basic_titles',
-            'basic_units',
-            'system_info',
-            'Abschluss...'
-        ];
+        // Создаем FormData для отправки
+        const formData = new FormData(form);
 
-        let progress = 0;
-        let collectionIndex = 0;
-        const currentCollectionSpan = document.getElementById('current-collection');
-
-        window.dbProgressInterval = setInterval(() => {
-            progress += Math.floor(Math.random() * 8) + 5;
-            if (progress > 95) progress = 95;
-
-            bar.style.width = progress + '%';
-
-            // Обновляем текущую коллекцию
-            const expectedCollectionIndex = Math.floor((progress / 100) * collections.length);
-            if (expectedCollectionIndex !== collectionIndex && expectedCollectionIndex < collections.length) {
-                collectionIndex = expectedCollectionIndex;
-                currentCollectionSpan.innerHTML = `Erstelle: ${collections[collectionIndex]}`;
-
-                // Добавляем небольшую анимацию при смене коллекции
-                currentCollectionSpan.style.opacity = '0.6';
-                setTimeout(() => {
-                    currentCollectionSpan.style.opacity = '1';
-                }, 150);
+        // Отправляем запрос через fetch
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'HX-Request': 'true'
             }
-        }, 300);
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideProgress();
+
+            // Обрабатываем сообщения
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(message => {
+                    showToast(message.text, message.tags, message.delay);
+                });
+
+                // Если есть успешное сообщение, перенаправляем через короткое время
+                const hasSuccess = data.messages.some(msg => msg.tags === 'success');
+                if (hasSuccess) {
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка создания базы данных:', error);
+            hideProgress();
+            showToast('Fehler beim Erstellen der Datenbank', 'error');
+        });
     });
 
-    // Отслеживаем завершение HTMX запроса
-    form.addEventListener('htmx:afterRequest', (event) => {
-        clearInterval(window.dbProgressInterval);
+    function showProgress() {
+        if (!submitBtn || !progressLabel || !progressBarContainer || !progressBar) return;
 
-        // Проверяем успешность запроса
-        if (event.detail.xhr.status === 200) {
-            bar.style.width = '100%';
-            bar.classList.remove('bg-danger');
-            bar.classList.add('bg-success');
-        } else {
-            bar.classList.remove('bg-primary');
-            bar.classList.add('bg-danger');
-            bar.style.width = '100%';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird erstellt...';
+
+        progressLabel.style.visibility = 'visible';
+        progressBarContainer.style.visibility = 'visible';
+        if (collectionProgress) {
+            collectionProgress.style.visibility = 'visible';
+        }
+
+        let progress = 0;
+        currentStep = 0;
+
+        progressInterval = setInterval(() => {
+            progress += Math.random() * 8;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+
+            // Обновляем текущий шаг
+            if (currentCollection && currentStep < collectionSteps.length - 1) {
+                if (progress > (currentStep + 1) * 15) {
+                    currentStep++;
+                    currentCollection.textContent = collectionSteps[currentStep];
+                }
+            }
+        }, 300);
+    }
+
+    function hideProgress() {
+        if (!submitBtn || !progressLabel || !progressBarContainer || !progressBar) return;
+
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-database-add me-1"></i>Datenbank erstellen';
+
+        // Завершаем прогресс-бар
+        progressBar.style.width = '100%';
+        if (currentCollection) {
+            currentCollection.textContent = 'Erfolgreich abgeschlossen!';
         }
 
         setTimeout(() => {
-            // Финальные сообщения
-            const currentCollectionSpan = document.getElementById('current-collection');
-            if (event.detail.xhr.status === 200) {
-                currentCollectionSpan.innerHTML = '✓ Alle Kollektionen erfolgreich erstellt!';
-                currentCollectionSpan.style.color = '#198754';
-            } else {
-                currentCollectionSpan.innerHTML = '✗ Fehler beim Erstellen der Kollektionen';
-                currentCollectionSpan.style.color = '#dc3545';
+            progressLabel.style.visibility = 'hidden';
+            progressBarContainer.style.visibility = 'hidden';
+            if (collectionProgress) {
+                collectionProgress.style.visibility = 'hidden';
             }
+            progressBar.style.width = '0%';
+        }, 1000);
+    }
 
+    // Глобальная функция для показа тостов (если не определена)
+    if (typeof window.showToast === 'undefined') {
+        window.showToast = function(message, type = 'info', delay = 5000) {
+            // Создаем простой toast если нет готовой системы
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Автоматически удаляем через delay
             setTimeout(() => {
-                // Скрываем прогресс-бар и детали
-                document.getElementById('db-progress-label').style.visibility = 'hidden';
-                document.getElementById('db-progress-bar-container').style.visibility = 'hidden';
-                document.getElementById('collection-progress').style.visibility = 'hidden';
-                bar.style.width = '0%';
-                bar.classList.remove('bg-danger', 'bg-success');
-                bar.classList.add('bg-primary');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="bi bi-database-add me-1"></i>{{ text.btn }}';
-
-                // Сброс стилей текста
-                currentCollectionSpan.style.color = '';
-                currentCollectionSpan.innerHTML = 'Initialisierung...';
-            }, 2000);
-        }, 500);
-    });
-
-    // Обработка успешного создания БД для перенаправления
-    document.body.addEventListener('htmx:afterRequest', function (event) {
-        if (event.target.id === 'create-db-form') {
-            try {
-                const response = JSON.parse(event.detail.xhr.responseText);
-                if (response && response.messages) {
-                    // Проверяем, есть ли сообщение об успехе
-                    const hasSuccess = response.messages.some(msg => msg.tags === 'success');
-                    if (hasSuccess) {
-                        // Перенаправляем через небольшую задержку
-                        setTimeout(() => {
-                            window.location.href = '/';
-                        }, 3000);
-                    }
+                if (toast.parentNode) {
+                    toast.remove();
                 }
-            } catch (e) {
-                // Если не JSON, игнорируем
-            }
-        }
-    });
+            }, delay);
+        };
+    }
 });
