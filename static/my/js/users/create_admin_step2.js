@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (hasSuccess) {
                         // Перенаправляем через небольшую задержку
                         setTimeout(() => {
-                            window.location.href = '{% url "create_admin_step3" %}';
+                            window.location.href = "{% url 'create_admin_step3' %}";
                         }, 2000);
                     }
                 }

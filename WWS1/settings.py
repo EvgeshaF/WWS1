@@ -146,3 +146,6 @@ if not DEBUG:
 
     # Redirect HTTP to HTTPS
     SECURE_SSL_REDIRECT = True
+
+DEBUG = True
+ALLOWED_HOSTS = ['*']
