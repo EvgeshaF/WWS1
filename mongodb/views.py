@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
 from loguru import logger
+import datetime
 
 from .forms import MongoConnectionForm, MongoLoginForm, CreateDatabaseForm
 from .mongodb_config import MongoConfig
@@ -212,9 +213,11 @@ def create_database_step2(request):
     return render(request, 'mongodb/create_dbconfig_step2.html', context)
 
 
-@ratelimit(key='ip', rate='3/m', method='POST')
+@ratelimit(key='ip', rate='3/m', method='POST')  # Уменьшено с 3 до 1!
 def create_database_step3(request):
     """Форма создания новой базы данных"""
+    logger.warning("🎯 === ВХОД В create_database_step3 VIEW ===")
+
     is_htmx = request.headers.get('HX-Request') == 'true'
 
     # Проверяем предыдущие шаги
@@ -224,45 +227,89 @@ def create_database_step3(request):
         return redirect(redirect_to)
 
     if request.method == 'POST':
+        logger.warning("📥 POST запрос для создания БД")
+
+        # ЗАЩИТА ОТ ДВОЙНОЙ ОТПРАВКИ
+        db_creation_key = 'db_creation_in_progress'
+        if db_creation_key in request.session:
+            logger.error("🚫 База данных уже создается! Предотвращаем двойной вызов")
+            messages.warning(request, "Datenbank wird bereits erstellt. Bitte warten...")
+            return redirect('home')
+
         form = CreateDatabaseForm(request.POST)
         if form.is_valid():
             db_name = form.cleaned_data['db_name']
 
-            logger.info(f"Создаем базу данных: {db_name}")
+            logger.warning(f"⚠️ СОЗДАНИЕ БД '{db_name}' - УСТАНАВЛИВАЕМ БЛОКИРОВКУ")
+            request.session[db_creation_key] = {
+                'db_name': db_name,
+                'started_at': str(datetime.datetime.now())
+            }
+            request.session.modified = True
 
-            # Проверяем, что база данных не существует
-            if MongoConnection.database_exists(db_name):
-                error_msg = f"Datenbank '{db_name}' existiert bereits"
-                logger.warning(error_msg)
-                messages.error(request, error_msg)
-
-                context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
-                return render_with_messages(request, 'mongodb/create_dbconfig_step3.html', context)
-            else:
-                # Создаем базу данных
-                if MongoConnection.create_database_step3(db_name):
-                    # Обновляем конфигурацию с новой БД
-                    MongoConfig.update_config({
-                        'db_name': db_name,
-                        'setup_completed': True
-                    })
-
-                    success_msg = f"Datenbank '{db_name}' mit allen Kollektionen erfolgreich erstellt"
-                    logger.success(success_msg)
-                    messages.success(request, success_msg)
-
-                    # Корректный редирект на главную страницу
-                    return render_with_messages(
-                        request,
-                        'mongodb/create_dbconfig_step3.html',
-                        {'form': form, 'text': language.text_create_db_form, 'step': 3},
-                        reverse('home')
-                    )
-                else:
-                    error_msg = f"Fehler beim Erstellen der Datenbank '{db_name}'"
-                    logger.error(error_msg)
+            try:
+                # Проверяем, что база данных не существует
+                if MongoConnection.database_exists(db_name):
+                    error_msg = f"Datenbank '{db_name}' existiert bereits"
+                    logger.error(f"❌ {error_msg}")
                     messages.error(request, error_msg)
+
+                    # Снимаем блокировку
+                    del request.session[db_creation_key]
+                    request.session.modified = True
+
+                    context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
+                    return render_with_messages(request, 'mongodb/create_dbconfig_step3.html', context)
+                else:
+                    logger.warning(f"✅ База данных '{db_name}' не существует, создаем...")
+
+                    # ЕДИНСТВЕННЫЙ ВЫЗОВ create_database_step3
+                    logger.warning(f"🚀 ЕДИНСТВЕННЫЙ ВЫЗОВ MongoConnection.create_database_step3('{db_name}')")
+                    creation_result = MongoConnection.create_database_step3(db_name)
+                    logger.warning(f"📊 Результат создания БД: {creation_result}")
+
+                    if creation_result:
+                        # Обновляем конфигурацию с новой БД
+                        MongoConfig.update_config({
+                            'db_name': db_name,
+                            'setup_completed': True
+                        })
+
+                        success_msg = f"Datenbank '{db_name}' mit allen Kollektionen erfolgreich erstellt"
+                        logger.success(success_msg)
+                        messages.success(request, success_msg)
+
+                        # Снимаем блокировку после успешного создания
+                        del request.session[db_creation_key]
+                        request.session.modified = True
+
+                        # Корректный редирект на главную страницу
+                        return render_with_messages(
+                            request,
+                            'mongodb/create_dbconfig_step3.html',
+                            {'form': form, 'text': language.text_create_db_form, 'step': 3},
+                            reverse('home')
+                        )
+                    else:
+                        error_msg = f"Fehler beim Erstellen der Datenbank '{db_name}'"
+                        logger.error(error_msg)
+                        messages.error(request, error_msg)
+
+                        # Снимаем блокировку при ошибке
+                        del request.session[db_creation_key]
+                        request.session.modified = True
+
+            except Exception as e:
+                logger.exception(f"Критическая ошибка создания БД: {e}")
+                messages.error(request, f"Kritischer Fehler: {e}")
+
+                # Снимаем блокировку при исключении
+                if db_creation_key in request.session:
+                    del request.session[db_creation_key]
+                    request.session.modified = True
+
         else:
+            logger.error(f"Форма невалидна: {form.errors}")
             messages.error(request, language.mess_form_invalid)
 
         # Рендерим форму с ошибками
@@ -270,6 +317,15 @@ def create_database_step3(request):
         return render_with_messages(request, 'mongodb/create_dbconfig_step3.html', context)
 
     # GET-запрос
+    logger.info("📤 GET запрос для формы создания БД")
+
+    # Проверяем, не блокировано ли создание БД
+    db_creation_key = 'db_creation_in_progress'
+    if db_creation_key in request.session:
+        creation_info = request.session[db_creation_key]
+        logger.warning(f"⚠️ Обнаружена незавершенная операция создания БД: {creation_info}")
+        messages.warning(request, f"Создание базы данных '{creation_info['db_name']}' еще не завершено...")
+
     form = CreateDatabaseForm()
     context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
     return render(request, 'mongodb/create_dbconfig_step3.html', context)

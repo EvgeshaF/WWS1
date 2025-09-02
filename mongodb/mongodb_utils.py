@@ -130,22 +130,48 @@ class MongoConnection:
             logger.error(f"Неожиданная ошибка при авторизации '{username}': {e}")
             return False
 
+
     @classmethod
     def create_database_step3(cls, db_name):
         """Создает базу данных с коллекциями из JSON файлов"""
+        logger.warning(f"🚀 === НАЧАЛО create_database_step3 для БД: {db_name} ===")
+
         if not db_name:
             logger.error("Имя базы данных обязательно")
             return False
 
         client = cls.get_client()
-        if client is None:  # ИСПРАВЛЕНО: используем 'is None'
+        if client is None:
             return False
 
         try:
-            # Проверяем, что база не существует
-            if db_name in client.list_database_names():
-                logger.warning(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_warning2}")
-                return False
+            # КРИТИЧЕСКАЯ ПРОВЕРКА: не существует ли уже база данных?
+            existing_databases = client.list_database_names()
+            logger.info(f"📋 Существующие базы данных: {existing_databases}")
+
+            if db_name in existing_databases:
+                logger.error(f"❌ База данных '{db_name}' уже существует!")
+
+                # Дополнительная проверка коллекций
+                db = client[db_name]
+                existing_collections = db.list_collection_names()
+                logger.error(f"📂 Существующие коллекции в '{db_name}': {existing_collections}")
+
+                # Проверяем основные коллекции
+                users_collection = f"{db_name}_users"
+                titles_collection = f"{db_name}_basic_titles"
+
+                if users_collection in existing_collections and titles_collection in existing_collections:
+                    users_count = db[users_collection].count_documents({})
+                    titles_count = db[titles_collection].count_documents({})
+
+                    logger.error(f"🚫 База данных '{db_name}' уже полностью настроена!")
+                    logger.error(f"📊 {users_collection}: {users_count} записей")
+                    logger.error(f"📊 {titles_collection}: {titles_count} записей")
+                    logger.error("❌ ОТМЕНЯЕМ создание - БД уже существует!")
+                    return False
+
+            logger.success(f"✅ База данных '{db_name}' не существует, создаем...")
 
             # Создаем базу данных
             db = client[db_name]
@@ -153,10 +179,12 @@ class MongoConnection:
 
             # Путь к JSON файлам
             base_path = os.path.join('static', 'defaults', 'data')
+            logger.info(f"📂 Ищем JSON файлы в: {base_path}")
 
             if os.path.exists(base_path):
                 # Получаем список всех JSON файлов
                 json_files = [f for f in os.listdir(base_path) if f.endswith('.json')]
+                logger.info(f"📋 Найдено JSON файлов: {json_files}")
 
                 for file_name in json_files:
                     # Создаем имя коллекции: db_name + "_" + имя_файла_без_расширения
@@ -164,13 +192,39 @@ class MongoConnection:
                     collection_name = f"{db_name}_{base_collection_name}"
                     json_path = os.path.join(base_path, file_name)
 
+                    logger.warning(f"🎯 Обрабатываем файл: {file_name} → коллекция: {collection_name}")
+
+                    # КРИТИЧЕСКАЯ ПРОВЕРКА: существует ли уже коллекция?
+                    existing_collections = db.list_collection_names()
+                    if collection_name in existing_collections:
+                        existing_count = db[collection_name].count_documents({})
+                        logger.error(f"🚫 Коллекция '{collection_name}' уже существует с {existing_count} записями!")
+                        logger.error(f"⏭️ ПРОПУСКАЕМ создание коллекции '{collection_name}'")
+                        continue
+
                     try:
                         with open(json_path, 'r', encoding='utf-8') as file:
                             data = json.load(file)
+                        logger.info(f"📖 Загружено {len(data) if isinstance(data, list) else 1} записей из {file_name}")
 
-                        # Создание коллекции, если не существует
-                        if collection_name not in db.list_collection_names():
+                        # Создание коллекции с проверкой существования
+                        try:
+                            logger.info(f"🔨 Создаем коллекцию: {collection_name}")
+
+                            # Двойная проверка перед созданием
+                            if collection_name in db.list_collection_names():
+                                logger.error(f"🚫 Коллекция '{collection_name}' появилась во время создания! Пропускаем...")
+                                continue
+
                             db.create_collection(collection_name)
+                            logger.success(f"✅ Коллекция '{collection_name}' создана")
+
+                        except Exception as create_error:
+                            if "already exists" in str(create_error).lower():
+                                logger.error(f"🚫 Коллекция '{collection_name}' уже существует (ошибка создания)")
+                                continue
+                            else:
+                                raise create_error
 
                         # Добавляем метаданные к каждому документу
                         if isinstance(data, list):
@@ -179,16 +233,21 @@ class MongoConnection:
                                 item['modified_at'] = now
                                 item['deleted'] = False
                             if data:  # Проверяем что список не пустой
-                                db[collection_name].insert_many(data)
-                                logger.success(f"Коллекция '{collection_name}' создана с {len(data)} элементами")
+                                result = db[collection_name].insert_many(data)
+                                inserted_count = len(result.inserted_ids)
+                                logger.success(f"✅ В коллекцию '{collection_name}' вставлено {inserted_count} документов")
                             else:
-                                logger.success(f"Пустая коллекция '{collection_name}' создана")
+                                logger.success(f"📝 Пустая коллекция '{collection_name}' создана")
                         else:
                             data['created_at'] = now
                             data['modified_at'] = now
                             data['deleted'] = False
-                            db[collection_name].insert_one(data)
-                            logger.success(f"Коллекция '{collection_name}' создана с 1 элементом")
+                            result = db[collection_name].insert_one(data)
+                            logger.success(f"✅ В коллекцию '{collection_name}' вставлен 1 документ с ID: {result.inserted_id}")
+
+                        # Проверяем финальное количество записей
+                        final_count = db[collection_name].count_documents({})
+                        logger.warning(f"📊 Финальное количество записей в '{collection_name}': {final_count}")
 
                     except (FileNotFoundError, json.JSONDecodeError) as e:
                         logger.error(f"Ошибка обработки файла {file_name}: {e}")
@@ -285,6 +344,15 @@ class MongoConnection:
             })
 
             logger.success(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_success2}")
+
+            # Финальная проверка
+            final_collections = db.list_collection_names()
+            logger.warning(f"🏁 ФИНАЛЬНОЕ состояние БД '{db_name}':")
+            for coll_name in final_collections:
+                if 'basic_titles' in coll_name:
+                    count = db[coll_name].count_documents({})
+                    logger.warning(f"📊 {coll_name}: {count} записей")
+
             return True
 
         except Exception as e:

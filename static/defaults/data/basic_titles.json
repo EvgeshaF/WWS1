@@ -1,14 +1,137 @@
 [
-  {
-    "title": "Dr."
-  },
-  {
-    "title": "Prof."
-  },
-  {
-    "title": "Dipl.-Ing."
-  },
-  {
-    "title": "Dr. med."
-  }
+    {
+        "code": "dr",
+        "name": "Dr.",
+        "description": "Doktor",
+        "category": "academic",
+        "display_order": 10,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "prof",
+        "name": "Prof.",
+        "description": "Professor",
+        "category": "academic",
+        "display_order": 20,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "prof_dr",
+        "name": "Prof. Dr.",
+        "description": "Professor Doktor",
+        "category": "academic",
+        "display_order": 30,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "dipl_ing",
+        "name": "Dipl.-Ing.",
+        "description": "Diplomingenieur",
+        "category": "engineering",
+        "display_order": 40,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "dipl_kfm",
+        "name": "Dipl.-Kfm.",
+        "description": "Diplomkaufmann",
+        "category": "business",
+        "display_order": 50,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "dipl_oec",
+        "name": "Dipl.-Oec.",
+        "description": "Diplomökonom",
+        "category": "business",
+        "display_order": 60,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "dipl_psych",
+        "name": "Dipl.-Psych.",
+        "description": "Diplompsychologe",
+        "category": "psychology",
+        "display_order": 70,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "mag",
+        "name": "Mag.",
+        "description": "Magister",
+        "category": "academic",
+        "display_order": 80,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "mba",
+        "name": "MBA",
+        "description": "Master of Business Administration",
+        "category": "business",
+        "display_order": 90,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "msc",
+        "name": "M.Sc.",
+        "description": "Master of Science",
+        "category": "academic",
+        "display_order": 100,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "ba",
+        "name": "B.A.",
+        "description": "Bachelor of Arts",
+        "category": "academic",
+        "display_order": 110,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "bsc",
+        "name": "B.Sc.",
+        "description": "Bachelor of Science",
+        "category": "academic",
+        "display_order": 120,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "beng",
+        "name": "B.Eng.",
+        "description": "Bachelor of Engineering",
+        "category": "engineering",
+        "display_order": 130,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "med",
+        "name": "Med.",
+        "description": "Mediziner",
+        "category": "medical",
+        "display_order": 140,
+        "active": true,
+        "deleted": false
+    },
+    {
+        "code": "phd",
+        "name": "Ph.D.",
+        "description": "Doctor of Philosophy",
+        "category": "academic",
+        "display_order": 150,
+        "active": true,
+        "deleted": false
+    }
 ]
