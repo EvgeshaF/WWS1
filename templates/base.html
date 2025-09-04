@@ -13,8 +13,9 @@
 
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'bootstrap/icons/bootstrap-icons.css' %}">
-    <link rel="stylesheet" href="{% static 'bootstrap-select/dist/css/bootstrap-select.min.css' %}">
 
+    <link rel="stylesheet" href="{% static 'select2/dist/css/select2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'select2-bootstrap-5-theme/select2-bootstrap-5-theme.min.css' %}">
 
     <link rel="stylesheet" href="{% static 'my/css/layout-heights.css' %}">
     <link rel="stylesheet" href="{% static 'my/css/main_styles.css' %}">
@@ -71,9 +72,13 @@
 </div>
 
 <script src="{% static 'my/js/toasts.js' %}"></script>
+
 <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'bootstrap-select/dist/js/bootstrap-select.min.js' %}"></script>
-<script src="{% static 'bootstrap-select/dist/js/i18n/defaults-de_DE.js' %}"></script>
+<!-- jQuery (требуется для Select2) -->
+<script src="{% static 'jquery/jquery-3.7.1.min.js' %}"></script>
+<!-- Select2 JS -->
+<script src="{% static 'select2/dist/js/select2.min.js' %}"></script>
+<script src="{% static 'select2/dist/js/i18n/de.js' %}"></script>
 
 <script src="{% static 'htmx/js/htmx.min.js' %}"></script>
 <script src="{% static 'my/js/sidebar.js' %}"></script>

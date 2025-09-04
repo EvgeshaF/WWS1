@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const phoneInput = form.querySelector('input[name="phone"]');
     const firstNameInput = form.querySelector('input[name="first_name"]');
     const lastNameInput = form.querySelector('input[name="last_name"]');
+    const salutationSelect = form.querySelector('select[name="salutation"]');
 
     // Валидация в реальном времени
     if (emailInput) {
@@ -35,7 +36,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const isValid = validateEmail() &&
                         validatePhone() &&
                         validateRequired(firstNameInput, 'Vorname ist erforderlich') &&
-                        validateRequired(lastNameInput, 'Nachname ist erforderlich');
+                        validateRequired(lastNameInput, 'Nachname ist erforderlich') &&
+                        validateSalutation();
 
         if (!isValid) {
             showToast('Bitte korrigieren Sie die Fehler im Formular', 'error');
@@ -87,8 +89,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    function validateSalutation() {
+        if (!salutationSelect) return true;
+
+        const value = salutationSelect.value;
+        clearFieldError(salutationSelect);
+
+        if (!value) {
+            setFieldError(salutationSelect, 'Anrede ist erforderlich');
+            return false;
+        }
+
+        setFieldSuccess(salutationSelect);
+        return true;
+    }
+
     function validateEmail() {
-        if (!emailInput) return true; // Email может быть необязательным
+        if (!emailInput) return true;
 
         const email = emailInput.value.trim();
         clearFieldError(emailInput);
@@ -109,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validatePhone() {
-        if (!phoneInput) return true; // Phone необязательный
+        if (!phoneInput) return true;
 
         const phone = phoneInput.value.trim();
         clearFieldError(phoneInput);
@@ -154,16 +171,16 @@ document.addEventListener('DOMContentLoaded', function() {
         field.classList.add('is-invalid');
 
         // Удаляем старые сообщения об ошибках
-        const existingError = field.parentNode.querySelector('.invalid-feedback');
+        const existingError = field.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
         }
 
         // Добавляем новое сообщение об ошибке
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'invalid-feedback';
+        errorDiv.className = 'invalid-feedback d-block';
         errorDiv.textContent = message;
-        field.parentNode.appendChild(errorDiv);
+        field.closest('.mb-3').appendChild(errorDiv);
     }
 
     function setFieldSuccess(field) {
@@ -171,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         field.classList.add('is-valid');
 
         // Удаляем сообщения об ошибках
-        const existingError = field.parentNode.querySelector('.invalid-feedback');
+        const existingError = field.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
         }
@@ -180,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearFieldError(field) {
         field.classList.remove('is-invalid', 'is-valid');
 
-        const existingError = field.parentNode.querySelector('.invalid-feedback');
+        const existingError = field.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
         }
