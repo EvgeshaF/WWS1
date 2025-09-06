@@ -1,3 +1,4 @@
+// static/my/js/users/create_admin_step3.js - FIXED URLs
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('admin-step3-form');
     if (!form) return;
@@ -67,8 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Создаем FormData для отправки
         const formData = new FormData(form);
 
-        // Отправляем запрос через fetch
-        fetch(form.action, {
+        // FIXED: Corrected URL to use namespace
+        fetch('/users/create-admin/step3/', {
             method: 'POST',
             body: formData,
             headers: {

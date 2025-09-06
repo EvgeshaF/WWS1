@@ -25,10 +25,8 @@
                         <br><small class="text-muted mt-1">Administrator: <strong>{{ full_name }}</strong> ({{ username }})</small>
                     </div>
 
-                    <form id="users:admin-step3-form" method="post"
-                          hx-post="{% url 'create_admin_step3' %}"
-                          hx-target="#toast-container"
-                          hx-swap="beforeend">
+                    <!-- FIXED: Corrected form id and action URL -->
+                    <form id="admin-step3-form" method="post" action="{% url 'users:create_admin_step3' %}">
                         {% csrf_token %}
 
                         <div class="row">
@@ -160,7 +158,8 @@
                         {% endif %}
 
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'create_admin_step2' %}" class="btn btn-outline-secondary">
+                            <!-- FIXED: Corrected back URL -->
+                            <a href="{% url 'users:create_admin_step2' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>
                                 {{ text.btn_back }}
                             </a>
@@ -187,6 +186,6 @@
 
     {# Подключаем JS файл #}
     {% load static %}
-    <script src="{% static 'my/js/users/create_admin_step2.js' %}"></script>
+    <script src="{% static 'my/js/users/create_admin_step3.js' %}"></script>
 
 {% endblock %}

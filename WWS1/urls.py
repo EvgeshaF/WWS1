@@ -25,10 +25,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('home.urls')),
     path('mongodb/', include('mongodb.urls')),
-    path('users/', include('users.urls', namespace='users')),  # Add namespace
+    path('users/', include('users.urls')),  # FIXED: Removed namespace from here
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
-

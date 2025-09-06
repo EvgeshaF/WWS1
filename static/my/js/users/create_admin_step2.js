@@ -748,7 +748,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('contacts_data', JSON.stringify(contactsData));
 
         // Отправляем запрос через fetch
-        fetch(form.action, {
+        fetch('/users/create-admin/step2/', {
             method: 'POST',
             body: formData,
             headers: {

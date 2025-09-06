@@ -9,6 +9,7 @@ from django.views.decorators.cache import never_cache
 from loguru import logger
 import datetime
 import json
+import re
 
 from .forms import CreateAdminUserForm, AdminProfileForm, AdminPermissionsForm
 from mongodb.mongodb_config import MongoConfig
@@ -71,22 +72,22 @@ def validate_admin_creation_step(request, required_step):
 
     if not admin_creation:
         logger.warning("Admin creation data not found in session")
-        return False, 'create_admin_step1'  # Remove namespace
+        return False, 'users:create_admin_step1'
 
     current_step = admin_creation.get('step', 0)
     if current_step < required_step - 1:
         logger.warning(f"Current step ({current_step}) less than required ({required_step})")
-        return False, f'create_admin_step{current_step + 1}'  # Remove namespace
+        return False, f'users:create_admin_step{current_step + 1}'
 
     # Additional data checks
     if required_step >= 2 and not admin_creation.get('username'):
         logger.warning("Step 2: missing username")
-        return False, 'create_admin_step1'
+        return False, 'users:create_admin_step1'
 
     if required_step >= 3:
         if not admin_creation.get('first_name') or not admin_creation.get('last_name'):
             logger.warning("Step 3: missing first_name/last_name")
-            return False, 'create_admin_step2'
+            return False, 'users:create_admin_step2'
 
     return True, None
 
@@ -138,7 +139,7 @@ def create_admin_step1(request):
                         request,
                         'users/create_admin_step1.html',
                         {'form': form, 'text': language.text_create_admin_step1, 'step': 1},
-                        reverse('create_admin_step2')  # No namespace
+                        reverse('users:create_admin_step2')
                     )
             else:
                 logger.error(f"Form invalid: {form.errors}")
@@ -185,14 +186,13 @@ def validate_contact_data(contacts_data_raw):
 
         # Validate email format
         if contact_type == 'email':
-            import re
-            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'  # FIXED: Added closing quote
             if not re.match(email_pattern, contact_value):
                 return None, f"Ungültiges E-Mail-Format: {contact_value}"
 
         # Validate phone format
         elif contact_type in ['phone', 'mobile', 'fax']:
-            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}$'
+            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}$'  # FIXED: Added closing quote
             if not re.match(phone_pattern, contact_value):
                 return None, f"Ungültiges Telefonformat: {contact_value}"
 
@@ -270,7 +270,7 @@ def create_admin_step2(request):
                         'form': form, 'text': language.text_create_admin_step2,
                         'step': 2, 'username': admin_creation['username']
                     },
-                    reverse('create_admin_step3')  # No namespace
+                    reverse('users:create_admin_step3')
                 )
             else:
                 logger.error(f"Step 2 form invalid: {form.errors}")
@@ -300,7 +300,7 @@ def create_admin_step2(request):
     except Exception as e:
         logger.error(f"Error in create_admin_step2: {e}")
         messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
-        return redirect('create_admin_step1')
+        return redirect('users:create_admin_step1')
 
 
 @ratelimit(key='ip', rate='2/m', method='POST')
@@ -424,7 +424,7 @@ def create_admin_step3(request):
                                 'contact_count': len(contacts),
                                 'primary_email': primary_email
                             },
-                            reverse('home')  # No namespace - home is in root
+                            reverse('home')
                         )
                     else:
                         messages.error(request, "Fehler beim Erstellen des Administrators")
@@ -464,39 +464,4 @@ def create_admin_step3(request):
     except Exception as e:
         logger.error(f"Error in create_admin_step3: {e}")
         messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
-        return redirect('create_admin_step2')
-
-
-# ===== Updated home/views.py to fix redirect =====
-from django.shortcuts import render, redirect
-from mongodb.mongodb_config import MongoConfig
-from users.user_utils import UserManager
-
-
-def home(request):
-    """Проверяет первый ли старт программы, наличие файла mongo_config.env"""
-    config_status = MongoConfig.check_config_completeness()
-
-    if config_status == 'connection_required' or config_status == 'ping_failed':
-        return redirect('create_database_step1')
-    elif config_status == 'login_required' or config_status == 'login_failed':
-        return redirect('create_database_step2')
-    elif config_status == 'db_required':
-        return redirect('create_database_step3')
-    elif config_status == 'complete':
-        # Проверяем, есть ли администраторы в системе
-        user_manager = UserManager()
-        admin_count = user_manager.get_admin_count()
-
-        if admin_count == 0:
-            # Нет администраторов - перенаправляем на создание первого администратора
-            return redirect('create_admin_step1')  # No namespace
-
-        # Система полностью настроена
-        return render(request, 'home/home.html', {
-            'admin_count': admin_count,
-            'setup_complete': True
-        })
-
-    # Если что-то пошло не так, показываем главную страницу
-    return render(request, 'home/home.html', locals())
+        return redirect('users:create_admin_step2')

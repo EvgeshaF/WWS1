@@ -21,7 +21,8 @@ def home(request):
 
         if admin_count == 0:
             # Нет администраторов - перенаправляем на создание первого администратора
-            return redirect('create_admin_step1')
+            # FIXED: Add namespace for users URLs
+            return redirect('users:create_admin_step1')
 
         # Система полностью настроена
         return render(request, 'home/home.html', {
