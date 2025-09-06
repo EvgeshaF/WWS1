@@ -86,35 +86,56 @@ class ContactManager {
         }
     }
 
-    setupFormSubmission() {
-        const form = document.getElementById('admin-step2-form');
-        if (!form) return;
+setupFormSubmission() {
+    const form = document.getElementById('admin-step2-form');
+    if (!form) return;
 
-        // Обработчик HTMX:beforeRequest для обновления данных контактов
-        form.addEventListener('htmx:beforeRequest', (event) => {
-            // Валидируем контакты перед отправкой
-            if (!this.validateAllContacts()) {
-                event.preventDefault();
-                return false;
+    // Обработчик HTMX:beforeRequest для обновления данных контактов
+    form.addEventListener('htmx:beforeRequest', (event) => {
+        // Валидируем контакты перед отправкой
+        if (!this.validateAllContacts()) {
+            event.preventDefault();
+            return false;
+        }
+
+        // Обновляем скрытое поле с данными контактов
+        this.updateContactsDataInput();
+    });
+
+    // Обработчик успешного ответа HTMX
+    form.addEventListener('htmx:afterRequest', (event) => {
+        if (event.detail.successful) {
+            // Успешный ответ - обрабатываем JSON
+            try {
+                const response = JSON.parse(event.detail.xhr.response);
+                if (response.messages) {
+                    response.messages.forEach(message => {
+                        this.showAlert(message.text, message.tags);
+                    });
+                }
+
+                // Проверяем редирект
+                const redirectHeader = event.detail.xhr.getResponseHeader('HX-Redirect');
+                if (redirectHeader) {
+                    setTimeout(() => {
+                        window.location.href = redirectHeader;
+                    }, 1500);
+                }
+            } catch (e) {
+                console.error('Ошибка обработки ответа:', e);
             }
-
-            // Обновляем скрытое поле с данными контактов
-            this.updateContactsDataInput();
-
-            console.log('HTMX отправляет форму с контактами:', this.contacts.length);
-        });
-
-        // Обработчик успешного ответа HTMX
-        form.addEventListener('htmx:afterSwap', (event) => {
-            console.log('HTMX получил ответ');
-        });
-
-        // Обработчик ошибок HTMX
-        form.addEventListener('htmx:responseError', (event) => {
-            console.error('HTMX ошибка:', event.detail);
+        } else {
+            // Ошибка запроса
             this.showAlert('Fehler beim Speichern des Profils', 'error');
-        });
-    }
+        }
+    });
+
+    // Обработчик ошибок HTMX
+    form.addEventListener('htmx:responseError', (event) => {
+        console.error('HTMX ошибка:', event.detail);
+        this.showAlert('Serverfehler beim Speichern', 'error');
+    });
+}
 
     setupValidation() {
         const form = document.getElementById('contactForm');

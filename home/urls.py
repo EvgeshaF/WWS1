@@ -3,6 +3,4 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('mongodb/', include('mongodb.urls')),
-    path('users/', include('users.urls')),
 ]

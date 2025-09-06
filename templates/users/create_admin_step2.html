@@ -29,7 +29,7 @@
                     <form id="admin-step2-form" method="post"
                           hx-post="{% url 'create_admin_step2' %}"
                           hx-target="#toast-container"
-                          hx-swap="beforeend"
+                          hx-swap="none"
                           hx-indicator="#form-progress">
                         {% csrf_token %}
 

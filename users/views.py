@@ -27,8 +27,16 @@ def render_toast_response(request):
             'delay': 5000
         })
 
-    response = JsonResponse({'messages': messages_list})
-    response['Content-Type'] = 'application/json'
+    # Добавим отладочную информацию
+    logger.debug(f"Отправляем JSON ответ с {len(messages_list)} сообщениями: {messages_list}")
+
+    response = JsonResponse({
+        'messages': messages_list,
+        'status': 'success' if any(msg['tags'] == 'success' for msg in messages_list) else 'error'
+    })
+
+    # Убеждаемся в правильном Content-Type
+    response['Content-Type'] = 'application/json; charset=utf-8'
     return response
 
 

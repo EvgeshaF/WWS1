@@ -23,6 +23,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('home.urls')),
+    path('mongodb/', include('mongodb.urls')),
+    path('users/', include('users.urls')),
 ]
 
 # Добавляем обслуживание media файлов в режиме разработки

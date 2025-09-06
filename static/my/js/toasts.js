@@ -2,6 +2,18 @@
 (function() {
     'use strict';
 
+    // Отладка - удалить после исправления
+console.log('Toast система загружена');
+
+// Перехватываем все HTMX события для отладки
+document.body.addEventListener('htmx:afterRequest', function(event) {
+    console.log('HTMX afterRequest:', {
+        status: event.detail.xhr.status,
+        contentType: event.detail.xhr.getResponseHeader('Content-Type'),
+        response: event.detail.xhr.response
+    });
+});
+
     // Создаем контейнер для тостов если его нет
     function ensureToastContainer() {
         let container = document.getElementById('toast-container');
@@ -133,20 +145,26 @@
         messagesContainer.innerHTML = '';
     }
 
-    // Обработчик для HTMX событий
-    document.body.addEventListener('htmx:afterRequest', function(event) {
-        // Если ответ содержит JSON с сообщениями
-        try {
-            const response = JSON.parse(event.detail.xhr.response);
-            if (response.messages && Array.isArray(response.messages)) {
-                response.messages.forEach(function(message) {
-                    showToast(message.text, message.tags, message.delay || 5000);
-                });
-            }
-        } catch (e) {
-            // Не JSON ответ, игнорируем
+// Обработчик для HTMX событий
+document.body.addEventListener('htmx:afterRequest', function(event) {
+    // Если ответ содержит JSON с сообщениями
+    try {
+        const response = JSON.parse(event.detail.xhr.response);
+        if (response.messages && Array.isArray(response.messages)) {
+            response.messages.forEach(function(message) {
+                showToast(message.text, message.tags, message.delay || 5000);
+            });
         }
-    });
+    } catch (e) {
+        // Не JSON ответ или другая ошибка - проверяем заголовки
+        const contentType = event.detail.xhr.getResponseHeader('Content-Type');
+        if (contentType && contentType.includes('application/json')) {
+            console.error('Ошибка парсинга JSON ответа:', e);
+            console.log('Сырой ответ:', event.detail.xhr.response);
+        }
+        // Если это не JSON, игнорируем
+    }
+});
 
     // Обработчик ошибок HTMX
     document.body.addEventListener('htmx:responseError', function(event) {
