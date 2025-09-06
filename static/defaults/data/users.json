@@ -7,6 +7,8 @@
       "title": "",
       "first_name": "Demo",
       "last_name": "Benutzer",
+      "email": "demo@example.com",
+      "phone": "+49 123 456789",
       "contacts": [
         {
           "type": "email",
