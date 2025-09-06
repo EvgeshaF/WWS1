@@ -1,408 +1,60 @@
+/* Исправленный CSS файл для create_admin_step2 */
 
-        /* Стили для блоков формы */
-        .card-header {
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .card-header h6 {
-            color: #495057;
-            font-weight: 600;
-        }
-
-        .form-label {
-            font-weight: 500;
-            color: #374151;
-        }
-
-        .form-label .text-muted {
-            font-weight: 400;
-        }
-
-        /* Индикаторы обязательных полей */
-        .form-label::after {
-            content: "";
-        }
-
-        .form-label:has(~ select[required]),
-        .form-label:has(~ input[required]) {
-            position: relative;
-        }
-
-        /* Стили для полей на всю ширину */
-        .full-width-field {
-            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
-        }
-
-        /* Подсветка обязательных полей */
-        input[required], select[required] {
-            box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.1);
-        }
-
-        input[required]:focus, select[required]:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
-
-        /* Стили для опциональных полей */
-        input:not([required]), select:not([required]) {
-            background-color: #f8f9fa;
-        }
-
-        /* Иконки в заголовках */
-        .card-header i {
-            color: #6c757d;
-        }
-
-        /* Дополнительные стили для блока контактов */
-
-/* Интеграция с существующими стилями формы */
-.contact-management-block .card-header {
+/* Стили для блоков формы */
+.card-header {
     border-bottom: 2px solid #e9ecef;
 }
 
-.contact-management-block .card-header h6 {
+.card-header h6 {
     color: #495057;
     font-weight: 600;
 }
 
-/* Стили для таблицы контактов */
-.contacts-table {
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    overflow: hidden;
-}
-
-.contacts-table th {
-    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
-    color: #495057;
-    font-weight: 600;
-    font-size: 0.9em;
-    border-bottom: 2px solid #dee2e6;
-    padding: 0.75rem;
-}
-
-.contacts-table td {
-    padding: 0.75rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #f1f3f4;
-}
-
-.contacts-table tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.03);
-    transition: background-color 0.2s ease;
-}
-
-/* Стили для типов контактов */
-.contact-type-badge {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.8em;
-    font-weight: 500;
-    padding: 0.3rem 0.6rem;
-    border-radius: 1rem;
-    border: 1px solid;
-    transition: all 0.2s ease;
-}
-
-.contact-type-email {
-    background-color: #e3f2fd;
-    color: #1565c0;
-    border-color: #bbdefb;
-}
-
-.contact-type-phone {
-    background-color: #e8f5e8;
-    color: #2e7d32;
-    border-color: #c8e6c9;
-}
-
-.contact-type-mobile {
-    background-color: #f3e5f5;
-    color: #7b1fa2;
-    border-color: #e1bee7;
-}
-
-.contact-type-fax {
-    background-color: #fff3e0;
-    color: #ef6c00;
-    border-color: #ffcc02;
-}
-
-.contact-type-website {
-    background-color: #e0f2f1;
-    color: #00695c;
-    border-color: #b2dfdb;
-}
-
-.contact-type-linkedin {
-    background-color: #e3f2fd;
-    color: #0277bd;
-    border-color: #81d4fa;
-}
-
-.contact-type-xing {
-    background-color: #e8f5e8;
-    color: #388e3c;
-    border-color: #a5d6a7;
-}
-
-.contact-type-other {
-    background-color: #f5f5f5;
-    color: #616161;
-    border-color: #e0e0e0;
-}
-
-/* Стили для значений контактов */
-.contact-value {
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-    font-size: 0.9em;
-    background: linear-gradient(145deg, #f8f9fa 0%, #ffffff 100%);
-    padding: 0.4rem 0.7rem;
-    border-radius: 0.375rem;
-    border: 1px solid #dee2e6;
-    color: #495057;
-    word-break: break-all;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.contact-label {
-    font-size: 0.75em;
-    color: #6c757d;
-    font-style: italic;
-    margin-top: 0.2rem;
-    opacity: 0.8;
-}
-
-/* Иконка главного контакта */
-.primary-contact-star {
-    color: #ffc107;
-    text-shadow: 0 0 3px rgba(255, 193, 7, 0.4);
-    animation: starGlow 2s ease-in-out infinite alternate;
-}
-
-@keyframes starGlow {
-    from { opacity: 0.8; }
-    to { opacity: 1; }
-}
-
-/* Кнопки действий */
-.action-btn {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.8em;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 32px;
-}
-
-.action-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.action-btn:active {
-    transform: translateY(0);
-}
-
-/* Кнопка добавления контакта */
-#addContactBtn {
-    background: linear-gradient(145deg, #0d6efd 0%, #0056b3 100%);
-    border: none;
-    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
-    transition: all 0.2s ease;
-}
-
-#addContactBtn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
-}
-
-/* Плейсхолдер для пустой таблицы */
-#emptyContactsPlaceholder {
-    border: 2px dashed #dee2e6;
-    border-radius: 0.5rem;
-    background: linear-gradient(145deg, #fafafa 0%, #f8f9fa 100%);
-    padding: 2rem;
-    margin: 1rem 0;
-    transition: all 0.3s ease;
-}
-
-#emptyContactsPlaceholder:hover {
-    border-color: #adb5bd;
-    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-#emptyContactsPlaceholder .display-4 {
-    font-size: 3rem;
-    opacity: 0.5;
-}
-
-/* Модальные окна */
-.modal-content {
-    border: none;
-    border-radius: 0.5rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.modal-header.bg-primary {
-    background: linear-gradient(145deg, #0d6efd 0%, #0056b3 100%) !important;
-    border-bottom: none;
-    border-radius: 0.5rem 0.5rem 0 0;
-}
-
-.modal-header.bg-danger {
-    background: linear-gradient(145deg, #dc3545 0%, #b02a37 100%) !important;
-    border-bottom: none;
-    border-radius: 0.5rem 0.5rem 0 0;
-}
-
-/* Стили формы в модальном окне */
-.modal-body .form-label {
+.form-label {
     font-weight: 500;
     color: #374151;
 }
 
-.modal-body .form-label i {
-    color: #6c757d;
+.form-label .text-muted {
+    font-weight: 400;
 }
 
-.modal-body .form-control,
-.modal-body .form-select {
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    transition: all 0.2s ease;
+/* Индикаторы обязательных полей */
+.form-label::after {
+    content: "";
 }
 
-.modal-body .form-control:focus,
-.modal-body .form-select:focus {
+.form-label:has(~ select[required]),
+.form-label:has(~ input[required]) {
+    position: relative;
+}
+
+/* Стили для полей на всю ширину */
+.full-width-field {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+/* Подсветка обязательных полей */
+input[required], select[required] {
+    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.1);
+}
+
+input[required]:focus, select[required]:focus {
     border-color: #86b7fe;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-.modal-body .form-check-input:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+/* Стили для опциональных полей */
+input:not([required]), select:not([required]) {
+    background-color: #f8f9fa;
 }
 
-.modal-body .form-text {
+/* Иконки в заголовках */
+.card-header i {
     color: #6c757d;
-    font-size: 0.875em;
-}
-
-/* Валидация */
-.is-valid {
-    border-color: #198754 !important;
-    box-shadow: inset 0 0 0 1px rgba(25, 135, 84, 0.1) !important;
-}
-
-.is-invalid {
-    border-color: #dc3545 !important;
-    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.1) !important;
-}
-
-.invalid-feedback {
-    color: #dc3545;
-    font-size: 0.875em;
-    margin-top: 0.25rem;
-}
-
-/* Анимации для модальных окон */
-.modal.fade .modal-dialog {
-    transform: scale(0.8) translateY(-50px);
-    transition: all 0.3s ease-out;
-}
-
-.modal.show .modal-dialog {
-    transform: scale(1) translateY(0);
-}
-
-/* Responsive стили */
-@media (max-width: 768px) {
-    .contacts-table th,
-    .contacts-table td {
-        padding: 0.5rem;
-        font-size: 0.9em;
-    }
-
-    .contact-value {
-        font-size: 0.8em;
-        padding: 0.3rem 0.5rem;
-    }
-
-    .action-btn {
-        padding: 0.2rem 0.4rem;
-        font-size: 0.7em;
-        min-width: 28px;
-        height: 28px;
-    }
-
-    .contact-type-badge {
-        font-size: 0.7em;
-        padding: 0.2rem 0.4rem;
-    }
-
-    #emptyContactsPlaceholder {
-        padding: 1.5rem;
-    }
-
-    #emptyContactsPlaceholder .display-4 {
-        font-size: 2rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .modal-dialog {
-        margin: 1rem;
-    }
-
-    .contacts-table {
-        font-size: 0.8em;
-    }
-
-    .contact-type-badge {
-        display: block;
-        text-align: center;
-        margin-bottom: 0.2rem;
-    }
-
-    .action-btn {
-        display: block;
-        margin: 0.1rem 0;
-        width: 100%;
-    }
-}
-
-/* Интеграция с темой Bootstrap */
-.table-hover tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.04);
-}
-
-/* Улучшенные переходы */
-* {
-    transition: all 0.2s ease;
-}
-
-button, .btn {
-    transition: all 0.2s ease;
-}
-
-/* Специальные стили для Select2 интеграции в модальных окнах */
-.modal .select2-container {
-    z-index: 9999;
-}
-
-.modal .select2-dropdown {
-    z-index: 10000;
 }
 
 /* === Стили для управления контактами === */
-/* Добавить в конец файла create_admin_step2.css */
 
 /* Интеграция с существующими стилями формы */
 .contact-management-block .card-header {
@@ -671,6 +323,56 @@ button, .btn {
     transform: scale(1) translateY(0);
 }
 
+/* HTMX индикатор загрузки */
+.htmx-indicator {
+    display: none;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+}
+
+.htmx-request .htmx-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.htmx-request.htmx-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Стили для формы во время отправки */
+.htmx-request #submitBtn {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.htmx-request #submitBtn .bi-arrow-right {
+    display: none;
+}
+
+.htmx-request #submitBtn::after {
+    content: "";
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Responsive стили */
 @media (max-width: 768px) {
     .contacts-table th,
@@ -748,4 +450,59 @@ button, .btn {
 
 .modal .select2-dropdown {
     z-index: 10000;
+}
+
+/* Дополнительные стили для улучшения UX */
+.contact-management-block {
+    position: relative;
+}
+
+.contact-management-block .card-body {
+    min-height: 200px;
+}
+
+/* Стили для скрытого поля данных контактов */
+#contactsDataInput {
+    visibility: hidden;
+    position: absolute;
+    left: -9999px;
+}
+
+/* Анимация появления контактов в таблице */
+.contacts-table tbody tr {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для состояний формы */
+.form-step-2 {
+    transition: all 0.3s ease;
+}
+
+.form-step-2.processing {
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* Улучшенные стили для валидации */
+.form-control.is-valid:focus,
+.form-select.is-valid:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
 }

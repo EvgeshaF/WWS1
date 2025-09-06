@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block extra_css %}
-    {# Подключаем CSS файл #}
     {% load static %}
     <link rel="stylesheet" href="{% static 'my/css/users/create_admin_step1-3.css' %}">
     <link rel="stylesheet" href="{% static 'my/css/users/create_admin_step2.css' %}">
@@ -30,7 +29,8 @@
                     <form id="admin-step2-form" method="post"
                           hx-post="{% url 'create_admin_step2' %}"
                           hx-target="#toast-container"
-                          hx-swap="beforeend">
+                          hx-swap="beforeend"
+                          hx-indicator="#form-progress">
                         {% csrf_token %}
 
                         <div class="row">
@@ -40,7 +40,7 @@
                                     <div class="card-header bg-light">
                                         <h6 class="mb-0">
                                             <i class="bi bi-person-badge me-2"></i>
-                                            Block 1 – Persönliche Daten
+                                            Block 1 — Persönliche Daten
                                         </h6>
                                     </div>
                                     <div class="card-body">
@@ -96,7 +96,6 @@
                                                     <div class="form-text">
                                                         <i class="bi bi-lightbulb me-1"></i>
                                                         Akademische oder berufliche Titel
-                                                        <span id="title-count" class="text-muted"></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -133,14 +132,14 @@
                             </div>
                         </div>
 
-                        <!-- Block 2: Kontakt - Новая версия с таблицей -->
+                        <!-- Block 2: Контакты -->
                         <div class="row">
                             <div class="col-12">
                                 <div class="card mb-4 contact-management-block">
                                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">
                                             <i class="bi bi-envelope me-2"></i>
-                                            Block 2 – Kontakt
+                                            Block 2 — Kontakt
                                         </h6>
                                         <button type="button" class="btn btn-sm btn-primary" id="addContactBtn">
                                             <i class="bi bi-plus-circle me-1"></i>
@@ -183,8 +182,8 @@
                                             </div>
                                         </div>
 
-                                        <!-- Versteckte Inputs für Formular-Übertragung -->
-                                        <div id="hiddenContactInputs"></div>
+                                        <!-- Скрытое поле для передачи данных контактов через HTMX -->
+                                        <input type="hidden" name="contacts_data" id="contactsDataInput" value="[]">
 
                                         <div class="form-text mt-3">
                                             <i class="bi bi-lightbulb me-1"></i>
@@ -200,11 +199,19 @@
                                 <i class="bi bi-arrow-left me-1"></i>
                                 {{ text.btn_back }}
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="bi bi-arrow-right me-1"></i>
                                 {{ text.btn }}
                             </button>
                         </div>
+
+                        <!-- Индикатор загрузки для HTMX -->
+                        <div id="form-progress" class="htmx-indicator position-fixed top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Wird verarbeitet...</span>
+                            </div>
+                        </div>
+
                     </form>
 
                 </div>
@@ -347,7 +354,7 @@
                 theme: 'bootstrap-5',
                 placeholder: 'Anrede auswählen...',
                 allowClear: false,
-                minimumResultsForSearch: Infinity, // Отключаем поиск для короткого списка
+                minimumResultsForSearch: Infinity,
                 width: '100%'
             });
 
@@ -371,19 +378,15 @@
                         return 'Alle Elemente entfernen';
                     }
                 },
-                // Кастомная функция для поиска
                 matcher: function(params, data) {
-                    // Если нет поискового запроса, показываем все
                     if ($.trim(params.term) === '') {
                         return data;
                     }
 
-                    // Если нет дочерних элементов и это обычная опция
                     if (typeof data.text === 'undefined') {
                         return null;
                     }
 
-                    // Поиск по тексту и значению
                     var term = params.term.toLowerCase();
                     if (data.text.toLowerCase().indexOf(term) > -1 ||
                         data.id.toLowerCase().indexOf(term) > -1) {
@@ -394,16 +397,9 @@
                 }
             });
 
-            // Подсчитываем и показываем количество опций
-            const titleOptions = $('#{{ form.title.id_for_label }} option[value!=""]').length;
-            if (titleOptions > 0) {
-                $('#title-count').text(`(${titleOptions} verfügbar)`);
-            }
-
             // Обработчики событий
             $('#{{ form.salutation.id_for_label }}').on('select2:select', function (e) {
                 console.log('Выбрана anrede:', e.params.data.id, '-', e.params.data.text);
-                // Убираем ошибки валидации
                 $(this).closest('.mb-3').find('.invalid-feedback').hide();
             });
 
@@ -417,8 +413,6 @@
             });
 
             console.log('Select2 успешно инициализирован');
-            console.log('- Anrede опций:', $('#{{ form.salutation.id_for_label }} option').length);
-            console.log('- Title опций:', titleOptions);
         });
 
         // Инициализация данных контактов для JavaScript
