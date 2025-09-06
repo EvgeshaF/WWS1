@@ -21,10 +21,11 @@ from django_ratelimit.decorators import ratelimit
 
 @never_cache
 def render_toast_response(request):
-    """JSON response with messages for HTMX"""
+    """JSON response with messages for HTMX - ИСПРАВЛЕНА"""
     try:
         storage = messages.get_messages(request)
         messages_list = []
+
         for message in storage:
             messages_list.append({
                 'tags': message.tags,
@@ -32,22 +33,34 @@ def render_toast_response(request):
                 'delay': 5000
             })
 
-        logger.debug(f"Sending JSON response with {len(messages_list)} messages: {messages_list}")
+        logger.info(f"Отправляем JSON ответ с {len(messages_list)} сообщениями")
+        for msg in messages_list:
+            logger.info(f"Сообщение: {msg['tags']} - {msg['text']}")
 
-        response = JsonResponse({
+        # Формируем JSON ответ
+        response_data = {
             'messages': messages_list,
             'status': 'success' if any(msg['tags'] == 'success' for msg in messages_list) else 'error'
-        })
+        }
 
+        response = JsonResponse(response_data, safe=False)
+
+        # Устанавливаем правильные заголовки
         response['Content-Type'] = 'application/json; charset=utf-8'
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         response['Pragma'] = 'no-cache'
         response['Expires'] = '0'
 
+        logger.debug(f"JSON response created successfully: {response_data}")
         return response
+
     except Exception as e:
-        logger.error(f"Error creating toast response: {e}")
-        return JsonResponse({'messages': [], 'status': 'error'})
+        logger.error(f"Ошибка создания JSON ответа: {e}")
+        # Возвращаем минимальный JSON ответ при ошибке
+        return JsonResponse({
+            'messages': [{'tags': 'error', 'text': 'Ein unerwarteter Fehler ist aufgetreten', 'delay': 5000}],
+            'status': 'error'
+        })
 
 
 @never_cache
@@ -205,7 +218,7 @@ def validate_contact_data(contacts_data_raw):
 @require_http_methods(["GET", "POST"])
 @never_cache
 def create_admin_step2(request):
-    """Step 2: Admin profile with contacts"""
+    """Step 2: Admin profile with contacts - ПОЛНОСТЬЮ ИСПРАВЛЕН"""
     try:
         # Check previous step
         is_valid, redirect_to = validate_admin_creation_step(request, 2)
@@ -222,9 +235,12 @@ def create_admin_step2(request):
 
             # Get and validate contact data
             contacts_data_raw = request.POST.get('contacts_data', '[]')
+            logger.info(f"Получены контакты: {contacts_data_raw}")
+
             contacts_data, validation_error = validate_contact_data(contacts_data_raw)
 
             if validation_error:
+                logger.error(f"Ошибка валидации контактов: {validation_error}")
                 messages.error(request, validation_error)
                 context = {
                     'form': form, 'text': language.text_create_admin_step2,
@@ -234,20 +250,12 @@ def create_admin_step2(request):
                 return render_with_messages(request, 'users/create_admin_step2.html', context)
 
             if form.is_valid():
-                # Update session data
-                admin_creation.update({
-                    'salutation': form.cleaned_data['salutation'],
-                    'title': form.cleaned_data['title'],
-                    'first_name': form.cleaned_data['first_name'],
-                    'last_name': form.cleaned_data['last_name'],
-                    'email': form.cleaned_data['email'],
-                    'phone': form.cleaned_data['phone'],
-                    'contacts': contacts_data,
-                    'step': 2
-                })
+                logger.info(f"Форма валидна, данные: {form.cleaned_data}")
 
-                # Extract primary email from contacts
+                # Extract primary email from contacts (НЕ из формы!)
                 primary_email = None
+                primary_phone = None
+
                 for contact in contacts_data:
                     if contact.get('type') == 'email':
                         if contact.get('primary', False):
@@ -256,8 +264,29 @@ def create_admin_step2(request):
                         elif not primary_email:
                             primary_email = contact.get('value')
 
-                if primary_email:
-                    admin_creation['primary_email'] = primary_email
+                for contact in contacts_data:
+                    if contact.get('type') in ['phone', 'mobile']:
+                        if contact.get('primary', False):
+                            primary_phone = contact.get('value')
+                            break
+                        elif not primary_phone:
+                            primary_phone = contact.get('value')
+
+                logger.info(f"Извлечены контакты - email: {primary_email}, phone: {primary_phone}")
+
+                # Update session data (ИСПРАВЛЕНО: убраны обращения к email/phone из формы!)
+                admin_creation.update({
+                    'salutation': form.cleaned_data['salutation'],
+                    'title': form.cleaned_data['title'],
+                    'first_name': form.cleaned_data['first_name'],
+                    'last_name': form.cleaned_data['last_name'],
+                    # УБРАНО: 'email': form.cleaned_data['email'],  # ← ЭТА СТРОКА ВЫЗЫВАЛА ОШИБКУ!
+                    # УБРАНО: 'phone': form.cleaned_data['phone'],  # ← ЭТА СТРОКА ВЫЗЫВАЛА ОШИБКУ!
+                    'contacts': contacts_data,
+                    'primary_email': primary_email,  # Из контактов
+                    'primary_phone': primary_phone,  # Из контактов
+                    'step': 2
+                })
 
                 request.session['admin_creation'] = admin_creation
                 request.session.modified = True
@@ -300,7 +329,7 @@ def create_admin_step2(request):
         return render(request, 'users/create_admin_step2.html', context)
 
     except Exception as e:
-        logger.error(f"Error in create_admin_step2: {e}")
+        logger.exception(f"КРИТИЧЕСКАЯ ОШИБКА в create_admin_step2: {e}")
         messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
         return redirect('users:create_admin_step1')
 
