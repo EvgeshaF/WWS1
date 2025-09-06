@@ -9,46 +9,30 @@ from loguru import logger
 def get_titles_from_mongodb():
     """Загружает titles из MongoDB коллекции"""
     try:
-        logger.info("🔍 Загружаем titles из MongoDB")
-
-        # Получаем подключение к базе данных
+        logger.info("Загружаем titles из MongoDB")
         db = MongoConnection.get_database()
         if db is None:
-            logger.error("❌ База данных недоступна")
+            logger.error("База данных недоступна")
             return get_default_title_choices()
 
-        # Получаем конфигурацию для имени базы данных
         config = MongoConfig.read_config()
         db_name = config.get('db_name')
         if not db_name:
-            logger.error("❌ Имя базы данных не найдено в конфигурации")
+            logger.error("Имя базы данных не найдено в конфигурации")
             return get_default_title_choices()
 
-        # Имя коллекции titles
         titles_collection_name = f"{db_name}_basic_titles"
-
-        # Проверяем существование коллекции
         collections = db.list_collection_names()
         if titles_collection_name not in collections:
-            logger.warning(f"⚠️ Коллекция '{titles_collection_name}' не найдена")
-            logger.info(f"📂 Доступные коллекции: {collections}")
+            logger.warning(f"Коллекция '{titles_collection_name}' не найдена")
             return get_default_title_choices()
 
-        # Получаем коллекцию titles
         titles_collection = db[titles_collection_name]
-
-        # Считаем количество записей для диагностики
-        total_count = titles_collection.count_documents({})
-        active_count = titles_collection.count_documents({'deleted': {'$ne': True}, 'active': {'$ne': False}})
-        logger.info(f"📊 В коллекции titles: всего={total_count}, активных={active_count}")
-
-        # Загружаем активные titles (НЕ удаленные и активные)
         titles_cursor = titles_collection.find(
-            {'deleted': {'$ne': True}, 'active': {'$ne': False}},  # Только активные
-            {'code': 1, 'name': 1, 'display_order': 1}  # Поля: code, name, display_order
-        ).sort('display_order', 1)  # Сортировка по порядку отображения
+            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
+            {'code': 1, 'name': 1, 'display_order': 1}
+        ).sort('display_order', 1)
 
-        # Формируем список choices для Django формы
         choices = [('', '-- Kein Titel --')]
         count = 0
 
@@ -56,23 +40,20 @@ def get_titles_from_mongodb():
             code = title_doc.get('code', '').strip()
             name = title_doc.get('name', code).strip()
 
-            if code:  # Только если есть код
+            if code:
                 choices.append((code, name))
                 count += 1
-                logger.debug(f"  📝 Добавлен title: '{code}' → '{name}'")
 
-        logger.success(f"✅ Успешно загружено {count} titles из коллекции")
+        logger.success(f"Успешно загружено {count} titles из коллекции")
         return choices
 
     except Exception as e:
-        logger.error(f"❌ Ошибка загрузки titles из MongoDB: {e}")
-        logger.exception("Полная информация об ошибке:")
+        logger.error(f"Ошибка загрузки titles из MongoDB: {e}")
         return get_default_title_choices()
 
 
 def get_default_title_choices():
     """Возвращает статичный список титулов как fallback"""
-    logger.info("📋 Используем статичный список титулов")
     return [
         ('', '-- Kein Titel --'),
         ('dr', 'Dr.'),
@@ -133,7 +114,6 @@ class CreateAdminUserForm(forms.Form):
     def clean_password(self):
         password = self.cleaned_data.get('password')
 
-        # Проверяем сложность пароля
         if len(password) < 8:
             raise forms.ValidationError("Passwort muss mindestens 8 Zeichen lang sein")
 
@@ -160,7 +140,7 @@ class CreateAdminUserForm(forms.Form):
 
 
 class AdminProfileForm(forms.Form):
-    """Шаг 2: Профильные данные администратора с динамической загрузкой titles"""
+    """Шаг 2: Профильные данные администратора - БЕЗ email и phone полей"""
 
     SALUTATION_CHOICES = [
         ('', '-- Auswählen --'),
@@ -178,7 +158,6 @@ class AdminProfileForm(forms.Form):
         })
     )
 
-    # Поле title - будет заполняться из MongoDB в __init__
     title = forms.ChoiceField(
         label="Titel",
         choices=[],  # Заполняется динамически
@@ -206,43 +185,14 @@ class AdminProfileForm(forms.Form):
         })
     )
 
-    email = forms.EmailField(
-        label="E-Mail",
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'email@example.com'
-        })
-    )
-
-    phone = forms.CharField(
-        label="Telefon",
-        max_length=20,
-        required=False,
-        validators=[
-            RegexValidator(
-                regex=r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-                message='Ungültiges Telefonformat'
-            )
-        ],
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '+49 123 456789 (optional)'
-        })
-    )
+    # УБРАНЫ поля email и phone - данные передаются через контакты
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        logger.info("🎯 Инициализация AdminProfileForm - загружаем titles из MongoDB")
-
         # Динамически загружаем titles из MongoDB
         title_choices = get_titles_from_mongodb()
         self.fields['title'].choices = title_choices
-
-        logger.info(f"📋 В поле title загружено {len(title_choices)} вариантов:")
-        for value, label in title_choices:
-            if value:  # Не логируем пустой вариант
-                logger.debug(f"   • '{value}' → '{label}'")
 
 
 class AdminPermissionsForm(forms.Form):

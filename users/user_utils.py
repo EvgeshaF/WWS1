@@ -235,21 +235,86 @@ class UserManager:
             return None
 
     def find_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
-        """Находит пользователя по email"""
+        """Находит пользователя по email в profile.email"""
         try:
             collection = self.get_collection()
             if collection is None:
                 return None
 
             user = collection.find_one({
-                'profile.email': email,
+                'profile.email': email,  # ИСПРАВЛЕНО: поиск в profile.email
                 'deleted': {'$ne': True}
             })
             return user
 
         except Exception as e:
-            logger.error(f"❌ Ошибка поиска пользователя по email '{email}': {e}")
+            logger.error(f"Ошибка поиска пользователя по email '{email}': {e}")
             return None
+
+    def authenticate_user(self, username: str, password: str) -> Optional[Dict[str, Any]]:
+        """Аутентифицирует пользователя"""
+        try:
+            user = self.find_user_by_username(username)
+            if not user:
+                logger.warning(f"Пользователь '{username}' не найден")
+                return None
+
+            if not user.get('is_active', False):
+                logger.warning(f"Пользователь '{username}' заблокирован")
+                return None
+
+            # Проверяем блокировку
+            locked_until = user.get('locked_until')
+            if locked_until and locked_until > datetime.datetime.now():
+                logger.warning(f"Пользователь '{username}' временно заблокирован до {locked_until}")
+                return None
+
+            # Проверяем пароль
+            if check_password(password, user['password']):
+                self._update_login_success(username)
+                logger.success(f"Пользователь '{username}' успешно авторизован")
+                return user
+            else:
+                self._update_login_failure(username)
+                logger.warning(f"Неверный пароль для пользователя '{username}'")
+                return None
+
+        except Exception as e:
+            logger.error(f"Ошибка аутентификации пользователя '{username}': {e}")
+            return None
+
+    def get_admin_count(self) -> int:
+        """Возвращает количество администраторов с диагностикой"""
+        try:
+            logger.debug("Подсчет администраторов...")
+
+            collection = self.get_collection()
+            if collection is None:
+                logger.error("Коллекция недоступна для подсчета")
+                return 0
+
+            # Подсчитываем активных администраторов
+            admin_query = {
+                'is_admin': True,
+                'deleted': {'$ne': True},
+                'is_active': True
+            }
+
+            count = collection.count_documents(admin_query)
+            logger.info(f"Найдено активных администраторов: {count}")
+
+            # Дополнительная диагностика
+            total_count = collection.count_documents({})
+            admin_all_count = collection.count_documents({'is_admin': True})
+            active_count = collection.count_documents({'is_active': True, 'deleted': {'$ne': True}})
+
+            logger.debug(f"Статистика: всего={total_count}, админов_всего={admin_all_count}, активных={active_count}")
+
+            return count
+
+        except Exception as e:
+            logger.error(f"Ошибка подсчета администраторов: {e}")
+            return 0
 
     def authenticate_user(self, username: str, password: str) -> Optional[Dict[str, Any]]:
         """Аутентифицирует пользователя"""

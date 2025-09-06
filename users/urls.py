@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+app_name = 'users'
 
 urlpatterns = [
     path('create-admin/step1/', views.create_admin_step1, name='create_admin_step1'),

@@ -162,6 +162,8 @@ def create_admin_step1(request):
 
 def validate_contact_data(contacts_data_raw):
     """Validate contact data"""
+    import re  # Перенесен вверх
+
     try:
         contacts_data = json.loads(contacts_data_raw)
     except json.JSONDecodeError as e:
@@ -186,13 +188,13 @@ def validate_contact_data(contacts_data_raw):
 
         # Validate email format
         if contact_type == 'email':
-            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'  # FIXED: Added closing quote
+            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'  # ИСПРАВЛЕНО: добавлена закрывающая кавычка
             if not re.match(email_pattern, contact_value):
                 return None, f"Ungültiges E-Mail-Format: {contact_value}"
 
         # Validate phone format
         elif contact_type in ['phone', 'mobile', 'fax']:
-            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}$'  # FIXED: Added closing quote
+            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}$'  # ИСПРАВЛЕНО: добавлена закрывающая кавычка
             if not re.match(phone_pattern, contact_value):
                 return None, f"Ungültiges Telefonformat: {contact_value}"
 
@@ -307,7 +309,7 @@ def create_admin_step2(request):
 @require_http_methods(["GET", "POST"])
 @never_cache
 def create_admin_step3(request):
-    """Step 3: Permissions and create admin"""
+    """Step 3: Permissions and create admin - FIXED STRUCTURE"""
     try:
         # Check previous steps
         is_valid, redirect_to = validate_admin_creation_step(request, 3)
@@ -356,9 +358,12 @@ def create_admin_step3(request):
                                 primary_phone = contact.get('value', '')
                                 break
 
+                    # CORRECT STRUCTURE - matching JSON schema
                     user_data = {
                         'username': admin_creation['username'],
                         'password': make_password(admin_creation['password']),
+
+                        # Profile object (nested structure like in JSON)
                         'profile': {
                             'salutation': admin_creation.get('salutation', ''),
                             'title': admin_creation.get('title', ''),
@@ -366,8 +371,10 @@ def create_admin_step3(request):
                             'last_name': admin_creation.get('last_name', ''),
                             'email': primary_email,
                             'phone': primary_phone,
-                            'contacts': contacts,
+                            'contacts': contacts,  # Add contacts to profile
                         },
+
+                        # Permissions object (nested structure like in JSON)
                         'permissions': {
                             'is_super_admin': form.cleaned_data.get('is_super_admin', False),
                             'can_manage_users': form.cleaned_data.get('can_manage_users', False),
@@ -377,8 +384,12 @@ def create_admin_step3(request):
                             'password_expires': form.cleaned_data.get('password_expires', True),
                             'two_factor_required': form.cleaned_data.get('two_factor_required', False),
                         },
-                        'is_admin': True,
+
+                        # Top-level admin flags
+                        'is_admin': True,  # This user is admin
                         'is_active': True,
+
+                        # Timestamps
                         'created_at': now,
                         'modified_at': now,
                         'deleted': False,
@@ -388,9 +399,14 @@ def create_admin_step3(request):
                         'password_changed_at': now
                     }
 
-                    logger.info(f"Creating user with {len(contacts)} contacts")
-                    logger.info(f"Primary email: {primary_email}")
-                    logger.info(f"Primary phone: {primary_phone}")
+                    logger.info(f"Creating user with structure matching JSON schema")
+                    logger.info(f"Username: {user_data['username']}")
+                    logger.info(f"Profile email: {user_data['profile']['email']}")
+                    logger.info(f"Profile first_name: {user_data['profile']['first_name']}")
+                    logger.info(f"Profile last_name: {user_data['profile']['last_name']}")
+                    logger.info(f"Is admin: {user_data['is_admin']}")
+                    logger.info(f"Is active: {user_data['is_active']}")
+                    logger.info(f"Contacts count: {len(user_data['profile']['contacts'])}")
 
                     # Use UserManager.create_user
                     if user_manager.create_user(user_data):

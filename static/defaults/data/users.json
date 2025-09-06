@@ -1,14 +1,28 @@
 [
   {
     "username": "demo_user",
-    "password": "pbkdf2_sha256$260000$...",
+    "password": "pbkdf2_sha256$260000$randomsalt$hashedpassword",
     "profile": {
       "salutation": "herr",
       "title": "",
       "first_name": "Demo",
       "last_name": "Benutzer",
       "email": "demo@example.com",
-      "phone": "+49 123 456789"
+      "phone": "+49 123 456789",
+      "contacts": [
+        {
+          "type": "email",
+          "value": "demo@example.com",
+          "label": "Haupt-E-Mail",
+          "primary": true
+        },
+        {
+          "type": "phone",
+          "value": "+49 123 456789",
+          "label": "Büro",
+          "primary": true
+        }
+      ]
     },
     "permissions": {
       "is_super_admin": false,
@@ -20,6 +34,13 @@
       "two_factor_required": false
     },
     "is_admin": false,
-    "is_active": true
+    "is_active": true,
+    "created_at": "2025-01-01T10:00:00Z",
+    "modified_at": "2025-01-01T10:00:00Z",
+    "deleted": false,
+    "last_login": null,
+    "failed_login_attempts": 0,
+    "locked_until": null,
+    "password_changed_at": "2025-01-01T10:00:00Z"
   }
 ]
