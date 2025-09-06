@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
 from loguru import logger
 import datetime
 import json
@@ -16,32 +18,40 @@ from . import language
 from django_ratelimit.decorators import ratelimit
 
 
+@never_cache
 def render_toast_response(request):
-    """JSON ответ с сообщениями для HTMX"""
-    storage = messages.get_messages(request)
-    messages_list = []
-    for message in storage:
-        messages_list.append({
-            'tags': message.tags,
-            'text': str(message),
-            'delay': 5000
+    """JSON response with messages for HTMX"""
+    try:
+        storage = messages.get_messages(request)
+        messages_list = []
+        for message in storage:
+            messages_list.append({
+                'tags': message.tags,
+                'text': str(message),
+                'delay': 5000
+            })
+
+        logger.debug(f"Sending JSON response with {len(messages_list)} messages: {messages_list}")
+
+        response = JsonResponse({
+            'messages': messages_list,
+            'status': 'success' if any(msg['tags'] == 'success' for msg in messages_list) else 'error'
         })
 
-    # Добавим отладочную информацию
-    logger.debug(f"Отправляем JSON ответ с {len(messages_list)} сообщениями: {messages_list}")
+        response['Content-Type'] = 'application/json; charset=utf-8'
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
 
-    response = JsonResponse({
-        'messages': messages_list,
-        'status': 'success' if any(msg['tags'] == 'success' for msg in messages_list) else 'error'
-    })
-
-    # Убеждаемся в правильном Content-Type
-    response['Content-Type'] = 'application/json; charset=utf-8'
-    return response
+        return response
+    except Exception as e:
+        logger.error(f"Error creating toast response: {e}")
+        return JsonResponse({'messages': [], 'status': 'error'})
 
 
+@never_cache
 def render_with_messages(request, template_name, context, success_redirect=None):
-    """Универсальная функция для рендеринга с поддержкой HTMX"""
+    """Universal function for rendering with HTMX support"""
     is_htmx = request.headers.get('HX-Request') == 'true'
 
     if is_htmx:
@@ -56,26 +66,26 @@ def render_with_messages(request, template_name, context, success_redirect=None)
 
 
 def validate_admin_creation_step(request, required_step):
-    """Проверяет корректность шага создания администратора с дополнительными проверками"""
+    """Validates admin creation step with additional checks"""
     admin_creation = request.session.get('admin_creation')
 
     if not admin_creation:
-        logger.warning("Данные создания администратора не найдены в сессии")
-        return False, 'create_admin_step1'
+        logger.warning("Admin creation data not found in session")
+        return False, 'create_admin_step1'  # Remove namespace
 
     current_step = admin_creation.get('step', 0)
     if current_step < required_step - 1:
-        logger.warning(f"Текущий шаг ({current_step}) меньше требуемого ({required_step})")
-        return False, f'create_admin_step{current_step + 1}'
+        logger.warning(f"Current step ({current_step}) less than required ({required_step})")
+        return False, f'create_admin_step{current_step + 1}'  # Remove namespace
 
-    # Дополнительные проверки данных
+    # Additional data checks
     if required_step >= 2 and not admin_creation.get('username'):
-        logger.warning("Шаг 2: отсутствует username")
+        logger.warning("Step 2: missing username")
         return False, 'create_admin_step1'
 
     if required_step >= 3:
         if not admin_creation.get('first_name') or not admin_creation.get('last_name'):
-            logger.warning("Шаг 3: отсутствуют имя/фамилия")
+            logger.warning("Step 3: missing first_name/last_name")
             return False, 'create_admin_step2'
 
     return True, None
@@ -83,82 +93,89 @@ def validate_admin_creation_step(request, required_step):
 
 @ratelimit(key='ip', rate='3/m', method='POST')
 @require_http_methods(["GET", "POST"])
+@never_cache
 def create_admin_step1(request):
-    """Шаг 1: Создание учетных данных администратора"""
-    # Проверяем, что MongoDB настроена
-    config = MongoConfig.read_config()
-    if not config.get('setup_completed'):
-        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
-        return redirect('home')
+    """Step 1: Create admin account credentials"""
+    try:
+        # Check if MongoDB is configured
+        config = MongoConfig.read_config()
+        if not config.get('setup_completed'):
+            messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+            return redirect('home')
 
-    if request.method == 'POST':
-        logger.info("Обработка POST запроса для шага 1")
+        if request.method == 'POST':
+            logger.info("Processing POST request for step 1")
 
-        form = CreateAdminUserForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
+            form = CreateAdminUserForm(request.POST)
+            if form.is_valid():
+                username = form.cleaned_data['username']
+                password = form.cleaned_data['password']
 
-            logger.info(f"Валидация формы прошла для: {username}")
+                logger.info(f"Form validation passed for: {username}")
 
-            # Используем UserManager для проверки
-            user_manager = UserManager()
-            existing_user = user_manager.find_user_by_username(username)
+                # Use UserManager for checking
+                user_manager = UserManager()
+                existing_user = user_manager.find_user_by_username(username)
 
-            if existing_user:
-                logger.warning(f"Пользователь {username} уже существует")
-                messages.error(request, f"Benutzer '{username}' existiert bereits")
-                context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
-                return render_with_messages(request, 'users/create_admin_step1.html', context)
+                if existing_user:
+                    logger.warning(f"User {username} already exists")
+                    messages.error(request, f"Benutzer '{username}' existiert bereits")
+                    context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
+                    return render_with_messages(request, 'users/create_admin_step1.html', context)
+                else:
+                    # Save data in session for next steps
+                    request.session['admin_creation'] = {
+                        'username': username,
+                        'password': password,
+                        'step': 1
+                    }
+                    request.session.modified = True
+
+                    logger.success(f"Data saved in session: {username}")
+                    messages.success(request, f"Benutzerdaten für '{username}' erfolgreich validiert")
+
+                    return render_with_messages(
+                        request,
+                        'users/create_admin_step1.html',
+                        {'form': form, 'text': language.text_create_admin_step1, 'step': 1},
+                        reverse('create_admin_step2')  # No namespace
+                    )
             else:
-                # Сохраняем данные в сессии для следующих шагов
-                request.session['admin_creation'] = {
-                    'username': username,
-                    'password': password,
-                    'step': 1
-                }
-                request.session.modified = True
+                logger.error(f"Form invalid: {form.errors}")
+                messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
 
-                logger.success(f"Данные сохранены в сессии: {username}")
-                messages.success(request, f"Benutzerdaten für '{username}' erfolgreich validiert")
+            # Render form with errors
+            context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
+            return render_with_messages(request, 'users/create_admin_step1.html', context)
 
-                return render_with_messages(
-                    request,
-                    'users/create_admin_step1.html',
-                    {'form': form, 'text': language.text_create_admin_step1, 'step': 1},
-                    reverse('create_admin_step2')
-                )
-        else:
-            logger.error(f"Форма невалидна: {form.errors}")
-            messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
-
-        # Рендерим форму с ошибками
+        # GET request
+        form = CreateAdminUserForm()
         context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
-        return render_with_messages(request, 'users/create_admin_step1.html', context)
+        return render(request, 'users/create_admin_step1.html', context)
 
-    # GET-запрос
-    form = CreateAdminUserForm()
-    context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
-    return render(request, 'users/create_admin_step1.html', context)
+    except Exception as e:
+        logger.error(f"Error in create_admin_step1: {e}")
+        messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
+        return redirect('home')
 
 
 def validate_contact_data(contacts_data_raw):
-    """Валидация данных контактов"""
+    """Validate contact data"""
     try:
         contacts_data = json.loads(contacts_data_raw)
     except json.JSONDecodeError as e:
-        logger.error(f"Ошибка парсинга JSON контактов: {e}")
+        logger.error(f"JSON parsing error for contacts: {e}")
         return None, "Fehler beim Verarbeiten der Kontaktdaten"
 
     if not contacts_data:
         return None, "Bitte fügen Sie mindestens einen Kontakt hinzu"
 
-    # Проверяем наличие email
+    # Check for email presence
     has_email = any(contact.get('type') == 'email' for contact in contacts_data)
     if not has_email:
         return None, "Bitte fügen Sie mindestens eine E-Mail-Adresse hinzu"
 
-    # Дополнительная валидация контактов
+    # Additional contact validation
     for i, contact in enumerate(contacts_data):
         contact_type = contact.get('type', '')
         contact_value = contact.get('value', '').strip()
@@ -166,14 +183,14 @@ def validate_contact_data(contacts_data_raw):
         if not contact_type or not contact_value:
             return None, f"Kontakt {i + 1}: Typ und Wert sind erforderlich"
 
-        # Валидация формата email
+        # Validate email format
         if contact_type == 'email':
             import re
             email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
             if not re.match(email_pattern, contact_value):
                 return None, f"Ungültiges E-Mail-Format: {contact_value}"
 
-        # Валидация формата телефона
+        # Validate phone format
         elif contact_type in ['phone', 'mobile', 'fax']:
             phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}$'
             if not re.match(phone_pattern, contact_value):
@@ -184,27 +201,82 @@ def validate_contact_data(contacts_data_raw):
 
 @ratelimit(key='ip', rate='3/m', method='POST')
 @require_http_methods(["GET", "POST"])
+@never_cache
 def create_admin_step2(request):
-    """Шаг 2: Профиль администратора с контактами"""
-    # Проверка предыдущего шага
-    is_valid, redirect_to = validate_admin_creation_step(request, 2)
-    if not is_valid:
-        messages.error(request, "Bitte vollenden Sie zuerst die vorherigen Schritte")
-        return redirect(redirect_to)
+    """Step 2: Admin profile with contacts"""
+    try:
+        # Check previous step
+        is_valid, redirect_to = validate_admin_creation_step(request, 2)
+        if not is_valid:
+            messages.error(request, "Bitte vollenden Sie zuerst die vorherigen Schritte")
+            return redirect(redirect_to)
 
-    admin_creation = request.session.get('admin_creation')
+        admin_creation = request.session.get('admin_creation')
 
-    if request.method == 'POST':
-        logger.info("Обработка POST запроса для шага 2")
+        if request.method == 'POST':
+            logger.info("Processing POST request for step 2")
 
-        form = AdminProfileForm(request.POST)
+            form = AdminProfileForm(request.POST)
 
-        # Получаем и валидируем данные контактов
-        contacts_data_raw = request.POST.get('contacts_data', '[]')
-        contacts_data, validation_error = validate_contact_data(contacts_data_raw)
+            # Get and validate contact data
+            contacts_data_raw = request.POST.get('contacts_data', '[]')
+            contacts_data, validation_error = validate_contact_data(contacts_data_raw)
 
-        if validation_error:
-            messages.error(request, validation_error)
+            if validation_error:
+                messages.error(request, validation_error)
+                context = {
+                    'form': form, 'text': language.text_create_admin_step2,
+                    'step': 2, 'username': admin_creation['username'],
+                    'existing_contacts': contacts_data_raw
+                }
+                return render_with_messages(request, 'users/create_admin_step2.html', context)
+
+            if form.is_valid():
+                # Update session data
+                admin_creation.update({
+                    'salutation': form.cleaned_data['salutation'],
+                    'title': form.cleaned_data['title'],
+                    'first_name': form.cleaned_data['first_name'],
+                    'last_name': form.cleaned_data['last_name'],
+                    'email': form.cleaned_data['email'],
+                    'phone': form.cleaned_data['phone'],
+                    'contacts': contacts_data,
+                    'step': 2
+                })
+
+                # Extract primary email from contacts
+                primary_email = None
+                for contact in contacts_data:
+                    if contact.get('type') == 'email':
+                        if contact.get('primary', False):
+                            primary_email = contact.get('value')
+                            break
+                        elif not primary_email:
+                            primary_email = contact.get('value')
+
+                if primary_email:
+                    admin_creation['primary_email'] = primary_email
+
+                request.session['admin_creation'] = admin_creation
+                request.session.modified = True
+
+                logger.success(f"Profile data and {len(contacts_data)} contacts saved in session")
+                messages.success(request, f"Profildaten und {len(contacts_data)} Kontakte erfolgreich erfasst")
+
+                return render_with_messages(
+                    request,
+                    'users/create_admin_step2.html',
+                    {
+                        'form': form, 'text': language.text_create_admin_step2,
+                        'step': 2, 'username': admin_creation['username']
+                    },
+                    reverse('create_admin_step3')  # No namespace
+                )
+            else:
+                logger.error(f"Step 2 form invalid: {form.errors}")
+                messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
+
+            # Render form with errors
             context = {
                 'form': form, 'text': language.text_create_admin_step2,
                 'step': 2, 'username': admin_creation['username'],
@@ -212,225 +284,219 @@ def create_admin_step2(request):
             }
             return render_with_messages(request, 'users/create_admin_step2.html', context)
 
-        if form.is_valid():
-            # Обновляем данные в сессии
-            admin_creation.update({
-                'salutation': form.cleaned_data['salutation'],
-                'title': form.cleaned_data['title'],
-                'first_name': form.cleaned_data['first_name'],
-                'last_name': form.cleaned_data['last_name'],
-                'email': form.cleaned_data['email'],
-                'phone': form.cleaned_data['phone'],
-                'contacts': contacts_data,
-                'step': 2
-            })
+        # GET request
+        form = AdminProfileForm()
+        existing_contacts = admin_creation.get('contacts', [])
 
-            # Извлекаем основной email из контактов для удобства
-            primary_email = None
-            for contact in contacts_data:
-                if contact.get('type') == 'email':
-                    if contact.get('primary', False):
-                        primary_email = contact.get('value')
-                        break
-                    elif not primary_email:
-                        primary_email = contact.get('value')
-
-            if primary_email:
-                admin_creation['primary_email'] = primary_email
-
-            request.session['admin_creation'] = admin_creation
-            request.session.modified = True
-
-            logger.success(f"Данные профиля и {len(contacts_data)} контактов сохранены в сессии")
-            messages.success(request, f"Profildaten und {len(contacts_data)} Kontakte erfolgreich erfasst")
-
-            return render_with_messages(
-                request,
-                'users/create_admin_step2.html',
-                {
-                    'form': form, 'text': language.text_create_admin_step2,
-                    'step': 2, 'username': admin_creation['username']
-                },
-                reverse('create_admin_step3')
-            )
-        else:
-            logger.error(f"Форма шага 2 невалидна: {form.errors}")
-            messages.error(request, "Formular ist ungültig. Bitte überprüfen Sie die Eingaben.")
-
-        # Рендерим форму с ошибками
         context = {
-            'form': form, 'text': language.text_create_admin_step2,
-            'step': 2, 'username': admin_creation['username'],
-            'existing_contacts': contacts_data_raw
+            'form': form,
+            'text': language.text_create_admin_step2,
+            'step': 2,
+            'username': admin_creation['username'],
+            'existing_contacts': json.dumps(existing_contacts) if existing_contacts else '[]'
         }
-        return render_with_messages(request, 'users/create_admin_step2.html', context)
+        return render(request, 'users/create_admin_step2.html', context)
 
-    # GET-запрос
-    form = AdminProfileForm()
-    existing_contacts = admin_creation.get('contacts', [])
-
-    context = {
-        'form': form,
-        'text': language.text_create_admin_step2,
-        'step': 2,
-        'username': admin_creation['username'],
-        'existing_contacts': json.dumps(existing_contacts) if existing_contacts else '[]'
-    }
-    return render(request, 'users/create_admin_step2.html', context)
+    except Exception as e:
+        logger.error(f"Error in create_admin_step2: {e}")
+        messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
+        return redirect('create_admin_step1')
 
 
 @ratelimit(key='ip', rate='2/m', method='POST')
 @require_http_methods(["GET", "POST"])
+@never_cache
 def create_admin_step3(request):
-    """Шаг 3: Разрешения и создание администратора"""
-    # Проверка предыдущих шагов
-    is_valid, redirect_to = validate_admin_creation_step(request, 3)
-    if not is_valid:
-        messages.error(request, "Bitte vollenden Sie die vorherigen Schritte")
-        return redirect(redirect_to)
+    """Step 3: Permissions and create admin"""
+    try:
+        # Check previous steps
+        is_valid, redirect_to = validate_admin_creation_step(request, 3)
+        if not is_valid:
+            messages.error(request, "Bitte vollenden Sie die vorherigen Schritte")
+            return redirect(redirect_to)
 
-    admin_creation = request.session.get('admin_creation')
+        admin_creation = request.session.get('admin_creation')
 
-    if request.method == 'POST':
-        logger.info(f"НАЧАЛИ создания администратора: {admin_creation['username']}")
+        if request.method == 'POST':
+            logger.info(f"Starting admin creation: {admin_creation['username']}")
 
-        form = AdminPermissionsForm(request.POST)
-        if form.is_valid():
-            try:
-                # Создание пользователя
-                user_manager = UserManager()
+            form = AdminPermissionsForm(request.POST)
+            if form.is_valid():
+                try:
+                    # Create user
+                    user_manager = UserManager()
 
-                # Подготовка данных пользователя
-                now = datetime.datetime.now()
-                contacts = admin_creation.get('contacts', [])
+                    # Prepare user data
+                    now = datetime.datetime.now()
+                    contacts = admin_creation.get('contacts', [])
 
-                # Находим основной email
-                primary_email = admin_creation.get('primary_email', '')
-                if not primary_email and contacts:
-                    for contact in contacts:
-                        if contact.get('type') == 'email':
-                            if contact.get('primary', False):
-                                primary_email = contact.get('value', '')
-                                break
-                    if not primary_email:
+                    # Find primary email
+                    primary_email = admin_creation.get('primary_email', '')
+                    if not primary_email and contacts:
                         for contact in contacts:
                             if contact.get('type') == 'email':
-                                primary_email = contact.get('value', '')
-                                break
+                                if contact.get('primary', False):
+                                    primary_email = contact.get('value', '')
+                                    break
+                        if not primary_email:
+                            for contact in contacts:
+                                if contact.get('type') == 'email':
+                                    primary_email = contact.get('value', '')
+                                    break
 
-                # Находим основной телефон
-                primary_phone = ''
-                for contact in contacts:
-                    if contact.get('type') in ['phone', 'mobile'] and contact.get('primary', False):
-                        primary_phone = contact.get('value', '')
-                        break
-                if not primary_phone:
+                    # Find primary phone
+                    primary_phone = ''
                     for contact in contacts:
-                        if contact.get('type') in ['phone', 'mobile']:
+                        if contact.get('type') in ['phone', 'mobile'] and contact.get('primary', False):
                             primary_phone = contact.get('value', '')
                             break
+                    if not primary_phone:
+                        for contact in contacts:
+                            if contact.get('type') in ['phone', 'mobile']:
+                                primary_phone = contact.get('value', '')
+                                break
 
-                user_data = {
-                    'username': admin_creation['username'],
-                    'password': make_password(admin_creation['password']),
-                    'profile': {
-                        'salutation': admin_creation.get('salutation', ''),
-                        'title': admin_creation.get('title', ''),
-                        'first_name': admin_creation.get('first_name', ''),
-                        'last_name': admin_creation.get('last_name', ''),
-                        'email': primary_email,
-                        'phone': primary_phone,
-                        'contacts': contacts,
-                    },
-                    'permissions': {
-                        'is_super_admin': form.cleaned_data.get('is_super_admin', False),
-                        'can_manage_users': form.cleaned_data.get('can_manage_users', False),
-                        'can_manage_database': form.cleaned_data.get('can_manage_database', False),
-                        'can_view_logs': form.cleaned_data.get('can_view_logs', False),
-                        'can_manage_settings': form.cleaned_data.get('can_manage_settings', False),
-                        'password_expires': form.cleaned_data.get('password_expires', True),
-                        'two_factor_required': form.cleaned_data.get('two_factor_required', False),
-                    },
-                    'is_admin': True,
-                    'is_active': True,
-                    'created_at': now,
-                    'modified_at': now,
-                    'deleted': False,
-                    'last_login': None,
-                    'failed_login_attempts': 0,
-                    'locked_until': None,
-                    'password_changed_at': now
-                }
-
-                logger.info(f"Создаем пользователя с {len(contacts)} контактами")
-                logger.info(f"Основной email: {primary_email}")
-                logger.info(f"Основной телефон: {primary_phone}")
-
-                # Используем UserManager.create_user
-                if user_manager.create_user(user_data):
-                    # Очищаем сессию
-                    if 'admin_creation' in request.session:
-                        del request.session['admin_creation']
-                        request.session.modified = True
-
-                    # Подготавливаем сводку по контактам для логирования
-                    contact_summary = {}
-                    for contact in contacts:
-                        contact_type = contact.get('type', 'unknown')
-                        if contact_type in contact_summary:
-                            contact_summary[contact_type] += 1
-                        else:
-                            contact_summary[contact_type] = 1
-
-                    contact_info = ', '.join([f"{count} {type_name}" for type_name, count in contact_summary.items()])
-
-                    success_msg = f"Administrator '{user_data['username']}' wurde erfolgreich erstellt! Kontakte: {contact_info}"
-                    logger.success(success_msg)
-                    messages.success(request, success_msg)
-
-                    return render_with_messages(
-                        request,
-                        'users/create_admin_step3.html',
-                        {
-                            'form': form, 'text': language.text_create_admin_step3,
-                            'step': 3, 'username': admin_creation.get('username', ''),
-                            'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}",
-                            'contact_count': len(contacts),
-                            'primary_email': primary_email
+                    user_data = {
+                        'username': admin_creation['username'],
+                        'password': make_password(admin_creation['password']),
+                        'profile': {
+                            'salutation': admin_creation.get('salutation', ''),
+                            'title': admin_creation.get('title', ''),
+                            'first_name': admin_creation.get('first_name', ''),
+                            'last_name': admin_creation.get('last_name', ''),
+                            'email': primary_email,
+                            'phone': primary_phone,
+                            'contacts': contacts,
                         },
-                        reverse('home')
-                    )
-                else:
-                    messages.error(request, "Fehler beim Erstellen des Administrators")
+                        'permissions': {
+                            'is_super_admin': form.cleaned_data.get('is_super_admin', False),
+                            'can_manage_users': form.cleaned_data.get('can_manage_users', False),
+                            'can_manage_database': form.cleaned_data.get('can_manage_database', False),
+                            'can_view_logs': form.cleaned_data.get('can_view_logs', False),
+                            'can_manage_settings': form.cleaned_data.get('can_manage_settings', False),
+                            'password_expires': form.cleaned_data.get('password_expires', True),
+                            'two_factor_required': form.cleaned_data.get('two_factor_required', False),
+                        },
+                        'is_admin': True,
+                        'is_active': True,
+                        'created_at': now,
+                        'modified_at': now,
+                        'deleted': False,
+                        'last_login': None,
+                        'failed_login_attempts': 0,
+                        'locked_until': None,
+                        'password_changed_at': now
+                    }
 
-            except Exception as e:
-                logger.exception(f"КРИТИЧЕСКАЯ ОШИБКА при создании администратора: {e}")
-                messages.error(request, f"Kritischer Fehler: {str(e)}")
+                    logger.info(f"Creating user with {len(contacts)} contacts")
+                    logger.info(f"Primary email: {primary_email}")
+                    logger.info(f"Primary phone: {primary_phone}")
 
-        else:
-            logger.error(f"Форма невалидна: {form.errors}")
-            messages.error(request, "Bitte korrigieren Sie die Formularfehler")
+                    # Use UserManager.create_user
+                    if user_manager.create_user(user_data):
+                        # Clear session
+                        if 'admin_creation' in request.session:
+                            del request.session['admin_creation']
+                            request.session.modified = True
 
-        # Рендерим форму с ошибками
+                        # Prepare contact summary for logging
+                        contact_summary = {}
+                        for contact in contacts:
+                            contact_type = contact.get('type', 'unknown')
+                            if contact_type in contact_summary:
+                                contact_summary[contact_type] += 1
+                            else:
+                                contact_summary[contact_type] = 1
+
+                        contact_info = ', '.join([f"{count} {type_name}" for type_name, count in contact_summary.items()])
+
+                        success_msg = f"Administrator '{user_data['username']}' wurde erfolgreich erstellt! Kontakte: {contact_info}"
+                        logger.success(success_msg)
+                        messages.success(request, success_msg)
+
+                        return render_with_messages(
+                            request,
+                            'users/create_admin_step3.html',
+                            {
+                                'form': form, 'text': language.text_create_admin_step3,
+                                'step': 3, 'username': admin_creation.get('username', ''),
+                                'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}",
+                                'contact_count': len(contacts),
+                                'primary_email': primary_email
+                            },
+                            reverse('home')  # No namespace - home is in root
+                        )
+                    else:
+                        messages.error(request, "Fehler beim Erstellen des Administrators")
+
+                except Exception as e:
+                    logger.exception(f"CRITICAL ERROR creating admin: {e}")
+                    messages.error(request, f"Kritischer Fehler: {str(e)}")
+
+            else:
+                logger.error(f"Form invalid: {form.errors}")
+                messages.error(request, "Bitte korrigieren Sie die Formularfehler")
+
+            # Render form with errors
+            context = {
+                'form': form, 'text': language.text_create_admin_step3,
+                'step': 3, 'username': admin_creation.get('username', ''),
+                'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}",
+                'contact_count': len(admin_creation.get('contacts', [])),
+                'primary_email': admin_creation.get('primary_email', '')
+            }
+            return render_with_messages(request, 'users/create_admin_step3.html', context)
+
+        # GET request
+        form = AdminPermissionsForm()
+        contacts = admin_creation.get('contacts', [])
         context = {
-            'form': form, 'text': language.text_create_admin_step3,
-            'step': 3, 'username': admin_creation.get('username', ''),
+            'form': form,
+            'text': language.text_create_admin_step3,
+            'step': 3,
+            'username': admin_creation.get('username', ''),
             'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}",
-            'contact_count': len(admin_creation.get('contacts', [])),
+            'contact_count': len(contacts),
             'primary_email': admin_creation.get('primary_email', '')
         }
-        return render_with_messages(request, 'users/create_admin_step3.html', context)
+        return render(request, 'users/create_admin_step3.html', context)
 
-    # GET запрос
-    form = AdminPermissionsForm()
-    contacts = admin_creation.get('contacts', [])
-    context = {
-        'form': form,
-        'text': language.text_create_admin_step3,
-        'step': 3,
-        'username': admin_creation.get('username', ''),
-        'full_name': f"{admin_creation.get('first_name', '')} {admin_creation.get('last_name', '')}",
-        'contact_count': len(contacts),
-        'primary_email': admin_creation.get('primary_email', '')
-    }
-    return render(request, 'users/create_admin_step3.html', context)
+    except Exception as e:
+        logger.error(f"Error in create_admin_step3: {e}")
+        messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
+        return redirect('create_admin_step2')
+
+
+# ===== Updated home/views.py to fix redirect =====
+from django.shortcuts import render, redirect
+from mongodb.mongodb_config import MongoConfig
+from users.user_utils import UserManager
+
+
+def home(request):
+    """Проверяет первый ли старт программы, наличие файла mongo_config.env"""
+    config_status = MongoConfig.check_config_completeness()
+
+    if config_status == 'connection_required' or config_status == 'ping_failed':
+        return redirect('create_database_step1')
+    elif config_status == 'login_required' or config_status == 'login_failed':
+        return redirect('create_database_step2')
+    elif config_status == 'db_required':
+        return redirect('create_database_step3')
+    elif config_status == 'complete':
+        # Проверяем, есть ли администраторы в системе
+        user_manager = UserManager()
+        admin_count = user_manager.get_admin_count()
+
+        if admin_count == 0:
+            # Нет администраторов - перенаправляем на создание первого администратора
+            return redirect('create_admin_step1')  # No namespace
+
+        # Система полностью настроена
+        return render(request, 'home/home.html', {
+            'admin_count': admin_count,
+            'setup_complete': True
+        })
+
+    # Если что-то пошло не так, показываем главную страницу
+    return render(request, 'home/home.html', locals())
