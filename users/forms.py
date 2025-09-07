@@ -140,7 +140,7 @@ class CreateAdminUserForm(forms.Form):
 
 
 class AdminProfileForm(forms.Form):
-    """Шаг 2: Профильные данные администратора - БЕЗ email и phone полей"""
+    """Шаг 2: Профильные данные администратора С основными контактами"""
 
     SALUTATION_CHOICES = [
         ('', '-- Auswählen --'),
@@ -185,7 +185,32 @@ class AdminProfileForm(forms.Form):
         })
     )
 
-    # УБРАНЫ поля email и phone - данные передаются через контакты
+    # ДОБАВЛЕНЫ обязательные поля email и phone
+    email = forms.EmailField(
+        label="E-Mail",
+        max_length=100,
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'beispiel@domain.com'
+        })
+    )
+
+    phone = forms.CharField(
+        label="Telefon",
+        max_length=50,
+        required=True,
+        validators=[
+            RegexValidator(
+                regex=r'^[\+]?[0-9\s\-\(\)]{7,20}$',
+                message='Ungültiges Telefonformat'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+49 123 456789'
+        })
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

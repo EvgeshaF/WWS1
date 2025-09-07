@@ -26,18 +26,17 @@
                         <br><small class="text-muted mt-1"><strong>{{ username }}</strong></small>
                     </div>
 
-                    <!-- FIXED: Corrected form action URL -->
                     <form id="admin-step2-form" method="post" action="{% url 'users:create_admin_step2' %}">
                         {% csrf_token %}
 
                         <div class="row">
-                            <!-- Block 1: Persönliche Daten -->
+                            <!-- Block 1: Persönliche Daten und Hauptkontakte -->
                             <div class="col-12">
                                 <div class="card mb-4">
                                     <div class="card-header bg-light">
                                         <h6 class="mb-0">
                                             <i class="bi bi-person-badge me-2"></i>
-                                            Persönliche Daten
+                                            Persönliche Daten und Hauptkontakte
                                         </h6>
                                     </div>
                                     <div class="card-body">
@@ -124,83 +123,69 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Block 2: Контакты -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="card mb-4 contact-management-block">
-                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">
-                                            <i class="bi bi-envelope me-2"></i>
-                                            Kontakt
-                                        </h6>
-                                        <button type="button" class="btn btn-sm btn-primary" id="addContactBtn">
-                                            <i class="bi bi-plus-circle me-1"></i>
-                                            Kontakt hinzufügen
-                                        </button>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover contacts-table" id="contactsTable" style="display: none;">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th width="35%">
-                                                            <i class="bi bi-tag me-1"></i>
-                                                            Kontakttyp
-                                                        </th>
-                                                        <th width="45%">
-                                                            <i class="bi bi-info-circle me-1"></i>
-                                                            Kontaktdaten
-                                                        </th>
-                                                        <th width="20%" class="text-center">
-                                                            <i class="bi bi-gear me-1"></i>
-                                                            Aktionen
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="contactsTableBody">
-                                                    <!-- Контакты добавляются динамически -->
-                                                </tbody>
-                                            </table>
-
-                                            <!-- Плейсхолдер для пустой таблицы -->
-                                            <div id="emptyContactsPlaceholder" class="text-center">
-                                                <i class="bi bi-inbox display-4 text-muted"></i>
-                                                <p class="mt-3 mb-2"><strong>Noch keine Kontakte hinzugefügt</strong></p>
-                                                <p class="text-muted mb-0">Klicken Sie auf "Kontakt hinzufügen", um zu beginnen</p>
-                                                <small class="text-muted">
-                                                    <i class="bi bi-info-circle me-1"></i>
-                                                    Mindestens eine E-Mail-Adresse ist erforderlich
-                                                </small>
+                                        <!-- НОВЫЕ обязательные поля email и phone -->
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-envelope me-1"></i>
+                                                        E-Mail *
+                                                    </label>
+                                                    {{ form.email }}
+                                                    {% if form.email.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+                                                    {% endif %}
+                                                    <div class="form-text">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Wird für wichtige Systembenachrichtigungen verwendet
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-telephone me-1"></i>
+                                                        Telefon *
+                                                    </label>
+                                                    {{ form.phone }}
+                                                    {% if form.phone.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.phone.errors }}</div>
+                                                    {% endif %}
+                                                    <div class="form-text">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Für Notfallkontakt und 2FA
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        <!-- Скрытое поле для передачи данных контактов -->
-                                        <input type="hidden" name="contacts_data" id="contactsDataInput" value="[]">
-
-                                        <div class="form-text mt-3">
-                                            <i class="bi bi-lightbulb me-1"></i>
-                                            <strong>Hinweis:</strong> Kontakte werden für Systembenachrichtigungen und Kommunikation verwendet
-                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Скрытое поле для передачи данных дополнительных контактов -->
+                        <input type="hidden" name="additional_contacts_data" id="additionalContactsDataInput" value="[]">
+
                         <div class="d-flex justify-content-between mt-4">
-                            <!-- FIXED: Corrected back URL -->
                             <a href="{% url 'users:create_admin_step1' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>
                                 {{ text.btn_back }}
                             </a>
-                            <button type="submit" class="btn btn-primary" id="submitBtn">
-                                <i class="bi bi-arrow-right me-1"></i>
-                                {{ text.btn }}
-                            </button>
+
+                            <div class="d-flex gap-2">
+                                <!-- Кнопка для открытия дополнительных контактов -->
+                                <button type="button" class="btn btn-outline-primary" id="openAdditionalContactsBtn">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    Zusätzliche Kontakte
+                                    <span class="badge bg-primary ms-1" id="additionalContactsCount">0</span>
+                                </button>
+
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="bi bi-arrow-right me-1"></i>
+                                    {{ text.btn }}
+                                </button>
+                            </div>
                         </div>
 
                     </form>
@@ -216,7 +201,87 @@
         </div>
     </div>
 
-    <!-- Modal для Kontakt hinzufügen/bearbeiten -->
+    <!-- Modal для дополнительных контактов (Schritt 2.1) -->
+    <div class="modal fade" id="additionalContactsModal" tabindex="-1" aria-labelledby="additionalContactsModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="additionalContactsModalLabel">
+                        <i class="bi bi-person-lines-fill me-2"></i>
+                        Zusätzliche Kontakte
+                    </h5>
+                    <span class="badge bg-light text-dark ms-auto">Schritt 2.1 (Optional)</span>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Hier können Sie zusätzliche Kontaktmöglichkeiten hinzufügen (optional).
+                        <br><small class="text-muted">Beispiel: Weitere E-Mails, Mobile, Fax, Website, LinkedIn, XING, etc.</small>
+                    </div>
+
+                    <!-- Кнопка добавления контакта -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="mb-0">
+                            <i class="bi bi-collection me-1"></i>
+                            Kontaktliste
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-primary" id="addAdditionalContactBtn">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Kontakt hinzufügen
+                        </button>
+                    </div>
+
+                    <!-- Таблица дополнительных контактов -->
+                    <div class="table-responsive">
+                        <table class="table table-hover contacts-table" id="additionalContactsTable" style="display: none;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="30%">
+                                        <i class="bi bi-tag me-1"></i>
+                                        Kontakttyp
+                                    </th>
+                                    <th width="40%">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Kontaktdaten
+                                    </th>
+                                    <th width="20%">
+                                        <i class="bi bi-bookmark me-1"></i>
+                                        Bezeichnung
+                                    </th>
+                                    <th width="10%" class="text-center">
+                                        <i class="bi bi-gear me-1"></i>
+                                        Aktionen
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="additionalContactsTableBody">
+                                <!-- Контакты добавляются динамически -->
+                            </tbody>
+                        </table>
+
+                        <!-- Плейсхолдер для пустой таблицы -->
+                        <div id="emptyAdditionalContactsPlaceholder" class="text-center">
+                            <i class="bi bi-inbox display-4 text-muted"></i>
+                            <p class="mt-3 mb-2"><strong>Noch keine zusätzlichen Kontakte hinzugefügt</strong></p>
+                            <p class="text-muted mb-0">Diese sind optional und können übersprungen werden</p>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Zusätzliche Kontakte verbessern die Kommunikationsmöglichkeiten
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Fertig
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal для создания/редактирования дополнительного контакта -->
     <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -236,8 +301,7 @@
                             </label>
                             <select class="form-select" id="contactType" required>
                                 <option value="">Typ auswählen...</option>
-                                <option value="email">📧 E-Mail</option>
-                                <option value="phone">📞 Telefon</option>
+                                <option value="email">📧 E-Mail (zusätzlich)</option>
                                 <option value="mobile">📱 Mobil</option>
                                 <option value="fax">📠 Fax</option>
                                 <option value="website">🌐 Website</option>
@@ -267,20 +331,11 @@
                                 Bezeichnung
                                 <small class="text-muted">(Optional)</small>
                             </label>
-                            <input type="text" class="form-control" id="contactLabel" placeholder="z.B. Büro, Privat, Hauptnummer..." autocomplete="off">
+                            <input type="text" class="form-control" id="contactLabel" placeholder="z.B. Büro, Privat, Geschäftlich..." autocomplete="off">
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
-                                Optional: Bezeichnung zur besseren Unterscheidung mehrerer Kontakte gleichen Typs
+                                Optional: Bezeichnung zur besseren Unterscheidung
                             </div>
-                        </div>
-
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="contactPrimary">
-                            <label class="form-check-label" for="contactPrimary">
-                                <i class="bi bi-star me-1"></i>
-                                Als Hauptkontakt markieren
-                                <small class="text-muted d-block">Wird für wichtige Systembenachrichtigungen bevorzugt verwendet</small>
-                            </label>
                         </div>
                     </form>
                 </div>
@@ -406,9 +461,9 @@
             console.log('Select2 успешно инициализирован');
         });
 
-        // Инициализация данных контактов для JavaScript
-        window.initialContactsData = {{ existing_contacts|default:"[]"|safe }};
+        // Инициализация данных дополнительных контактов для JavaScript
+        window.initialAdditionalContactsData = {{ existing_additional_contacts|default:"[]"|safe }};
     </script>
 
-    <script src="{% static 'my/js/users/create_admin_step2.js' %}"></script>
+    <script src="{% static 'my/js/users/create_admin_step2_updated.js' %}"></script>
 {% endblock %}
