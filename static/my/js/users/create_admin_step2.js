@@ -878,7 +878,7 @@ class AdditionalContactManager {
         this.clearFieldError(phoneInput);
 
         if (!phone) {
-            this.setFieldError(phoneInput, 'System Telefon ist erforderlich');
+            this.setFieldError(phoneInput, 'Telefon ist erforderlich');
             return false;
         }
 
