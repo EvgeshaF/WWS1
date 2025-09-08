@@ -210,11 +210,13 @@ def create_admin_step1(request):
         return redirect('home')
 
 
+# users/views.py - ОБНОВЛЕННЫЙ create_admin_step2 с поддержкой главного контакта
+
 @ratelimit(key='ip', rate='3/m', method='POST')
 @require_http_methods(["GET", "POST"])
 @never_cache
 def create_admin_step2(request):
-    """Step 2: Admin profile with main contacts + optional additional contacts - ОБНОВЛЕН"""
+    """Step 2: Admin profile with primary contact + optional additional contacts - ОБНОВЛЕН ДЛЯ ГЛАВНОГО КОНТАКТА"""
     try:
         # Check previous step
         is_valid, redirect_to = validate_admin_creation_step(request, 2)
@@ -225,11 +227,36 @@ def create_admin_step2(request):
         admin_creation = request.session.get('admin_creation')
 
         if request.method == 'POST':
-            logger.info("Processing POST request for step 2")
+            logger.info("Processing POST request for step 2 with primary contact")
 
             form = AdminProfileForm(request.POST)
 
-            # НОВОЕ: Получаем и валидируем ДОПОЛНИТЕЛЬНЫЕ контакты (опциональные)
+            # Получаем и валидируем ГЛАВНЫЙ контакт (новое поле)
+            primary_contact_data_raw = request.POST.get('primary_contact_data', '')
+            primary_contact_data = None
+
+            if primary_contact_data_raw:
+                try:
+                    primary_contact_data = json.loads(primary_contact_data_raw)
+                    logger.info(f"Получен главный контакт: {primary_contact_data}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Ошибка парсинга главного контакта: {e}")
+
+            # Если данные главного контакта не переданы через JSON, берем из полей формы
+            if not primary_contact_data:
+                primary_contact_type = request.POST.get('primary_contact_type', '').strip()
+                primary_contact_value = request.POST.get('primary_contact_value', '').strip()
+
+                if primary_contact_type and primary_contact_value:
+                    primary_contact_data = {
+                        'type': primary_contact_type,
+                        'value': primary_contact_value,
+                        'label': 'Hauptkontakt',
+                        'primary': True
+                    }
+                    logger.info(f"Создан главный контакт из полей формы: {primary_contact_data}")
+
+            # Получаем и валидируем ДОПОЛНИТЕЛЬНЫЕ контакты (опциональные)
             additional_contacts_data_raw = request.POST.get('additional_contacts_data', '[]')
             logger.info(f"Получены дополнительные контакты: {additional_contacts_data_raw}")
 
@@ -248,27 +275,50 @@ def create_admin_step2(request):
             if form.is_valid():
                 logger.info(f"Форма валидна, данные: {form.cleaned_data}")
 
-                # НОВОЕ: Теперь email и phone берутся из формы (обязательные поля)
+                # Стандартные обязательные контакты из формы
                 primary_email = form.cleaned_data['email']
                 primary_phone = form.cleaned_data['phone']
 
                 logger.info(f"Основные контакты - email: {primary_email}, phone: {primary_phone}")
 
-                # Создаем список всех контактов (основные + дополнительные)
+                # Создаем список всех контактов
                 all_contacts = [
                     {
                         'type': 'email',
                         'value': primary_email,
-                        'label': 'Haupt-E-Mail',
+                        'label': 'System-E-Mail',
                         'primary': True
                     },
                     {
                         'type': 'phone',
                         'value': primary_phone,
-                        'label': 'Haupttelefon',
+                        'label': 'System-Telefon',
                         'primary': True
                     }
                 ]
+
+                # НОВОЕ: Добавляем главный контакт из выпадающего списка
+                if primary_contact_data and primary_contact_data.get('value'):
+                    # Проверяем, что главный контакт не дублирует system контакты
+                    contact_type = primary_contact_data['type'].lower()
+                    contact_value = primary_contact_data['value'].strip()
+
+                    is_duplicate = False
+                    if contact_type == 'email' and contact_value == primary_email:
+                        is_duplicate = True
+                        logger.info("Главный контакт E-Mail совпадает с system email - пропускаем дублирование")
+                    elif contact_type in ['telefon', 'phone'] and contact_value == primary_phone:
+                        is_duplicate = True
+                        logger.info("Главный контакт телефон совпадает с system phone - пропускаем дублирование")
+
+                    if not is_duplicate:
+                        all_contacts.append({
+                            'type': primary_contact_data['type'],
+                            'value': contact_value,
+                            'label': primary_contact_data.get('label', 'Hauptkontakt'),
+                            'primary': True
+                        })
+                        logger.info(f"Добавлен главный контакт: {primary_contact_data['type']} = {contact_value}")
 
                 # Добавляем дополнительные контакты
                 if additional_contacts_data:
@@ -280,9 +330,10 @@ def create_admin_step2(request):
                     'title': form.cleaned_data['title'],
                     'first_name': form.cleaned_data['first_name'],
                     'last_name': form.cleaned_data['last_name'],
-                    'email': primary_email,  # Основной email из формы
-                    'phone': primary_phone,  # Основной телефон из формы
-                    'all_contacts': all_contacts,  # Все контакты (основные + дополнительные)
+                    'email': primary_email,  # System email
+                    'phone': primary_phone,  # System phone
+                    'primary_contact': primary_contact_data,  # Главный контакт из выпадающего списка
+                    'all_contacts': all_contacts,  # Все контакты (system + главный + дополнительные)
                     'additional_contacts': additional_contacts_data,  # Только дополнительные
                     'step': 2
                 })
@@ -290,9 +341,18 @@ def create_admin_step2(request):
                 request.session['admin_creation'] = admin_creation
                 request.session.modified = True
 
-                contact_summary = f"Haupt-E-Mail, Haupttelefon"
+                # Формируем описание контактов для сообщения
+                contact_parts = []
+                contact_parts.append("System-E-Mail")
+                contact_parts.append("System-Telefon")
+
+                if primary_contact_data and primary_contact_data.get('value'):
+                    contact_parts.append(f"Hauptkontakt ({primary_contact_data['type']})")
+
                 if additional_contacts_data:
-                    contact_summary += f" + {len(additional_contacts_data)} zusätzliche"
+                    contact_parts.append(f"{len(additional_contacts_data)} zusätzliche")
+
+                contact_summary = ", ".join(contact_parts)
 
                 logger.success(f"Profile data and contacts saved in session: {contact_summary}")
                 messages.success(request, f"Profildaten und Kontakte erfolgreich erfasst ({contact_summary})")
@@ -314,20 +374,23 @@ def create_admin_step2(request):
             context = {
                 'form': form, 'text': language.text_create_admin_step2,
                 'step': 2, 'username': admin_creation['username'],
-                'existing_additional_contacts': additional_contacts_data_raw
+                'existing_additional_contacts': additional_contacts_data_raw,
+                'existing_primary_contact': primary_contact_data
             }
             return render_with_messages(request, 'users/create_admin_step2.html', context)
 
         # GET request
         form = AdminProfileForm()
         existing_additional_contacts = admin_creation.get('additional_contacts', [])
+        existing_primary_contact = admin_creation.get('primary_contact', {})
 
         context = {
             'form': form,
             'text': language.text_create_admin_step2,
             'step': 2,
             'username': admin_creation['username'],
-            'existing_additional_contacts': json.dumps(existing_additional_contacts) if existing_additional_contacts else '[]'
+            'existing_additional_contacts': json.dumps(existing_additional_contacts) if existing_additional_contacts else '[]',
+            'existing_primary_contact': json.dumps(existing_primary_contact) if existing_primary_contact else '{}'
         }
         return render(request, 'users/create_admin_step2.html', context)
 
@@ -335,7 +398,6 @@ def create_admin_step2(request):
         logger.exception(f"КРИТИЧЕСКАЯ ОШИБКА в create_admin_step2: {e}")
         messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
         return redirect('users:create_admin_step1')
-
 
 @ratelimit(key='ip', rate='2/m', method='POST')
 @require_http_methods(["GET", "POST"])
