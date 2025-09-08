@@ -1,239 +1,488 @@
-<!-- templates/users/create_admin_step2.html - ФИНАЛЬНАЯ ВЕРСИЯ -->
+{% extends 'base.html' %}
+{% load static %}
 
-<!-- Block 1: Persönliche Daten -->
-<div class="col-12">
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="bi bi-person-badge me-2"></i>
-                Persönliche Daten
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="{{ form.salutation.id_for_label }}" class="form-label">
-                            <i class="bi bi-person me-1"></i>
-                            Anrede *
-                        </label>
-                        <select name="{{ form.salutation.name }}"
-                                id="{{ form.salutation.id_for_label }}"
-                                class="form-select select2-basic"
-                                data-placeholder="Anrede auswählen..."
-                                required>
-                            <option></option>
-                            {% for value, text in form.salutation.field.choices %}
-                                {% if value %}
-                                    <option value="{{ value }}">{{ text }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                        {% if form.salutation.errors %}
-                            <div class="invalid-feedback d-block">{{ form.salutation.errors }}</div>
-                        {% endif %}
-                    </div>
+{% block title %}Administrator Profil - Schritt 2{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'my/css/users/create_admin_step2.css' %}">
+<link rel="stylesheet" href="{% static 'my/css/users/create_admin_step1-3.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Модальное окно открыто сразу -->
+<div class="modal fade show" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-modal="true" role="dialog" style="display: block;">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="adminModalLabel">
+                    <i class="bi bi-person-badge me-2"></i>
+                    Administrator Profil
+                </h5>
+                <span class="badge bg-light text-dark ms-auto">Schritt 2 von 3</span>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Vervollständigen Sie das Profil und geben Sie die Kontaktdaten ein:
+                    <br><small class="text-muted mt-1">Administrator: <strong>{{ username }}</strong></small>
                 </div>
-                <div class="col-md-6">
+
+                <form method="post" id="admin-step2-form" action="{% url 'users:create_admin_step2' %}">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <!-- Block 1: Persönliche Daten -->
+                        <div class="col-12">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-person-badge me-2"></i>
+                                        Persönliche Daten
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.salutation.id_for_label }}" class="form-label">
+                                                    <i class="bi bi-person me-1"></i>
+                                                    Anrede *
+                                                </label>
+                                                <select name="{{ form.salutation.name }}"
+                                                        id="{{ form.salutation.id_for_label }}"
+                                                        class="form-select select2-basic"
+                                                        data-placeholder="Anrede auswählen..."
+                                                        required>
+                                                    <option></option>
+                                                    {% for value, text in form.salutation.field.choices %}
+                                                        {% if value %}
+                                                            <option value="{{ value }}">{{ text }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                                {% if form.salutation.errors %}
+                                                    <div class="invalid-feedback d-block">{{ form.salutation.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                                    <i class="bi bi-mortarboard me-1"></i>
+                                                    Titel
+                                                    <small class="text-muted">(Optional)</small>
+                                                </label>
+                                                <select name="{{ form.title.name }}"
+                                                        id="{{ form.title.id_for_label }}"
+                                                        class="form-select select2-search"
+                                                        data-placeholder="Titel suchen oder auswählen..."
+                                                        data-allow-clear="true">
+                                                    <option></option>
+                                                    {% for value, text in form.title.field.choices %}
+                                                        {% if value %}
+                                                            <option value="{{ value }}"
+                                                                    data-subtext="Code: {{ value }}">
+                                                                {{ text }}
+                                                            </option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                                {% if form.title.errors %}
+                                                    <div class="invalid-feedback d-block">{{ form.title.errors }}</div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    <i class="bi bi-lightbulb me-1"></i>
+                                                    Akademische oder berufliche Titel
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                                    <i class="bi bi-person-badge me-1"></i>
+                                                    Vorname *
+                                                </label>
+                                                {{ form.first_name }}
+                                                {% if form.first_name.errors %}
+                                                    <div class="invalid-feedback d-block">{{ form.first_name.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                                    <i class="bi bi-person-badge-fill me-1"></i>
+                                                    Nachname *
+                                                </label>
+                                                {{ form.last_name }}
+                                                {% if form.last_name.errors %}
+                                                    <div class="invalid-feedback d-block">{{ form.last_name.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Block 2: System Kontakte (Erforderlich) -->
+                        <div class="col-12">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-shield-check me-2"></i>
+                                        System Kontakte
+                                        <small class="text-muted ms-2">(Erforderlich für Systembenachrichtigungen)</small>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                                    <i class="bi bi-envelope me-1"></i>
+                                                    System E-Mail *
+                                                </label>
+                                                {{ form.email }}
+                                                {% if form.email.errors %}
+                                                    <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Wird für wichtige Systembenachrichtigungen verwendet
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                                    <i class="bi bi-telephone me-1"></i>
+                                                    System Telefon *
+                                                </label>
+                                                {{ form.phone }}
+                                                {% if form.phone.errors %}
+                                                    <div class="invalid-feedback d-block">{{ form.phone.errors }}</div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Für Notfallkontakt und 2FA
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Block 3: Hauptkontakt (Erforderlich) -->
+                        <div class="col-12">
+                            <div class="primary-contact-section">
+                                <div class="section-title">
+                                    <i class="bi bi-star-fill"></i>
+                                    Hauptkontakt (Erforderlich)
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.primary_contact_type.id_for_label }}" class="form-label">
+                                                <i class="bi bi-tag me-1"></i>
+                                                Kontakttyp *
+                                            </label>
+                                            <select name="{{ form.primary_contact_type.name }}"
+                                                    id="{{ form.primary_contact_type.id_for_label }}"
+                                                    class="form-select select2-contact-type"
+                                                    data-placeholder="Kontakttyp auswählen..."
+                                                    required>
+                                                <option></option>
+                                                {% for value, text in form.primary_contact_type.field.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}">{{ text }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                            {% if form.primary_contact_type.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.primary_contact_type.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="{{ form.primary_contact_value.id_for_label }}" class="form-label">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Hauptkontakt *
+                                            </label>
+                                            {{ form.primary_contact_value }}
+                                            {% if form.primary_contact_value.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.primary_contact_value.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text" id="primaryContactHint">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Wählen Sie zuerst den Kontakttyp aus
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="contact-context-hint" id="primaryContactContext" style="display: none;">
+                                    <strong>Hinweis:</strong> Dieser Kontakt wird als primärer Kommunikationskanal verwendet.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Separator -->
+                        <div class="col-12">
+                            <div class="contact-separator">
+                                <span>Zusätzliche Kontakte (Optional)</span>
+                            </div>
+                        </div>
+
+                        <!-- Additional Contacts Management -->
+                        <div class="col-12">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-plus-circle me-2"></i>
+                                        Zusätzliche Kontakte
+                                        <small class="text-muted ms-2">(Optional)</small>
+                                    </h6>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="openAdditionalContactsBtn">
+                                        <i class="bi bi-plus me-1"></i>
+                                        Verwalten
+                                        <span class="badge bg-primary ms-1" id="additionalContactsCount">0</span>
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Placeholder for empty state -->
+                                    <div id="emptyAdditionalContactsPlaceholder" class="text-center">
+                                        <div class="display-4 text-muted mb-3">📋</div>
+                                        <p><strong>Keine zusätzlichen Kontakte</strong></p>
+                                        <p class="text-muted">Diese sind optional und können übersprungen werden</p>
+                                        <small class="text-muted">Zusätzliche Kontakte verbessern die Kommunikationsmöglichkeiten</small>
+                                    </div>
+
+                                    <!-- Contacts table (hidden initially) -->
+                                    <div class="table-responsive" id="additionalContactsTableContainer" style="display: none;">
+                                        <table class="table contacts-table" id="additionalContactsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Typ</th>
+                                                    <th>Kontaktdaten</th>
+                                                    <th class="text-center">Aktionen</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="additionalContactsTableBody">
+                                                <!-- Content will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Скрытое поле для передачи данных дополнительных контактов -->
+                    <input type="hidden" name="additional_contacts_data" id="additionalContactsDataInput" value="[]">
+
+                    <!-- Кнопки управления -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'users:create_admin_step1' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Zurück zu Schritt 1
+                        </a>
+
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            Weiter zu Schritt 3
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <small class="text-muted">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    Die Hauptkontakte sind erforderlich. Zusätzliche Kontakte können optional hinzugefügt werden.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Полупрозрачный фон -->
+<div class="modal-backdrop fade show"></div>
+
+<!-- Модальное окно для управления дополнительными контактами -->
+<div class="modal fade" id="additionalContactsModal" tabindex="-1" aria-labelledby="additionalContactsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="additionalContactsModalLabel">
+                    <i class="bi bi-person-vcard me-2"></i>
+                    Zusätzliche Kontakte verwalten
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <button type="button" class="btn btn-primary" id="addAdditionalContactBtn">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Neuen Kontakt hinzufügen
+                    </button>
+                </div>
+
+                <!-- Placeholder für leere Tabelle -->
+                <div id="emptyAdditionalContactsPlaceholder" class="text-center py-4">
+                    <div class="display-4 text-muted mb-3">📇</div>
+                    <p><strong>Noch keine zusätzlichen Kontakte hinzugefügt</strong></p>
+                    <p class="text-muted">Diese sind optional und können übersprungen werden</p>
+                    <small class="text-muted">Zusätzliche Kontakte verbessern die Kommunikationsmöglichkeiten</small>
+                </div>
+
+                <!-- Tabelle für dополнительные контакты -->
+                <div class="table-responsive" id="additionalContactsTableContainer" style="display: none;">
+                    <table class="table contacts-table" id="additionalContactsTable">
+                        <thead>
+                            <tr>
+                                <th>Typ</th>
+                                <th>Kontaktdaten</th>
+                                <th class="text-center">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="additionalContactsTableBody">
+                            <!-- Content will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Fertig
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления/редактирования контакта -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="contactModalLabel">
+                    <i class="bi bi-person-vcard me-2"></i>
+                    Kontakt hinzufügen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contactForm">
                     <div class="mb-3">
-                        <label for="{{ form.title.id_for_label }}" class="form-label">
-                            <i class="bi bi-mortarboard me-1"></i>
-                            Titel
-                            <small class="text-muted">(Optional)</small>
+                        <label for="contactType" class="form-label">
+                            <i class="bi bi-tag me-1"></i>
+                            Kontakttyp *
                         </label>
-                        <select name="{{ form.title.name }}"
-                                id="{{ form.title.id_for_label }}"
-                                class="form-select select2-search"
-                                data-placeholder="Titel suchen oder auswählen..."
-                                data-allow-clear="true">
-                            <option></option>
-                            {% for value, text in form.title.field.choices %}
-                                {% if value %}
-                                    <option value="{{ value }}"
-                                            data-subtext="Code: {{ value }}">
-                                        {{ text }}
-                                    </option>
-                                {% endif %}
-                            {% endfor %}
+                        <select class="form-select" id="contactType" required>
+                            <option value="">Typ auswählen...</option>
+                            <option value="email">📧 E-Mail</option>
+                            <option value="mobile">📱 Mobil</option>
+                            <option value="fax">📠 Fax</option>
+                            <option value="website">🌐 Website</option>
+                            <option value="linkedin">💼 LinkedIn</option>
+                            <option value="xing">🔗 XING</option>
+                            <option value="other">📝 Sonstige</option>
                         </select>
-                        {% if form.title.errors %}
-                            <div class="invalid-feedback d-block">{{ form.title.errors }}</div>
-                        {% endif %}
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="contactValue" class="form-label">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Kontaktdaten *
+                        </label>
+                        <input type="text" class="form-control" id="contactValue" placeholder="Kontaktdaten eingeben..." required>
+                        <div class="invalid-feedback"></div>
+                        <div class="form-text" id="contactHint">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            Geben Sie die entsprechenden Kontaktdaten ein
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="contactLabel" class="form-label">
+                            <i class="bi bi-tag me-1"></i>
+                            Beschreibung (Optional)
+                        </label>
+                        <input type="text" class="form-control" id="contactLabel" placeholder="z.B. Privat, Geschäftlich...">
                         <div class="form-text">
                             <i class="bi bi-lightbulb me-1"></i>
-                            Akademische oder berufliche Titel
+                            Optionale Beschreibung für diesen Kontakt
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
-                            <i class="bi bi-person-badge me-1"></i>
-                            Vorname *
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="contactPrimary">
+                        <label class="form-check-label" for="contactPrimary">
+                            <i class="bi bi-star me-1"></i>
+                            Als wichtig markieren
                         </label>
-                        {{ form.first_name }}
-                        {% if form.first_name.errors %}
-                            <div class="invalid-feedback d-block">{{ form.first_name.errors }}</div>
-                        {% endif %}
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
-                            <i class="bi bi-person-badge-fill me-1"></i>
-                            Nachname *
-                        </label>
-                        {{ form.last_name }}
-                        {% if form.last_name.errors %}
-                            <div class="invalid-feedback d-block">{{ form.last_name.errors }}</div>
-                        {% endif %}
-                    </div>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Abbrechen
+                </button>
+                <button type="button" class="btn btn-primary" id="saveContactBtn">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Speichern
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Block 2: System Kontakte (Erforderlich) -->
-<div class="col-12">
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="bi bi-shield-check me-2"></i>
-                System Kontakte
-                <small class="text-muted ms-2">(Erforderlich für Systembenachrichtigungen)</small>
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">
-                            <i class="bi bi-envelope me-1"></i>
-                            System E-Mail *
-                        </label>
-                        {{ form.email }}
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
-                        {% endif %}
-                        <div class="form-text">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Wird für wichtige Systembenachrichtigungen verwendet
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="{{ form.phone.id_for_label }}" class="form-label">
-                            <i class="bi bi-telephone me-1"></i>
-                            System Telefon *
-                        </label>
-                        {{ form.phone }}
-                        {% if form.phone.errors %}
-                            <div class="invalid-feedback d-block">{{ form.phone.errors }}</div>
-                        {% endif %}
-                        <div class="form-text">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Für Notfallkontakt und 2FA
-                        </div>
-                    </div>
-                </div>
+<!-- Модальное окно для подтверждения удаления -->
+<div class="modal fade" id="deleteContactModal" tabindex="-1" aria-labelledby="deleteContactModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteContactModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Kontakt löschen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <p>Möchten Sie diesen Kontakt wirklich löschen?</p>
+                <p class="text-muted">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Diese Aktion kann nicht rückgängig gemacht werden.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Abbrechen
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-1"></i>
+                    Löschen
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Block 3: Hauptkontakt (Erforderlich) -->
-<div class="col-12">
-    <div class="primary-contact-section">
-        <div class="section-title">
-            <i class="bi bi-star-fill"></i>
-            Hauptkontakt (Erforderlich)
-        </div>
+{% endblock %}
 
-        <div class="row">
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="{{ form.primary_contact_type.id_for_label }}" class="form-label">
-                        <i class="bi bi-tag me-1"></i>
-                        Kontakttyp *
-                    </label>
-                    <select name="{{ form.primary_contact_type.name }}"
-                            id="{{ form.primary_contact_type.id_for_label }}"
-                            class="form-select select2-contact-type"
-                            data-placeholder="Kontakttyp auswählen..."
-                            required>
-                        <option></option>
-                        {% for value, text in form.primary_contact_type.field.choices %}
-                            {% if value %}
-                                <option value="{{ value }}">{{ text }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                    {% if form.primary_contact_type.errors %}
-                        <div class="invalid-feedback d-block">{{ form.primary_contact_type.errors }}</div>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="mb-3">
-                    <label for="{{ form.primary_contact_value.id_for_label }}" class="form-label">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Hauptkontakt *
-                    </label>
-                    {{ form.primary_contact_value }}
-                    {% if form.primary_contact_value.errors %}
-                        <div class="invalid-feedback d-block">{{ form.primary_contact_value.errors }}</div>
-                    {% endif %}
-                    <div class="form-text" id="primaryContactHint">
-                        <i class="bi bi-lightbulb me-1"></i>
-                        Wählen Sie zuerst den Kontakttyp aus
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="contact-context-hint" id="primaryContactContext" style="display: none;">
-            <strong>Hinweis:</strong> Dieser Kontakt wird als primärer Kommunikationskanal verwendet.
-        </div>
-    </div>
-</div>
-
-<!-- Contact Separator -->
-<div class="col-12">
-    <div class="contact-separator">
-        <span>Zusätzliche Kontakte (Optional)</span>
-    </div>
-</div>
-
-<!-- Скрытое поле для передачи данных дополнительных контактов -->
-<input type="hidden" name="additional_contacts_data" id="additionalContactsDataInput" value="[]">
-
-<!-- Кнопки управления -->
-<div class="d-flex justify-content-between mt-4">
-    <a href="{% url 'users:create_admin_step1' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>
-        {{ text.btn_back }}
-    </a>
-
-    <div class="d-flex gap-2">
-        <!-- Кнопка для открытия дополнительных контактов -->
-        <button type="button" class="btn btn-outline-primary" id="openAdditionalContactsBtn">
-            <i class="bi bi-plus-circle me-1"></i>
-            Zusätzliche Kontakte
-            <span class="badge bg-primary ms-1" id="additionalContactsCount">0</span>
-        </button>
-
-        <button type="submit" class="btn btn-primary" id="submitBtn">
-            <i class="bi bi-arrow-right me-1"></i>
-            {{ text.btn }}
-        </button>
-    </div>
-</div>
-
+{% block extra_js %}
 <!-- JavaScript инициализация -->
 <script>
     $(document).ready(function() {
@@ -267,15 +516,15 @@
             }
         });
 
-        // НОВОЕ: Инициализация для Contact Type (простой выбор с эмодзи)
+        // Инициализация для Contact Type (простой выбор с эмодзи)
         $('#{{ form.primary_contact_type.id_for_label }}').select2({
             theme: 'bootstrap-5',
             placeholder: 'Kontakttyp auswählen...',
             allowClear: false,
-            minimumResultsForSearch: Infinity, // Отключаем поиск для простого списка
+            minimumResultsForSearch: Infinity,
             width: '100%',
             escapeMarkup: function (markup) {
-                return markup; // Позволяем HTML (эмодзи)
+                return markup;
             }
         });
 
@@ -294,10 +543,8 @@
             console.log('Title очищен');
         });
 
-        // НОВОЕ: Обработчик для Contact Type
         $('#{{ form.primary_contact_type.id_for_label }}').on('select2:select', function (e) {
             console.log('Выбран тип главного контакта:', e.params.data.id, '-', e.params.data.text);
-            // Trigger change event для PrimaryContactManager
             if (window.primaryContactManager) {
                 window.primaryContactManager.updateContactHints();
             }
@@ -308,7 +555,9 @@
 
     // Инициализация данных дополнительных контактов для JavaScript
     window.initialAdditionalContactsData = {{ existing_additional_contacts|default:"[]"|safe }};
-
-    // НОВОЕ: Инициализация данных главного контакта
     window.initialPrimaryContactData = {{ existing_primary_contact|default:"{}"|safe }};
 </script>
+
+<!-- Подключаем JavaScript для управления контактами -->
+<script src="{% static 'my/js/users/create_admin_step2.js' %}"></script>
+{% endblock %}

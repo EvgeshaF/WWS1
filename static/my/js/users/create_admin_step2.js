@@ -1,13 +1,232 @@
-// Исправленный файл create_admin_step2.js с улучшенной обработкой ошибок
+// static/my/js/users/create_admin_step2.js - ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 
-// Управление контактами
-class ContactManager {
+// ==================== ГЛАВНЫЙ КОНТАКТ МЕНЕДЖЕР ====================
+class PrimaryContactManager {
     constructor() {
-        this.contacts = [];
+        this.contactTypeSelect = null;
+        this.contactValueInput = null;
+        this.contactHintElement = null;
+
+        this.contactHints = {
+            'email': {
+                placeholder: 'beispiel@domain.com',
+                hint: 'Geben Sie eine gültige E-Mail-Adresse ein',
+                pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'
+            },
+            'telefon': {
+                placeholder: '+49 123 456789',
+                hint: 'Geben Sie eine Telefonnummer ein (z.B. +49 123 456789)',
+                pattern: '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$'
+            },
+            'mobil': {
+                placeholder: '+49 170 1234567',
+                hint: 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)',
+                pattern: '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$'
+            },
+            'fax': {
+                placeholder: '+49 123 456789',
+                hint: 'Geben Sie eine Faxnummer ein (z.B. +49 123 456789)',
+                pattern: '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$'
+            },
+            'website': {
+                placeholder: 'https://www.example.com',
+                hint: 'Geben Sie eine Website-URL ein (z.B. https://www.example.com)',
+                pattern: '^https?:\\/\\/.+\\..+$|^www\\..+\\..+$'
+            },
+            'linkedin': {
+                placeholder: 'linkedin.com/in/username',
+                hint: 'Geben Sie Ihr LinkedIn-Profil ein (z.B. linkedin.com/in/username)',
+                pattern: '^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$'
+            },
+            'xing': {
+                placeholder: 'xing.com/profile/username',
+                hint: 'Geben Sie Ihr XING-Profil ein (z.B. xing.com/profile/username)',
+                pattern: '^(https?:\\/\\/)?(www\\.)?xing\\.com\\/profile\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$'
+            },
+            'sonstige': {
+                placeholder: 'Kontaktdaten eingeben...',
+                hint: 'Geben Sie die entsprechenden Kontaktdaten ein',
+                pattern: '.{3,}'
+            }
+        };
+    }
+
+    init() {
+        // Находим элементы на странице
+        this.contactTypeSelect = document.getElementById('id_primary_contact_type');
+        this.contactValueInput = document.getElementById('id_primary_contact_value');
+        this.contactHintElement = document.getElementById('primaryContactHint');
+
+        if (!this.contactTypeSelect || !this.contactValueInput || !this.contactHintElement) {
+            console.warn('PrimaryContactManager: Не все элементы найдены на странице');
+            return;
+        }
+
+        // Привязываем события
+        this.bindEvents();
+
+        // Устанавливаем начальное состояние
+        this.updateContactHints();
+
+        console.log('PrimaryContactManager инициализирован');
+    }
+
+    bindEvents() {
+        // Изменение типа контакта
+        this.contactTypeSelect.addEventListener('change', () => {
+            this.updateContactHints();
+            this.validateContactValue();
+        });
+
+        // Валидация при вводе
+        this.contactValueInput.addEventListener('input', () => {
+            this.validateContactValue();
+        });
+
+        this.contactValueInput.addEventListener('blur', () => {
+            this.validateContactValue();
+        });
+    }
+
+    updateContactHints() {
+        const selectedType = this.contactTypeSelect.value.toLowerCase();
+        const config = this.contactHints[selectedType];
+
+        if (config) {
+            // Обновляем placeholder
+            this.contactValueInput.placeholder = config.placeholder;
+
+            // Обновляем подсказку
+            this.contactHintElement.innerHTML = `
+                <i class="bi bi-lightbulb me-1"></i>
+                ${config.hint}
+            `;
+
+            // Устанавливаем паттерн для HTML5 валидации
+            if (config.pattern) {
+                this.contactValueInput.setAttribute('pattern', config.pattern);
+            } else {
+                this.contactValueInput.removeAttribute('pattern');
+            }
+        } else {
+            // Сброс к дефолтным значениям
+            this.contactValueInput.placeholder = 'Kontaktdaten eingeben...';
+            this.contactHintElement.innerHTML = `
+                <i class="bi bi-lightbulb me-1"></i>
+                Wählen Sie zuerst den Kontakttyp aus
+            `;
+            this.contactValueInput.removeAttribute('pattern');
+        }
+
+        // Очищаем предыдущую валидацию
+        this.clearFieldValidation();
+    }
+
+    validateContactValue() {
+        const selectedType = this.contactTypeSelect.value.toLowerCase();
+        const value = this.contactValueInput.value.trim();
+
+        // Если тип не выбран или значение пустое
+        if (!selectedType || !value) {
+            this.clearFieldValidation();
+            return true;
+        }
+
+        const config = this.contactHints[selectedType];
+        if (!config) {
+            this.clearFieldValidation();
+            return true;
+        }
+
+        let isValid = true;
+        let errorMessage = '';
+
+        // Проверяем по паттерну
+        if (config.pattern) {
+            const regex = new RegExp(config.pattern);
+            if (!regex.test(value)) {
+                isValid = false;
+                errorMessage = this.getValidationErrorMessage(selectedType);
+            }
+        }
+
+        // Устанавливаем состояние валидации
+        if (isValid) {
+            this.setFieldSuccess();
+        } else {
+            this.setFieldError(errorMessage);
+        }
+
+        return isValid;
+    }
+
+    getValidationErrorMessage(contactType) {
+        const errorMessages = {
+            'email': 'Ungültiges E-Mail-Format',
+            'telefon': 'Ungültiges Telefonformat',
+            'mobil': 'Ungültiges Mobilnummer-Format',
+            'fax': 'Ungültiges Faxnummer-Format',
+            'website': 'Ungültiges Website-Format (muss mit http:// oder https:// beginnen)',
+            'linkedin': 'Ungültiges LinkedIn-Profil-Format',
+            'xing': 'Ungültiges XING-Profil-Format',
+            'sonstige': 'Kontaktdaten müssen mindestens 3 Zeichen lang sein'
+        };
+
+        return errorMessages[contactType] || 'Ungültiges Format';
+    }
+
+    setFieldError(message) {
+        this.contactValueInput.classList.remove('is-valid');
+        this.contactValueInput.classList.add('is-invalid');
+
+        // Удаляем старые сообщения об ошибках
+        const existingError = this.contactValueInput.closest('.mb-3').querySelector('.invalid-feedback');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Добавляем новое сообщение об ошибке
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback d-block';
+        errorDiv.textContent = message;
+        this.contactValueInput.closest('.mb-3').appendChild(errorDiv);
+    }
+
+    setFieldSuccess() {
+        this.contactValueInput.classList.remove('is-invalid');
+        this.contactValueInput.classList.add('is-valid');
+
+        // Удаляем сообщения об ошибках
+        const existingError = this.contactValueInput.closest('.mb-3').querySelector('.invalid-feedback');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+
+    clearFieldValidation() {
+        this.contactValueInput.classList.remove('is-invalid', 'is-valid');
+
+        const existingError = this.contactValueInput.closest('.mb-3').querySelector('.invalid-feedback');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+
+    // Публичный метод для получения валидации (используется при отправке формы)
+    isValid() {
+        return this.validateContactValue();
+    }
+}
+
+// ==================== ДОПОЛНИТЕЛЬНЫЕ КОНТАКТЫ МЕНЕДЖЕР ====================
+class AdditionalContactManager {
+    constructor() {
+        this.additionalContacts = [];
         this.editingIndex = -1;
+        this.deletingIndex = -1;
+
         this.contactTypeLabels = {
             'email': 'E-Mail',
-            'phone': 'Telefon',
             'mobile': 'Mobil',
             'fax': 'Fax',
             'website': 'Website',
@@ -15,9 +234,9 @@ class ContactManager {
             'xing': 'XING',
             'other': 'Sonstige'
         };
+
         this.contactTypeIcons = {
             'email': 'bi-envelope',
-            'phone': 'bi-telephone',
             'mobile': 'bi-phone',
             'fax': 'bi-printer',
             'website': 'bi-globe',
@@ -30,20 +249,27 @@ class ContactManager {
     init() {
         this.bindEvents();
         this.updateTable();
-        this.setupValidation();
         this.setupFormSubmission();
     }
 
     bindEvents() {
-        // Кнопка добавления контакта
-        const addBtn = document.getElementById('addContactBtn');
-        if (addBtn) {
-            addBtn.addEventListener('click', () => {
-                this.openModal();
+        // Кнопка открытия модального окна управления контактами
+        const openBtn = document.getElementById('openAdditionalContactsBtn');
+        if (openBtn) {
+            openBtn.addEventListener('click', () => {
+                this.openAdditionalContactsModal();
             });
         }
 
-        // Кнопка сохранения в модальном окне
+        // Кнопка добавления нового контакта
+        const addBtn = document.getElementById('addAdditionalContactBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                this.openContactModal();
+            });
+        }
+
+        // Кнопка сохранения в модальном окне контакта
         const saveBtn = document.getElementById('saveContactBtn');
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
@@ -79,8 +305,387 @@ class ContactManager {
         const modal = document.getElementById('contactModal');
         if (modal) {
             modal.addEventListener('hidden.bs.modal', () => {
-                this.resetForm();
+                this.resetContactForm();
             });
+        }
+    }
+
+    openAdditionalContactsModal() {
+        const modalElement = document.getElementById('additionalContactsModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            this.updateTable();
+            modal.show();
+        }
+    }
+
+    openContactModal(index = -1) {
+        this.editingIndex = index;
+        const modalElement = document.getElementById('contactModal');
+        if (!modalElement) return;
+
+        const modal = new bootstrap.Modal(modalElement);
+        const modalTitle = document.getElementById('contactModalLabel');
+        const saveBtn = document.getElementById('saveContactBtn');
+
+        if (index >= 0) {
+            // Режим редактирования
+            const contact = this.additionalContacts[index];
+            modalTitle.innerHTML = '<i class="bi bi-pencil me-2"></i>Kontakt bearbeiten';
+            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Aktualisieren';
+
+            // Заполняем форму данными
+            this.setFieldValue('contactType', contact.type);
+            this.setFieldValue('contactValue', contact.value);
+            this.setFieldValue('contactLabel', contact.label || '');
+            this.setCheckboxValue('contactPrimary', contact.primary || false);
+
+            this.updateContactHints(contact.type);
+        } else {
+            // Режим добавления
+            modalTitle.innerHTML = '<i class="bi bi-person-vcard me-2"></i>Kontakt hinzufügen';
+            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Speichern';
+            this.resetContactForm();
+        }
+
+        modal.show();
+    }
+
+    setFieldValue(fieldId, value) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.value = value;
+        }
+    }
+
+    setCheckboxValue(fieldId, checked) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.checked = checked;
+        }
+    }
+
+    resetContactForm() {
+        const form = document.getElementById('contactForm');
+        if (!form) return;
+
+        form.reset();
+
+        // Очищаем валидацию
+        form.querySelectorAll('.is-invalid, .is-valid').forEach(el => {
+            el.classList.remove('is-invalid', 'is-valid');
+        });
+
+        this.updateContactHints('');
+    }
+
+    updateContactHints(type) {
+        const valueInput = document.getElementById('contactValue');
+        const hintElement = document.getElementById('contactHint');
+
+        if (!valueInput || !hintElement) return;
+
+        const hints = {
+            'email': 'Geben Sie eine zusätzliche E-Mail-Adresse ein (z.B. privat@example.com)',
+            'mobile': 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)',
+            'fax': 'Geben Sie eine Faxnummer ein (z.B. +49 123 456789)',
+            'website': 'Geben Sie eine Website-URL ein (z.B. https://www.example.com)',
+            'linkedin': 'Geben Sie Ihr LinkedIn-Profil ein (z.B. linkedin.com/in/username)',
+            'xing': 'Geben Sie Ihr XING-Profil ein (z.B. xing.com/profile/username)',
+            'other': 'Geben Sie die entsprechenden Kontaktdaten ein'
+        };
+
+        const placeholders = {
+            'email': 'privat@domain.com',
+            'mobile': '+49 170 1234567',
+            'fax': '+49 123 456789',
+            'website': 'https://www.example.com',
+            'linkedin': 'linkedin.com/in/username',
+            'xing': 'xing.com/profile/username',
+            'other': 'Kontaktdaten eingeben...'
+        };
+
+        if (type && hints[type]) {
+            hintElement.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${hints[type]}`;
+            valueInput.placeholder = placeholders[type];
+        } else {
+            hintElement.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Geben Sie die entsprechenden Kontaktdaten ein';
+            valueInput.placeholder = 'Kontaktdaten eingeben...';
+        }
+    }
+
+    validateContactValue() {
+        const typeField = document.getElementById('contactType');
+        const valueField = document.getElementById('contactValue');
+
+        if (!typeField || !valueField) return false;
+
+        const type = typeField.value;
+        const value = valueField.value.trim();
+
+        if (!value) return false;
+
+        switch (type) {
+            case 'email':
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+            case 'mobile':
+            case 'fax':
+                return /^[\+]?[0-9\s\-\(\)]{7,20}$/.test(value);
+            case 'website':
+                return /^https?:\/\/.+\..+$/.test(value) || /^www\..+\..+$/.test(value);
+            case 'linkedin':
+                return value.includes('linkedin.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
+            case 'xing':
+                return value.includes('xing.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
+            default:
+                return value.length >= 3;
+        }
+    }
+
+    saveContact() {
+        const form = document.getElementById('contactForm');
+        if (!form) return;
+
+        const typeField = document.getElementById('contactType');
+        const valueField = document.getElementById('contactValue');
+        const labelField = document.getElementById('contactLabel');
+        const primaryField = document.getElementById('contactPrimary');
+
+        // Валидируем все поля
+        const isTypeValid = this.validateField(typeField);
+        const isValueValid = this.validateField(valueField);
+
+        if (!isTypeValid || !isValueValid) {
+            this.showAlert('Bitte korrigieren Sie die Fehler im Formular', 'error');
+            return;
+        }
+
+        const contactData = {
+            type: typeField.value,
+            value: valueField.value.trim(),
+            label: labelField ? labelField.value.trim() : '',
+            primary: primaryField ? primaryField.checked : false
+        };
+
+        // Если это основной контакт, снимаем флаг с других
+        if (contactData.primary) {
+            this.additionalContacts.forEach(contact => contact.primary = false);
+        }
+
+        if (this.editingIndex >= 0) {
+            // Обновляем существующий контакт
+            this.additionalContacts[this.editingIndex] = contactData;
+            this.showAlert('Kontakt erfolgreich aktualisiert', 'success');
+        } else {
+            // Добавляем новый контакт
+            this.additionalContacts.push(contactData);
+            this.showAlert('Kontakt erfolgreich hinzugefügt', 'success');
+        }
+
+        this.updateTable();
+        this.updateContactsDataInput();
+
+        // Закрываем модальное окно
+        const modalElement = document.getElementById('contactModal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
+    }
+
+    validateField(field) {
+        if (!field) return true;
+
+        const value = field.value.trim();
+        let isValid = true;
+        let errorMessage = '';
+
+        switch (field.id) {
+            case 'contactType':
+                if (!value) {
+                    isValid = false;
+                    errorMessage = 'Kontakttyp ist erforderlich';
+                }
+                break;
+
+            case 'contactValue':
+                if (!value) {
+                    isValid = false;
+                    errorMessage = 'Kontaktdaten sind erforderlich';
+                } else {
+                    isValid = this.validateContactValue();
+                    if (!isValid) {
+                        errorMessage = this.getValidationError();
+                    }
+                }
+                break;
+        }
+
+        this.setFieldValidation(field, isValid, errorMessage);
+        return isValid;
+    }
+
+    getValidationError() {
+        const typeField = document.getElementById('contactType');
+        if (!typeField) return 'Ungültiges Format';
+
+        const type = typeField.value;
+
+        const errors = {
+            'email': 'Ungültiges E-Mail-Format',
+            'mobile': 'Ungültiges Mobilnummer-Format',
+            'fax': 'Ungültiges Faxnummer-Format',
+            'website': 'Ungültiges Website-Format (muss mit http:// oder https:// beginnen)',
+            'linkedin': 'Ungültiges LinkedIn-Profil-Format',
+            'xing': 'Ungültiges XING-Profil-Format',
+            'other': 'Kontaktdaten müssen mindestens 3 Zeichen lang sein'
+        };
+
+        return errors[type] || 'Ungültiges Format';
+    }
+
+    setFieldValidation(field, isValid, errorMessage = '') {
+        if (!field) return;
+
+        const feedback = field.parentElement.querySelector('.invalid-feedback');
+
+        field.classList.remove('is-valid', 'is-invalid');
+
+        if (isValid) {
+            field.classList.add('is-valid');
+            if (feedback) feedback.textContent = '';
+        } else {
+            field.classList.add('is-invalid');
+            if (feedback) feedback.textContent = errorMessage;
+        }
+    }
+
+    confirmDelete(index) {
+        this.deletingIndex = index;
+        const modalElement = document.getElementById('deleteContactModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    }
+
+    deleteContact() {
+        if (this.deletingIndex >= 0) {
+            this.additionalContacts.splice(this.deletingIndex, 1);
+            this.updateTable();
+            this.updateContactsDataInput();
+            this.showAlert('Kontakt erfolgreich gelöscht', 'info');
+
+            const modalElement = document.getElementById('deleteContactModal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            }
+        }
+    }
+
+    updateTable() {
+        // Обновляем таблицу в модальном окне управления контактами
+        const tableBody = document.getElementById('additionalContactsTableBody');
+        const counter = document.getElementById('additionalContactsCount');
+
+        if (!tableBody || !counter) return;
+
+        // Обновляем счетчик
+        counter.textContent = this.additionalContacts.length;
+
+        // Находим элементы в модальном окне
+        const modalTableContainer = document.querySelector('#additionalContactsModal .table-responsive');
+        const modalPlaceholder = document.querySelector('#additionalContactsModal #emptyAdditionalContactsPlaceholder');
+
+        if (this.additionalContacts.length === 0) {
+            if (modalTableContainer) modalTableContainer.style.display = 'none';
+            if (modalPlaceholder) modalPlaceholder.style.display = 'block';
+            tableBody.innerHTML = '';
+            return;
+        }
+
+        if (modalTableContainer) modalTableContainer.style.display = 'block';
+        if (modalPlaceholder) modalPlaceholder.style.display = 'none';
+
+        tableBody.innerHTML = this.additionalContacts.map((contact, index) => {
+            return this.createContactRow(contact, index);
+        }).join('');
+    }
+
+    createContactRow(contact, index) {
+        const typeIcon = this.contactTypeIcons[contact.type] || 'bi-question-circle';
+        const typeLabel = this.contactTypeLabels[contact.type] || contact.type;
+        const primaryStar = contact.primary ? '<i class="bi bi-star-fill primary-contact-star me-1" title="Wichtig"></i>' : '';
+        const labelText = contact.label ? `<div class="contact-label small text-muted">${this.escapeHtml(contact.label)}</div>` : '';
+
+        return `
+            <tr>
+                <td>
+                    <span class="contact-type-badge contact-type-${contact.type}">
+                        <i class="bi ${typeIcon} me-1"></i>
+                        ${typeLabel}
+                    </span>
+                    ${labelText}
+                </td>
+                <td>
+                    ${primaryStar}
+                    <code class="contact-value">${this.escapeHtml(contact.value)}</code>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-primary action-btn me-1" 
+                            onclick="additionalContactManager.openContactModal(${index})" 
+                            title="Bearbeiten">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger action-btn" 
+                            onclick="additionalContactManager.confirmDelete(${index})" 
+                            title="Löschen">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    updateContactsDataInput() {
+        const input = document.getElementById('additionalContactsDataInput');
+        if (input) {
+            input.value = JSON.stringify(this.additionalContacts);
+            console.log('Обновлены данные дополнительных контактов:', this.additionalContacts.length);
+        }
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    showAlert(message, type = 'info') {
+        // Используем глобальную функцию showToast если есть
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+    }
+
+    // Метод для получения данных дополнительных контактов
+    getAdditionalContactsData() {
+        return this.additionalContacts;
+    }
+
+    // Метод для загрузки существующих дополнительных контактов
+    loadAdditionalContacts(contactsData) {
+        if (Array.isArray(contactsData)) {
+            this.additionalContacts = contactsData;
+            this.updateTable();
+            this.updateContactsDataInput();
         }
     }
 
@@ -96,15 +701,21 @@ class ContactManager {
             const firstNameInput = form.querySelector('input[name="first_name"]');
             const lastNameInput = form.querySelector('input[name="last_name"]');
             const salutationSelect = form.querySelector('select[name="salutation"]');
+            const emailInput = form.querySelector('input[name="email"]');
+            const phoneInput = form.querySelector('input[name="phone"]');
+
+            // Валидируем главный контакт
+            const primaryContactTypeSelect = form.querySelector('select[name="primary_contact_type"]');
+            const primaryContactValueInput = form.querySelector('input[name="primary_contact_value"]');
 
             const isValid = this.validateRequired(firstNameInput, 'Vorname ist erforderlich') &&
                             this.validateRequired(lastNameInput, 'Nachname ist erforderlich') &&
-                            this.validateSalutation(salutationSelect);
+                            this.validateSalutation(salutationSelect) &&
+                            this.validateEmail(emailInput) &&
+                            this.validatePhone(phoneInput) &&
+                            this.validatePrimaryContact(primaryContactTypeSelect, primaryContactValueInput);
 
-            // Валидируем контакты
-            const contactsValid = this.validateAllContacts();
-
-            if (!isValid || !contactsValid) {
+            if (!isValid) {
                 this.showAlert('Bitte korrigieren Sie die Fehler im Formular', 'error');
                 return;
             }
@@ -119,11 +730,20 @@ class ContactManager {
             // Создаем FormData для отправки
             const formData = new FormData(form);
 
-            // Добавляем данные контактов
-            const contactsData = this.getContactsData();
-            formData.append('contacts_data', JSON.stringify(contactsData));
+            // Добавляем данные дополнительных контактов
+            const additionalContactsData = this.getAdditionalContactsData();
+            formData.append('additional_contacts_data', JSON.stringify(additionalContactsData));
 
-            // ИСПРАВЛЕНО: улучшенная обработка ошибок
+            // Добавляем данные главного контакта
+            const primaryContactData = {
+                type: primaryContactTypeSelect.value,
+                value: primaryContactValueInput.value.trim(),
+                label: 'Hauptkontakt',
+                primary: true
+            };
+            formData.append('primary_contact_data', JSON.stringify(primaryContactData));
+
+            // Отправляем запрос
             fetch('/users/create-admin/step2/', {
                 method: 'POST',
                 body: formData,
@@ -134,18 +754,13 @@ class ContactManager {
             })
             .then(response => {
                 console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                // Проверяем Content-Type
                 const contentType = response.headers.get('Content-Type');
-                console.log('Content-Type:', contentType);
-
                 if (!contentType || !contentType.includes('application/json')) {
-                    // Если не JSON, читаем как текст для отладки
                     return response.text().then(text => {
                         console.error('Non-JSON response:', text);
                         throw new Error('Server returned non-JSON response');
@@ -177,7 +792,7 @@ class ContactManager {
                         }, 1500);
                     }
                 } else {
-                    console.warn('No messages in response or messages is not array:', data);
+                    console.warn('No messages in response:', data);
                 }
             })
             .catch(error => {
@@ -235,15 +850,88 @@ class ContactManager {
         return true;
     }
 
+    validateEmail(emailInput) {
+        if (!emailInput) return false;
+
+        const email = emailInput.value.trim();
+        this.clearFieldError(emailInput);
+
+        if (!email) {
+            this.setFieldError(emailInput, 'System E-Mail ist erforderlich');
+            return false;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            this.setFieldError(emailInput, 'Ungültiges E-Mail-Format');
+            return false;
+        }
+
+        this.setFieldSuccess(emailInput);
+        return true;
+    }
+
+    validatePhone(phoneInput) {
+        if (!phoneInput) return false;
+
+        const phone = phoneInput.value.trim();
+        this.clearFieldError(phoneInput);
+
+        if (!phone) {
+            this.setFieldError(phoneInput, 'System Telefon ist erforderlich');
+            return false;
+        }
+
+        const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,20}$/;
+        if (!phoneRegex.test(phone)) {
+            this.setFieldError(phoneInput, 'Ungültiges Telefonformat');
+            return false;
+        }
+
+        this.setFieldSuccess(phoneInput);
+        return true;
+    }
+
+    validatePrimaryContact(typeSelect, valueInput) {
+        if (!typeSelect || !valueInput) return false;
+
+        const type = typeSelect.value;
+        const value = valueInput.value.trim();
+
+        this.clearFieldError(typeSelect);
+        this.clearFieldError(valueInput);
+
+        if (!type) {
+            this.setFieldError(typeSelect, 'Hauptkontakt Typ ist erforderlich');
+            return false;
+        }
+
+        if (!value) {
+            this.setFieldError(valueInput, 'Hauptkontakt ist erforderlich');
+            return false;
+        }
+
+        // Используем валидацию из PrimaryContactManager
+        if (window.primaryContactManager && !window.primaryContactManager.isValid()) {
+            return false; // Ошибка уже установлена в PrimaryContactManager
+        }
+
+        this.setFieldSuccess(typeSelect);
+        this.setFieldSuccess(valueInput);
+        return true;
+    }
+
     setFieldError(field, message) {
         field.classList.remove('is-valid');
         field.classList.add('is-invalid');
 
+        // Удаляем старые сообщения об ошибках
         const existingError = field.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
         }
 
+        // Добавляем новое сообщение об ошибке
         const errorDiv = document.createElement('div');
         errorDiv.className = 'invalid-feedback d-block';
         errorDiv.textContent = message;
@@ -254,6 +942,7 @@ class ContactManager {
         field.classList.remove('is-invalid');
         field.classList.add('is-valid');
 
+        // Удаляем сообщения об ошибках
         const existingError = field.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
@@ -268,437 +957,29 @@ class ContactManager {
             existingError.remove();
         }
     }
-
-    setupValidation() {
-        const form = document.getElementById('contactForm');
-        if (!form) return;
-
-        const inputs = form.querySelectorAll('input, select');
-        inputs.forEach(input => {
-            input.addEventListener('blur', () => {
-                this.validateField(input);
-            });
-        });
-    }
-
-    openModal(index = -1) {
-        this.editingIndex = index;
-        const modalElement = document.getElementById('contactModal');
-        if (!modalElement) return;
-
-        const modal = new bootstrap.Modal(modalElement);
-        const modalTitle = document.getElementById('contactModalLabel');
-        const saveBtn = document.getElementById('saveContactBtn');
-
-        if (index >= 0) {
-            // Режим редактирования
-            const contact = this.contacts[index];
-            modalTitle.innerHTML = '<i class="bi bi-pencil me-2"></i>Kontakt bearbeiten';
-            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Aktualisieren';
-
-            // Заполняем форму данными
-            this.setFieldValue('contactType', contact.type);
-            this.setFieldValue('contactValue', contact.value);
-            this.setFieldValue('contactLabel', contact.label || '');
-            this.setCheckboxValue('contactPrimary', contact.primary || false);
-
-            this.updateContactHints(contact.type);
-        } else {
-            // Режим добавления
-            modalTitle.innerHTML = '<i class="bi bi-person-vcard me-2"></i>Kontakt hinzufügen';
-            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Speichern';
-            this.resetForm();
-        }
-
-        modal.show();
-    }
-
-    setFieldValue(fieldId, value) {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.value = value;
-        }
-    }
-
-    setCheckboxValue(fieldId, checked) {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.checked = checked;
-        }
-    }
-
-    resetForm() {
-        const form = document.getElementById('contactForm');
-        if (!form) return;
-
-        form.reset();
-
-        // Очищаем валидацию
-        form.querySelectorAll('.is-invalid, .is-valid').forEach(el => {
-            el.classList.remove('is-invalid', 'is-valid');
-        });
-
-        this.updateContactHints('');
-    }
-
-    updateContactHints(type) {
-        const valueInput = document.getElementById('contactValue');
-        const hintElement = document.getElementById('contactHint');
-
-        if (!valueInput || !hintElement) return;
-
-        const hints = {
-            'email': 'Geben Sie eine gültige E-Mail-Adresse ein (z.B. max@example.com)',
-            'phone': 'Geben Sie eine Telefonnummer ein (z.B. +49 123 456789)',
-            'mobile': 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)',
-            'fax': 'Geben Sie eine Faxnummer ein (z.B. +49 123 456789)',
-            'website': 'Geben Sie eine Website-URL ein (z.B. https://www.example.com)',
-            'linkedin': 'Geben Sie Ihr LinkedIn-Profil ein (z.B. linkedin.com/in/username)',
-            'xing': 'Geben Sie Ihr XING-Profil ein (z.B. xing.com/profile/username)',
-            'other': 'Geben Sie die entsprechenden Kontaktdaten ein'
-        };
-
-        const placeholders = {
-            'email': 'beispiel@domain.com',
-            'phone': '+49 123 456789',
-            'mobile': '+49 170 1234567',
-            'fax': '+49 123 456789',
-            'website': 'https://www.example.com',
-            'linkedin': 'linkedin.com/in/username',
-            'xing': 'xing.com/profile/username',
-            'other': 'Kontaktdaten eingeben...'
-        };
-
-        if (type && hints[type]) {
-            hintElement.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${hints[type]}`;
-            valueInput.placeholder = placeholders[type];
-        } else {
-            hintElement.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Geben Sie die entsprechenden Kontaktdaten ein';
-            valueInput.placeholder = 'Kontaktdaten eingeben...';
-        }
-    }
-
-    validateField(field) {
-        if (!field) return true;
-
-        const value = field.value.trim();
-        let isValid = true;
-        let errorMessage = '';
-
-        switch (field.id) {
-            case 'contactType':
-                if (!value) {
-                    isValid = false;
-                    errorMessage = 'Kontakttyp ist erforderlich';
-                }
-                break;
-
-            case 'contactValue':
-                if (!value) {
-                    isValid = false;
-                    errorMessage = 'Kontaktdaten sind erforderlich';
-                } else {
-                    isValid = this.validateContactValue();
-                    if (!isValid) {
-                        errorMessage = this.getValidationError();
-                    }
-                }
-                break;
-        }
-
-        this.setFieldValidation(field, isValid, errorMessage);
-        return isValid;
-    }
-
-    validateContactValue() {
-        const typeField = document.getElementById('contactType');
-        const valueField = document.getElementById('contactValue');
-
-        if (!typeField || !valueField) return false;
-
-        const type = typeField.value;
-        const value = valueField.value.trim();
-
-        if (!value) return false;
-
-        switch (type) {
-            case 'email':
-                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-            case 'phone':
-            case 'mobile':
-            case 'fax':
-                return /^[\+]?[0-9\s\-\(\)]{7,20}$/.test(value);
-            case 'website':
-                return /^https?:\/\/.+\..+$/.test(value) || /^www\..+\..+$/.test(value);
-            case 'linkedin':
-                return value.includes('linkedin.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
-            case 'xing':
-                return value.includes('xing.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
-            default:
-                return value.length >= 3;
-        }
-    }
-
-    getValidationError() {
-        const typeField = document.getElementById('contactType');
-        if (!typeField) return 'Ungültiges Format';
-
-        const type = typeField.value;
-
-        const errors = {
-            'email': 'Ungültiges E-Mail-Format',
-            'phone': 'Ungültiges Telefonformat',
-            'mobile': 'Ungültiges Mobilnummer-Format',
-            'fax': 'Ungültiges Faxnummer-Format',
-            'website': 'Ungültiges Website-Format (muss mit http:// oder https:// beginnen)',
-            'linkedin': 'Ungültiges LinkedIn-Profil-Format',
-            'xing': 'Ungültiges XING-Profil-Format',
-            'other': 'Kontaktdaten müssen mindestens 3 Zeichen lang sein'
-        };
-
-        return errors[type] || 'Ungültiges Format';
-    }
-
-    setFieldValidation(field, isValid, errorMessage = '') {
-        if (!field) return;
-
-        const feedback = field.parentElement.querySelector('.invalid-feedback');
-
-        field.classList.remove('is-valid', 'is-invalid');
-
-        if (isValid) {
-            field.classList.add('is-valid');
-            if (feedback) feedback.textContent = '';
-        } else {
-            field.classList.add('is-invalid');
-            if (feedback) feedback.textContent = errorMessage;
-        }
-    }
-
-    saveContact() {
-        const form = document.getElementById('contactForm');
-        if (!form) return;
-
-        const typeField = document.getElementById('contactType');
-        const valueField = document.getElementById('contactValue');
-        const labelField = document.getElementById('contactLabel');
-        const primaryField = document.getElementById('contactPrimary');
-
-        // Валидируем все поля
-        const isTypeValid = this.validateField(typeField);
-        const isValueValid = this.validateField(valueField);
-
-        if (!isTypeValid || !isValueValid) {
-            this.showAlert('Bitte korrigieren Sie die Fehler im Formular', 'error');
-            return;
-        }
-
-        const contactData = {
-            type: typeField.value,
-            value: valueField.value.trim(),
-            label: labelField ? labelField.value.trim() : '',
-            primary: primaryField ? primaryField.checked : false
-        };
-
-        // Если это основной контакт, снимаем флаг с других
-        if (contactData.primary) {
-            this.contacts.forEach(contact => contact.primary = false);
-        }
-
-        if (this.editingIndex >= 0) {
-            // Обновляем существующий контакт
-            this.contacts[this.editingIndex] = contactData;
-            this.showAlert('Kontakt erfolgreich aktualisiert', 'success');
-        } else {
-            // Добавляем новый контакт
-            this.contacts.push(contactData);
-            this.showAlert('Kontakt erfolgreich hinzugefügt', 'success');
-        }
-
-        this.updateTable();
-        this.updateContactsDataInput();
-
-        // Закрываем модальное окно
-        const modalElement = document.getElementById('contactModal');
-        if (modalElement) {
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.hide();
-            }
-        }
-    }
-
-    confirmDelete(index) {
-        this.deletingIndex = index;
-        const modalElement = document.getElementById('deleteContactModal');
-        if (modalElement) {
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
-        }
-    }
-
-    deleteContact() {
-        if (this.deletingIndex >= 0) {
-            this.contacts.splice(this.deletingIndex, 1);
-            this.updateTable();
-            this.updateContactsDataInput();
-            this.showAlert('Kontakt erfolgreich gelöscht', 'info');
-
-            const modalElement = document.getElementById('deleteContactModal');
-            if (modalElement) {
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) {
-                    modal.hide();
-                }
-            }
-        }
-    }
-
-    updateTable() {
-        const tableBody = document.getElementById('contactsTableBody');
-        const placeholder = document.getElementById('emptyContactsPlaceholder');
-        const table = document.getElementById('contactsTable');
-
-        if (!tableBody || !placeholder || !table) return;
-
-        if (this.contacts.length === 0) {
-            table.style.display = 'none';
-            placeholder.style.display = 'block';
-            return;
-        }
-
-        table.style.display = 'table';
-        placeholder.style.display = 'none';
-
-        tableBody.innerHTML = this.contacts.map((contact, index) => {
-            return this.createContactRow(contact, index);
-        }).join('');
-    }
-
-    createContactRow(contact, index) {
-        const typeIcon = this.contactTypeIcons[contact.type] || 'bi-question-circle';
-        const typeLabel = this.contactTypeLabels[contact.type] || contact.type;
-        const primaryStar = contact.primary ? '<i class="bi bi-star-fill primary-contact-star me-1" title="Hauptkontakt"></i>' : '';
-        const labelText = contact.label ? `<div class="contact-label">${this.escapeHtml(contact.label)}</div>` : '';
-
-        return `
-            <tr>
-                <td>
-                    <span class="contact-type-badge contact-type-${contact.type}">
-                        <i class="bi ${typeIcon} me-1"></i>
-                        ${typeLabel}
-                    </span>
-                    ${labelText}
-                </td>
-                <td>
-                    ${primaryStar}
-                    <code class="contact-value">${this.escapeHtml(contact.value)}</code>
-                </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-primary action-btn me-1" 
-                            onclick="contactManager.openModal(${index})" 
-                            title="Bearbeiten">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger action-btn" 
-                            onclick="contactManager.confirmDelete(${index})" 
-                            title="Löschen">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    }
-
-    updateContactsDataInput() {
-        const input = document.getElementById('contactsDataInput');
-        if (input) {
-            input.value = JSON.stringify(this.contacts);
-            console.log('Обновлены данные контактов в скрытом поле:', this.contacts.length);
-        }
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    showAlert(message, type = 'info') {
-        // Используем глобальную функцию showToast если есть, иначе простой alert
-        if (typeof window.showToast === 'function') {
-            window.showToast(message, type);
-        } else {
-            // Создаем простой toast если нет глобальной функции
-            this.createSimpleToast(message, type);
-        }
-    }
-
-    createSimpleToast(message, type) {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
-        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        toast.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, 5000);
-    }
-
-    // Валидация всех контактов для отправки формы
-    validateAllContacts() {
-        if (this.contacts.length === 0) {
-            this.showAlert('Bitte fügen Sie mindestens einen Kontakt hinzu', 'warning');
-            return false;
-        }
-
-        // Проверяем наличие email
-        const hasEmail = this.contacts.some(contact => contact.type === 'email');
-        if (!hasEmail) {
-            this.showAlert('Bitte fügen Sie mindestens eine E-Mail-Adresse hinzu', 'warning');
-            return false;
-        }
-
-        return true;
-    }
-
-    // Метод для получения данных контактов
-    getContactsData() {
-        return this.contacts;
-    }
-
-    // Метод для загрузки существующих контактов
-    loadContacts(contactsData) {
-        if (Array.isArray(contactsData)) {
-            this.contacts = contactsData;
-            this.updateTable();
-            this.updateContactsDataInput();
-        }
-    }
 }
 
-// Основной код для формы Step 2
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('admin-step2-form');
     if (!form) return;
 
-    // Инициализируем менеджер контактов
-    window.contactManager = new ContactManager();
-    contactManager.init();
+    // Инициализируем менеджер главного контакта
+    window.primaryContactManager = new PrimaryContactManager();
+    primaryContactManager.init();
 
-    // Если есть существующие данные контактов, загружаем их
-    const existingContacts = window.initialContactsData || [];
-    if (existingContacts.length > 0) {
-        contactManager.loadContacts(existingContacts);
+    // Инициализируем менеджер дополнительных контактов
+    window.additionalContactManager = new AdditionalContactManager();
+    additionalContactManager.init();
+
+    // Если есть существующие данные дополнительных контактов, загружаем их
+    const existingAdditionalContacts = window.initialAdditionalContactsData || [];
+    if (existingAdditionalContacts.length > 0) {
+        additionalContactManager.loadAdditionalContacts(existingAdditionalContacts);
     }
 
-    console.log('Create Admin Step 2 с Contact Manager инициализирован');
-    console.log('Загружено контактов:', existingContacts.length);
+    console.log('Create Admin Step 2 полностью инициализирован');
+    console.log('- PrimaryContactManager: готов');
+    console.log('- AdditionalContactManager: готов');
+    console.log('- Загружено дополнительных контактов:', existingAdditionalContacts.length);
 });
