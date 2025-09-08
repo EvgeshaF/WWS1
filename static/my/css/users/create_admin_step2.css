@@ -1,65 +1,114 @@
-/* Дополнительные стили для системы контактов в create_admin_step2 */
+/* Обновленный CSS файл для create_admin_step2 с поддержкой дополнительных контактов */
 
-/* ==================== КОНТЕЙНЕР ДОПОЛНИТЕЛЬНЫХ КОНТАКТОВ ==================== */
-.additional-contacts-section {
-    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+/* Стили для блоков формы */
+.card-header {
+    border-bottom: 2px solid #e9ecef;
+}
+
+.card-header h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-label .text-muted {
+    font-weight: 400;
+}
+
+/* Индикаторы обязательных полей */
+.form-label::after {
+    content: "";
+}
+
+.form-label:has(~ select[required]),
+.form-label:has(~ input[required]) {
     position: relative;
 }
 
-.additional-contacts-section::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #6f42c1 0%, #0d6efd 100%);
-    border-radius: 0.5rem 0.5rem 0 0;
+/* Стили для полей на всю ширину */
+.full-width-field {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
 }
 
-/* ==================== СЧЕТЧИК КОНТАКТОВ ==================== */
-#additionalContactsCount {
-    background: rgba(255, 255, 255, 0.9) !important;
-    color: #0d6efd !important;
-    font-weight: 700;
-    min-width: 24px;
-    height: 24px;
-    border-radius: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    border: 2px solid rgba(13, 110, 253, 0.3);
+/* Подсветка обязательных полей */
+input[required], select[required] {
+    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.1);
+}
+
+input[required]:focus, select[required]:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Стили для опциональных полей */
+input:not([required]), select:not([required]) {
+    background-color: #f8f9fa;
+}
+
+/* Иконки в заголовках */
+.card-header i {
+    color: #6c757d;
+}
+
+/* ==================== КНОПКА ДОПОЛНИТЕЛЬНЫХ КОНТАКТОВ ==================== */
+
+#openAdditionalContactsBtn {
+    position: relative;
+    background: linear-gradient(145deg, #6f42c1 0%, #5a2d91 100%);
+    border: none;
+    color: white;
     transition: all 0.3s ease;
 }
 
-#additionalContactsCount:not(:empty) {
-    animation: pulse 2s infinite;
+#openAdditionalContactsBtn:hover {
+    background: linear-gradient(145deg, #5a2d91 0%, #4c237a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
 }
 
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 5px rgba(13, 110, 253, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
-    }
+#additionalContactsCount {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #6f42c1 !important;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* ==================== ТАБЛИЦА КОНТАКТОВ ==================== */
+/* ==================== МОДАЛЬНОЕ ОКНО ДОПОЛНИТЕЛЬНЫХ КОНТАКТОВ ==================== */
+
+#additionalContactsModal .modal-header {
+    background: linear-gradient(145deg, #17a2b8 0%, #138496 100%) !important;
+}
+
+#additionalContactsModal .modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+#additionalContactsModal .modal-body {
+    padding: 2rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* ==================== СТИЛИ ДЛЯ ТАБЛИЦЫ ДОПОЛНИТЕЛЬНЫХ КОНТАКТОВ ==================== */
+
 .contacts-table {
     border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     overflow: hidden;
     background: var(--surface-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .contacts-table th {
@@ -68,43 +117,40 @@
     font-weight: 600;
     font-size: 0.9em;
     border-bottom: 2px solid #dee2e6;
-    padding: 1rem 0.75rem;
+    padding: 0.75rem;
     text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
 .contacts-table td {
-    padding: 0.875rem 0.75rem;
+    padding: 0.75rem;
     vertical-align: middle;
     border-bottom: 1px solid #f1f3f4;
     text-align: center;
 }
 
 .contacts-table tbody tr {
-    transition: all 0.3s ease;
-    animation: fadeInUp 0.4s ease-out;
+    transition: all 0.2s ease;
+    animation: fadeInUp 0.3s ease-out;
 }
 
 .contacts-table tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.04);
+    background-color: rgba(13, 110, 253, 0.03);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* ==================== ТИПЫ КОНТАКТОВ ==================== */
+/* ==================== СТИЛИ ДЛЯ ТИПОВ КОНТАКТОВ ==================== */
+
 .contact-type-badge {
     display: inline-flex;
     align-items: center;
-    font-size: 0.85em;
+    font-size: 0.8em;
     font-weight: 500;
-    padding: 0.5rem 0.75rem;
-    border-radius: 25px;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
     border: 1px solid;
     transition: all 0.2s ease;
     white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .contact-type-email {
@@ -149,23 +195,23 @@
     border-color: #bdbdbd;
 }
 
-/* ==================== ЗНАЧЕНИЯ КОНТАКТОВ ==================== */
+/* ==================== СТИЛИ ДЛЯ ЗНАЧЕНИЙ КОНТАКТОВ ==================== */
+
 .contact-value {
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
     font-size: 0.9em;
     background: linear-gradient(145deg, #f8f9fa 0%, #ffffff 100%);
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.8rem;
     border-radius: 0.375rem;
     border: 1px solid #dee2e6;
     color: #495057;
     word-break: break-all;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     display: inline-block;
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: all 0.2s ease;
 }
 
 .contact-value:hover {
@@ -174,141 +220,166 @@
     white-space: normal;
     word-wrap: break-word;
     max-width: none;
-    z-index: 1000;
-    position: relative;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* ==================== КНОПКИ ДЕЙСТВИЙ ==================== */
+
 .action-btn {
-    padding: 0.375rem 0.5rem;
+    padding: 0.25rem 0.5rem;
     border: 1px solid;
-    border-radius: 0.375rem;
+    border-radius: 0.25rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.85em;
+    font-size: 0.8em;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 36px;
-    height: 36px;
-    position: relative;
+    min-width: 32px;
+    height: 32px;
 }
 
 .action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .action-btn:active {
     transform: translateY(0);
 }
 
-.action-btn.btn-outline-primary:hover {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: white;
+/* Кнопка добавления дополнительного контакта */
+#addAdditionalContactBtn {
+    background: linear-gradient(145deg, #0d6efd 0%, #0056b3 100%);
+    border: none;
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+    transition: all 0.2s ease;
 }
 
-.action-btn.btn-outline-danger:hover {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    color: white;
+#addAdditionalContactBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
 }
 
 /* ==================== ПЛЕЙСХОЛДЕР ДЛЯ ПУСТОЙ ТАБЛИЦЫ ==================== */
+
 #emptyAdditionalContactsPlaceholder {
     border: 2px dashed #dee2e6;
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     background: linear-gradient(145deg, #fafafa 0%, #f8f9fa 100%);
     padding: 3rem 2rem;
-    margin: 1.5rem 0;
+    margin: 1rem 0;
     transition: all 0.3s ease;
     text-align: center;
-    position: relative;
 }
 
 #emptyAdditionalContactsPlaceholder:hover {
     border-color: #adb5bd;
     background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
-    transform: translateY(-2px);
 }
 
 #emptyAdditionalContactsPlaceholder .display-4 {
     font-size: 3rem;
-    opacity: 0.6;
+    opacity: 0.5;
     color: #6c757d;
-    margin-bottom: 1rem;
-    animation: float 3s ease-in-out infinite;
 }
 
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0px);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
+#emptyAdditionalContactsPlaceholder p {
+    margin-bottom: 0.5rem;
 }
 
-/* ==================== ЗВЕЗДОЧКА ДЛЯ ВАЖНЫХ КОНТАКТОВ ==================== */
-.primary-contact-star {
-    color: #ffc107;
-    text-shadow: 0 0 3px rgba(255, 193, 7, 0.5);
-    animation: sparkle 2s ease-in-out infinite;
+#emptyAdditionalContactsPlaceholder strong {
+    color: #495057;
 }
 
-@keyframes sparkle {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
-    }
+#emptyAdditionalContactsPlaceholder .text-muted {
+    color: #6c757d !important;
 }
 
-/* ==================== МЕТКИ КОНТАКТОВ ==================== */
-.contact-label {
-    font-style: italic;
-    color: #6c757d;
-    font-size: 0.8em;
-    margin-top: 0.25rem;
-    padding: 0.2rem 0.4rem;
-    background: rgba(108, 117, 125, 0.1);
-    border-radius: 0.25rem;
-    display: inline-block;
+#emptyAdditionalContactsPlaceholder small {
+    color: #868e96;
 }
 
 /* ==================== МОДАЛЬНЫЕ ОКНА ==================== */
+
 .modal-content {
     border: none;
-    border-radius: 0.75rem;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-}
-
-.modal-header.bg-info {
-    background: linear-gradient(145deg, #17a2b8 0%, #138496 100%) !important;
-    border-bottom: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
 .modal-header.bg-primary {
     background: linear-gradient(145deg, #0d6efd 0%, #0056b3 100%) !important;
     border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .modal-header.bg-danger {
     background: linear-gradient(145deg, #dc3545 0%, #b02a37 100%) !important;
     border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+/* ==================== СТИЛИ ФОРМЫ В МОДАЛЬНОМ ОКНЕ ==================== */
+
+.modal-body .form-label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.modal-body .form-label i {
+    color: #6c757d;
+}
+
+.modal-body .form-control,
+.modal-body .form-select {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.modal-body .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.modal-body .form-text {
+    color: #6c757d;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+/* ==================== ВАЛИДАЦИЯ ==================== */
+
+.is-valid {
+    border-color: #198754 !important;
+    box-shadow: inset 0 0 0 1px rgba(25, 135, 84, 0.1) !important;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.1) !important;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+    display: block;
 }
 
 /* ==================== АНИМАЦИИ ==================== */
+
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(15px);
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
@@ -325,117 +396,199 @@
     transform: scale(1) translateY(0);
 }
 
+/* ==================== HTMX ИНДИКАТОРЫ ==================== */
+
+.htmx-indicator {
+    display: none;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+}
+
+.htmx-request .htmx-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.htmx-request.htmx-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.htmx-request #submitBtn {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.htmx-request #submitBtn .bi-arrow-right {
+    display: none;
+}
+
+.htmx-request #submitBtn::after {
+    content: "";
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* ==================== RESPONSIVE СТИЛИ ==================== */
+
 @media (max-width: 768px) {
     .contacts-table th,
     .contacts-table td {
-        padding: 0.625rem 0.5rem;
+        padding: 0.5rem;
         font-size: 0.9em;
     }
 
     .contact-value {
         font-size: 0.8em;
-        padding: 0.375rem 0.5rem;
-        max-width: 120px;
+        padding: 0.3rem 0.5rem;
+        max-width: 150px;
     }
 
     .action-btn {
-        padding: 0.25rem 0.375rem;
-        font-size: 0.8em;
-        min-width: 32px;
-        height: 32px;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7em;
+        min-width: 28px;
+        height: 28px;
     }
 
     .contact-type-badge {
-        font-size: 0.75em;
-        padding: 0.375rem 0.5rem;
+        font-size: 0.7em;
+        padding: 0.2rem 0.4rem;
     }
 
     #emptyAdditionalContactsPlaceholder {
-        padding: 2rem 1rem;
+        padding: 2rem 1.5rem;
     }
 
     #emptyAdditionalContactsPlaceholder .display-4 {
         font-size: 2rem;
     }
 
-    .modal-dialog {
-        margin: 0.5rem;
+    #additionalContactsModal .modal-body {
+        padding: 1.5rem;
+        max-height: 60vh;
     }
 
-    #additionalContactsCount {
-        min-width: 20px;
-        height: 20px;
-        font-size: 0.7rem;
+    .btn-group-mobile {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .btn-group-mobile .btn {
+        width: 100%;
     }
 }
 
 @media (max-width: 576px) {
+    .modal-dialog {
+        margin: 1rem;
+    }
+
     .contacts-table {
-        font-size: 0.85em;
+        font-size: 0.8em;
     }
 
     .contact-type-badge {
         display: block;
         text-align: center;
-        margin-bottom: 0.25rem;
-        font-size: 0.7em;
+        margin-bottom: 0.2rem;
     }
 
     .action-btn {
         display: block;
         margin: 0.1rem 0;
         width: 100%;
-        min-width: auto;
     }
 
-    .additional-contacts-section {
-        padding: 1rem;
+    #openAdditionalContactsBtn {
+        width: 100%;
+        margin-bottom: 0.5rem;
     }
 }
 
 /* ==================== УЛУЧШЕННЫЕ ПЕРЕХОДЫ ==================== */
+
 * {
     transition: all 0.2s ease;
 }
 
-.btn, .form-control, .form-select {
-    transition: all 0.15s ease-in-out;
+button, .btn {
+    transition: all 0.2s ease;
 }
 
-/* ==================== СПЕЦИАЛЬНЫЕ ЭФФЕКТЫ ==================== */
-.contact-management-enhanced {
+/* ==================== СПЕЦИАЛЬНЫЕ СТИЛИ ДЛЯ SELECT2 ==================== */
+
+.modal .select2-container {
+    z-index: 9999;
+}
+
+.modal .select2-dropdown {
+    z-index: 10000;
+}
+
+/* ==================== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ UX ==================== */
+
+.contact-management-block {
     position: relative;
-    overflow: hidden;
 }
 
-.contact-management-enhanced::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: rotate(45deg);
-    transition: all 0.6s ease;
-    opacity: 0;
+.contact-management-block .card-body {
+    min-height: 200px;
 }
 
-.contact-management-enhanced:hover::before {
-    animation: shimmer 1.5s ease-in-out;
+.form-step-2 {
+    transition: all 0.3s ease;
 }
 
-@keyframes shimmer {
-    0% {
-        transform: translateX(-100%) translateY(-100%) rotate(45deg);
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        transform: translateX(100%) translateY(100%) rotate(45deg);
-        opacity: 0;
-    }
+.form-step-2.processing {
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* Улучшенные стили для валидации полей */
+.form-control.is-valid:focus,
+.form-select.is-valid:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+/* Стилизация счетчика */
+.badge-counter {
+    position: relative;
+    top: -2px;
+}
+
+/* Дополнительные стили для улучшения визуального восприятия */
+.gradient-border {
+    border-image: linear-gradient(45deg, #0d6efd, #6f42c1) 1;
+}
+
+.card-modern {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
 }

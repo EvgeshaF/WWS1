@@ -1,4 +1,4 @@
-// static/my/js/users/create_admin_step2.js - ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
+// static/my/js/users/create_admin_step2.js - ENHANCED MODAL VERSION
 
 // ==================== ГЛАВНЫЙ КОНТАКТ МЕНЕДЖЕР ====================
 class PrimaryContactManager {
@@ -52,7 +52,6 @@ class PrimaryContactManager {
     }
 
     init() {
-        // Находим элементы на странице
         this.contactTypeSelect = document.getElementById('id_primary_contact_type');
         this.contactValueInput = document.getElementById('id_primary_contact_value');
         this.contactHintElement = document.getElementById('primaryContactHint');
@@ -62,23 +61,17 @@ class PrimaryContactManager {
             return;
         }
 
-        // Привязываем события
         this.bindEvents();
-
-        // Устанавливаем начальное состояние
         this.updateContactHints();
-
         console.log('PrimaryContactManager инициализирован');
     }
 
     bindEvents() {
-        // Изменение типа контакта
         this.contactTypeSelect.addEventListener('change', () => {
             this.updateContactHints();
             this.validateContactValue();
         });
 
-        // Валидация при вводе
         this.contactValueInput.addEventListener('input', () => {
             this.validateContactValue();
         });
@@ -93,23 +86,18 @@ class PrimaryContactManager {
         const config = this.contactHints[selectedType];
 
         if (config) {
-            // Обновляем placeholder
             this.contactValueInput.placeholder = config.placeholder;
-
-            // Обновляем подсказку
             this.contactHintElement.innerHTML = `
                 <i class="bi bi-lightbulb me-1"></i>
                 ${config.hint}
             `;
 
-            // Устанавливаем паттерн для HTML5 валидации
             if (config.pattern) {
                 this.contactValueInput.setAttribute('pattern', config.pattern);
             } else {
                 this.contactValueInput.removeAttribute('pattern');
             }
         } else {
-            // Сброс к дефолтным значениям
             this.contactValueInput.placeholder = 'Kontaktdaten eingeben...';
             this.contactHintElement.innerHTML = `
                 <i class="bi bi-lightbulb me-1"></i>
@@ -118,7 +106,6 @@ class PrimaryContactManager {
             this.contactValueInput.removeAttribute('pattern');
         }
 
-        // Очищаем предыдущую валидацию
         this.clearFieldValidation();
     }
 
@@ -126,7 +113,6 @@ class PrimaryContactManager {
         const selectedType = this.contactTypeSelect.value.toLowerCase();
         const value = this.contactValueInput.value.trim();
 
-        // Если тип не выбран или значение пустое
         if (!selectedType || !value) {
             this.clearFieldValidation();
             return true;
@@ -141,7 +127,6 @@ class PrimaryContactManager {
         let isValid = true;
         let errorMessage = '';
 
-        // Проверяем по паттерну
         if (config.pattern) {
             const regex = new RegExp(config.pattern);
             if (!regex.test(value)) {
@@ -150,7 +135,6 @@ class PrimaryContactManager {
             }
         }
 
-        // Устанавливаем состояние валидации
         if (isValid) {
             this.setFieldSuccess();
         } else {
@@ -179,13 +163,11 @@ class PrimaryContactManager {
         this.contactValueInput.classList.remove('is-valid');
         this.contactValueInput.classList.add('is-invalid');
 
-        // Удаляем старые сообщения об ошибках
         const existingError = this.contactValueInput.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
         }
 
-        // Добавляем новое сообщение об ошибке
         const errorDiv = document.createElement('div');
         errorDiv.className = 'invalid-feedback d-block';
         errorDiv.textContent = message;
@@ -196,7 +178,6 @@ class PrimaryContactManager {
         this.contactValueInput.classList.remove('is-invalid');
         this.contactValueInput.classList.add('is-valid');
 
-        // Удаляем сообщения об ошибках
         const existingError = this.contactValueInput.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
@@ -212,13 +193,12 @@ class PrimaryContactManager {
         }
     }
 
-    // Публичный метод для получения валидации (используется при отправке формы)
     isValid() {
         return this.validateContactValue();
     }
 }
 
-// ==================== ДОПОЛНИТЕЛЬНЫЕ КОНТАКТЫ МЕНЕДЖЕР ====================
+// ==================== ДОПОЛНИТЕЛЬНЫЕ КОНТАКТЫ МЕНЕДЖЕР - ENHANCED VERSION ====================
 class AdditionalContactManager {
     constructor() {
         this.additionalContacts = [];
@@ -249,11 +229,11 @@ class AdditionalContactManager {
     init() {
         this.bindEvents();
         this.updateTable();
+        this.updateSummary();
         this.setupFormSubmission();
     }
 
     bindEvents() {
-        // Кнопка открытия модального окна управления контактами
         const openBtn = document.getElementById('openAdditionalContactsBtn');
         if (openBtn) {
             openBtn.addEventListener('click', () => {
@@ -261,7 +241,6 @@ class AdditionalContactManager {
             });
         }
 
-        // Кнопка добавления нового контакта
         const addBtn = document.getElementById('addAdditionalContactBtn');
         if (addBtn) {
             addBtn.addEventListener('click', () => {
@@ -269,7 +248,6 @@ class AdditionalContactManager {
             });
         }
 
-        // Кнопка сохранения в модальном окне контакта
         const saveBtn = document.getElementById('saveContactBtn');
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
@@ -277,7 +255,6 @@ class AdditionalContactManager {
             });
         }
 
-        // Кнопка подтверждения удаления
         const confirmBtn = document.getElementById('confirmDeleteBtn');
         if (confirmBtn) {
             confirmBtn.addEventListener('click', () => {
@@ -285,7 +262,6 @@ class AdditionalContactManager {
             });
         }
 
-        // Изменение типа контакта для динамических подсказок
         const typeSelect = document.getElementById('contactType');
         if (typeSelect) {
             typeSelect.addEventListener('change', (e) => {
@@ -293,7 +269,6 @@ class AdditionalContactManager {
             });
         }
 
-        // Валидация в реальном времени
         const valueInput = document.getElementById('contactValue');
         if (valueInput) {
             valueInput.addEventListener('input', () => {
@@ -301,7 +276,6 @@ class AdditionalContactManager {
             });
         }
 
-        // Сброс формы при закрытии модального окна
         const modal = document.getElementById('contactModal');
         if (modal) {
             modal.addEventListener('hidden.bs.modal', () => {
@@ -315,6 +289,7 @@ class AdditionalContactManager {
         if (modalElement) {
             const modal = new bootstrap.Modal(modalElement);
             this.updateTable();
+            this.updateModalCounter();
             modal.show();
         }
     }
@@ -329,12 +304,10 @@ class AdditionalContactManager {
         const saveBtn = document.getElementById('saveContactBtn');
 
         if (index >= 0) {
-            // Режим редактирования
             const contact = this.additionalContacts[index];
             modalTitle.innerHTML = '<i class="bi bi-pencil me-2"></i>Kontakt bearbeiten';
             saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Aktualisieren';
 
-            // Заполняем форму данными
             this.setFieldValue('contactType', contact.type);
             this.setFieldValue('contactValue', contact.value);
             this.setFieldValue('contactLabel', contact.label || '');
@@ -342,7 +315,6 @@ class AdditionalContactManager {
 
             this.updateContactHints(contact.type);
         } else {
-            // Режим добавления
             modalTitle.innerHTML = '<i class="bi bi-person-vcard me-2"></i>Kontakt hinzufügen';
             saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Speichern';
             this.resetContactForm();
@@ -371,7 +343,6 @@ class AdditionalContactManager {
 
         form.reset();
 
-        // Очищаем валидацию
         form.querySelectorAll('.is-invalid, .is-valid').forEach(el => {
             el.classList.remove('is-invalid', 'is-valid');
         });
@@ -451,7 +422,6 @@ class AdditionalContactManager {
         const labelField = document.getElementById('contactLabel');
         const primaryField = document.getElementById('contactPrimary');
 
-        // Валидируем все поля
         const isTypeValid = this.validateField(typeField);
         const isValueValid = this.validateField(valueField);
 
@@ -467,25 +437,23 @@ class AdditionalContactManager {
             primary: primaryField ? primaryField.checked : false
         };
 
-        // Если это основной контакт, снимаем флаг с других
         if (contactData.primary) {
             this.additionalContacts.forEach(contact => contact.primary = false);
         }
 
         if (this.editingIndex >= 0) {
-            // Обновляем существующий контакт
             this.additionalContacts[this.editingIndex] = contactData;
             this.showAlert('Kontakt erfolgreich aktualisiert', 'success');
         } else {
-            // Добавляем новый контакт
             this.additionalContacts.push(contactData);
             this.showAlert('Kontakt erfolgreich hinzugefügt', 'success');
         }
 
         this.updateTable();
+        this.updateModalCounter();
+        this.updateSummary();
         this.updateContactsDataInput();
 
-        // Закрываем модальное окно
         const modalElement = document.getElementById('contactModal');
         if (modalElement) {
             const modal = bootstrap.Modal.getInstance(modalElement);
@@ -575,6 +543,8 @@ class AdditionalContactManager {
         if (this.deletingIndex >= 0) {
             this.additionalContacts.splice(this.deletingIndex, 1);
             this.updateTable();
+            this.updateModalCounter();
+            this.updateSummary();
             this.updateContactsDataInput();
             this.showAlert('Kontakt erfolgreich gelöscht', 'info');
 
@@ -589,18 +559,11 @@ class AdditionalContactManager {
     }
 
     updateTable() {
-        // Обновляем таблицу в модальном окне управления контактами
         const tableBody = document.getElementById('additionalContactsTableBody');
-        const counter = document.getElementById('additionalContactsCount');
-
-        if (!tableBody || !counter) return;
-
-        // Обновляем счетчик
-        counter.textContent = this.additionalContacts.length;
-
-        // Находим элементы в модальном окне
         const modalTableContainer = document.querySelector('#additionalContactsModal .table-responsive');
         const modalPlaceholder = document.querySelector('#additionalContactsModal #emptyAdditionalContactsPlaceholder');
+
+        if (!tableBody) return;
 
         if (this.additionalContacts.length === 0) {
             if (modalTableContainer) modalTableContainer.style.display = 'none';
@@ -615,6 +578,34 @@ class AdditionalContactManager {
         tableBody.innerHTML = this.additionalContacts.map((contact, index) => {
             return this.createContactRow(contact, index);
         }).join('');
+    }
+
+    updateModalCounter() {
+        const modalCounter = document.getElementById('modalContactsCount');
+        if (modalCounter) {
+            modalCounter.textContent = this.additionalContacts.length;
+        }
+    }
+
+    // НОВАЯ ФУНКЦИЯ: Обновление summary на главной странице
+    updateSummary() {
+        const counter = document.getElementById('additionalContactsCount');
+        const summaryText = document.getElementById('contactsSummaryText');
+
+        if (counter) {
+            counter.textContent = this.additionalContacts.length;
+        }
+
+        if (summaryText) {
+            const count = this.additionalContacts.length;
+            if (count === 0) {
+                summaryText.textContent = 'Keine zusätzlichen Kontakte hinzugefügt';
+            } else if (count === 1) {
+                summaryText.textContent = '1 zusätzlicher Kontakt hinzugefügt';
+            } else {
+                summaryText.textContent = `${count} zusätzliche Kontakte hinzugefügt`;
+            }
+        }
     }
 
     createContactRow(contact, index) {
@@ -636,17 +627,22 @@ class AdditionalContactManager {
                     ${primaryStar}
                     <code class="contact-value">${this.escapeHtml(contact.value)}</code>
                 </td>
+                <td>
+                    ${contact.primary ? '<span class="badge bg-warning text-dark">Wichtig</span>' : '<span class="badge bg-secondary">Standard</span>'}
+                </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-primary action-btn me-1" 
-                            onclick="additionalContactManager.openContactModal(${index})" 
-                            title="Bearbeiten">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger action-btn" 
-                            onclick="additionalContactManager.confirmDelete(${index})" 
-                            title="Löschen">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary" 
+                                onclick="additionalContactManager.openContactModal(${index})" 
+                                title="Bearbeiten">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" 
+                                onclick="additionalContactManager.confirmDelete(${index})" 
+                                title="Löschen">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -667,7 +663,6 @@ class AdditionalContactManager {
     }
 
     showAlert(message, type = 'info') {
-        // Используем глобальную функцию showToast если есть
         if (typeof window.showToast === 'function') {
             window.showToast(message, type);
         } else {
@@ -675,16 +670,15 @@ class AdditionalContactManager {
         }
     }
 
-    // Метод для получения данных дополнительных контактов
     getAdditionalContactsData() {
         return this.additionalContacts;
     }
 
-    // Метод для загрузки существующих дополнительных контактов
     loadAdditionalContacts(contactsData) {
         if (Array.isArray(contactsData)) {
             this.additionalContacts = contactsData;
             this.updateTable();
+            this.updateSummary();
             this.updateContactsDataInput();
         }
     }
@@ -693,18 +687,15 @@ class AdditionalContactManager {
         const form = document.getElementById('admin-step2-form');
         if (!form) return;
 
-        // Обработчик отправки формы
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
-            // Валидируем основные поля
             const firstNameInput = form.querySelector('input[name="first_name"]');
             const lastNameInput = form.querySelector('input[name="last_name"]');
             const salutationSelect = form.querySelector('select[name="salutation"]');
             const emailInput = form.querySelector('input[name="email"]');
             const phoneInput = form.querySelector('input[name="phone"]');
 
-            // Валидируем главный контакт
             const primaryContactTypeSelect = form.querySelector('select[name="primary_contact_type"]');
             const primaryContactValueInput = form.querySelector('input[name="primary_contact_value"]');
 
@@ -720,21 +711,17 @@ class AdditionalContactManager {
                 return;
             }
 
-            // Показываем прогресс
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird gespeichert...';
             }
 
-            // Создаем FormData для отправки
             const formData = new FormData(form);
 
-            // Добавляем данные дополнительных контактов
             const additionalContactsData = this.getAdditionalContactsData();
             formData.append('additional_contacts_data', JSON.stringify(additionalContactsData));
 
-            // Добавляем данные главного контакта
             const primaryContactData = {
                 type: primaryContactTypeSelect.value,
                 value: primaryContactValueInput.value.trim(),
@@ -743,7 +730,6 @@ class AdditionalContactManager {
             };
             formData.append('primary_contact_data', JSON.stringify(primaryContactData));
 
-            // Отправляем запрос
             fetch('/users/create-admin/step2/', {
                 method: 'POST',
                 body: formData,
@@ -772,19 +758,16 @@ class AdditionalContactManager {
             .then(data => {
                 console.log('JSON response:', data);
 
-                // Скрываем прогресс
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Weiter zu Schritt 3';
                 }
 
-                // Обрабатываем сообщения
                 if (data.messages && Array.isArray(data.messages)) {
                     data.messages.forEach(message => {
                         this.showAlert(message.text, message.tags);
                     });
 
-                    // Если есть успешное сообщение, перенаправляем через короткое время
                     const hasSuccess = data.messages.some(msg => msg.tags === 'success');
                     if (hasSuccess) {
                         setTimeout(() => {
@@ -798,13 +781,11 @@ class AdditionalContactManager {
             .catch(error => {
                 console.error('Fetch error:', error);
 
-                // Скрываем прогресс
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Weiter zu Schritt 3';
                 }
 
-                // Показываем ошибку пользователю
                 if (error.message.includes('non-JSON')) {
                     this.showAlert('Server hat eine ungültige Antwort gesendet. Bitte versuchen Sie es erneut.', 'error');
                 } else {
@@ -814,7 +795,6 @@ class AdditionalContactManager {
         });
     }
 
-    // Вспомогательные функции валидации
     validateRequired(field, errorMessage) {
         if (!field) return false;
 
@@ -911,9 +891,8 @@ class AdditionalContactManager {
             return false;
         }
 
-        // Используем валидацию из PrimaryContactManager
         if (window.primaryContactManager && !window.primaryContactManager.isValid()) {
-            return false; // Ошибка уже установлена в PrimaryContactManager
+            return false;
         }
 
         this.setFieldSuccess(typeSelect);
@@ -925,13 +904,11 @@ class AdditionalContactManager {
         field.classList.remove('is-valid');
         field.classList.add('is-invalid');
 
-        // Удаляем старые сообщения об ошибках
         const existingError = field.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
         }
 
-        // Добавляем новое сообщение об ошибке
         const errorDiv = document.createElement('div');
         errorDiv.className = 'invalid-feedback d-block';
         errorDiv.textContent = message;
@@ -942,7 +919,6 @@ class AdditionalContactManager {
         field.classList.remove('is-invalid');
         field.classList.add('is-valid');
 
-        // Удаляем сообщения об ошибках
         const existingError = field.closest('.mb-3').querySelector('.invalid-feedback');
         if (existingError) {
             existingError.remove();
@@ -978,7 +954,7 @@ document.addEventListener('DOMContentLoaded', function() {
         additionalContactManager.loadAdditionalContacts(existingAdditionalContacts);
     }
 
-    console.log('Create Admin Step 2 полностью инициализирован');
+    console.log('Create Admin Step 2 (Enhanced Modal Version) полностью инициализирован');
     console.log('- PrimaryContactManager: готов');
     console.log('- AdditionalContactManager: готов');
     console.log('- Загружено дополнительных контактов:', existingAdditionalContacts.length);

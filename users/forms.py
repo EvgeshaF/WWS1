@@ -71,189 +71,6 @@ def get_default_title_choices():
     ]
 
 
-def get_contact_types_from_mongodb():
-    """Загружает типы контактов из MongoDB коллекции с кэшированием"""
-    try:
-        logger.info("Загружаем типы контактов из MongoDB")
-        db = MongoConnection.get_database()
-        if db is None:
-            logger.error("База данных недоступна")
-            return get_default_contact_type_choices()
-
-        config = MongoConfig.read_config()
-        db_name = config.get('db_name')
-        if not db_name:
-            logger.error("Имя базы данных не найдено в конфигурации")
-            return get_default_contact_type_choices()
-
-        contact_types_collection_name = f"{db_name}_basic_contact_types"
-        collections = db.list_collection_names()
-        if contact_types_collection_name not in collections:
-            logger.warning(f"Коллекция '{contact_types_collection_name}' не найдена")
-            return get_default_contact_type_choices()
-
-        contact_types_collection = db[contact_types_collection_name]
-
-        # Получаем типы контактов с дополнительными полями
-        contact_types_cursor = contact_types_collection.find(
-            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
-            {
-                'type': 1,
-                'icon': 1,
-                'required_format': 1,
-                'display_order': 1,
-                'validation_pattern': 1,
-                'placeholder': 1,
-                'hint_de': 1
-            }
-        ).sort('display_order', 1)
-
-        choices = [('', '-- Typ auswählen --')]
-        count = 0
-
-        for contact_type_doc in contact_types_cursor:
-            type_code = contact_type_doc.get('type', '').strip()
-            icon = contact_type_doc.get('icon', '')
-
-            if type_code:
-                # Создаем читаемое название на основе типа
-                display_name = get_contact_type_display_name(type_code, icon)
-
-                # Используем нормализованный код для value
-                normalized_code = type_code.lower().replace('-', '').replace('_', '')
-                choices.append((normalized_code, display_name))
-                count += 1
-
-        logger.success(f"Успешно загружено {count} типов контактов из коллекции")
-        return choices
-
-    except Exception as e:
-        logger.error(f"Ошибка загрузки типов контактов из MongoDB: {e}")
-        return get_default_contact_type_choices()
-
-
-def get_contact_type_display_name(type_code, icon=''):
-    """Возвращает отображаемое название типа контакта с эмодзи"""
-
-    # Маппинг типов на отображаемые названия
-    type_mapping = {
-        'E-Mail': 'E-Mail',
-        'Email': 'E-Mail',
-        'email': 'E-Mail',
-        'Telefon': 'Telefon',
-        'Phone': 'Telefon',
-        'telefon': 'Telefon',
-        'Mobil': 'Mobil',
-        'Mobile': 'Mobil',
-        'mobil': 'Mobil',
-        'Fax': 'Fax',
-        'fax': 'Fax',
-        'Website': 'Website',
-        'Web': 'Website',
-        'website': 'Website',
-        'LinkedIn': 'LinkedIn',
-        'linkedin': 'LinkedIn',
-        'XING': 'XING',
-        'Xing': 'XING',
-        'xing': 'XING',
-        'Sonstige': 'Sonstige',
-        'Other': 'Sonstige',
-        'sonstige': 'Sonstige',
-        'other': 'Sonstige'
-    }
-
-    # Эмодзи для типов контактов
-    emoji_mapping = {
-        'E-Mail': '📧',
-        'Telefon': '📞',
-        'Mobil': '📱',
-        'Fax': '📠',
-        'Website': '🌐',
-        'LinkedIn': '💼',
-        'XING': '🔗',
-        'Sonstige': '📝'
-    }
-
-    # Получаем отображаемое название
-    display_name = type_mapping.get(type_code, type_code)
-
-    # Получаем эмодзи
-    emoji = emoji_mapping.get(display_name, '📋')
-
-    return f"{emoji} {display_name}"
-
-
-def get_default_contact_type_choices():
-    """Возвращает статичный список типов контактов как fallback"""
-    return [
-        ('', '-- Typ auswählen --'),
-        ('email', '📧 E-Mail'),
-        ('telefon', '📞 Telefon'),
-        ('mobil', '📱 Mobil'),
-        ('fax', '📠 Fax'),
-        ('website', '🌐 Website'),
-        ('linkedin', '💼 LinkedIn'),
-        ('xing', '🔗 XING'),
-        ('sonstige', '📝 Sonstige'),
-    ]
-
-
-def get_contact_validation_config(contact_type):
-    """Возвращает конфигурацию валидации для типа контакта"""
-    validation_config = {
-        'email': {
-            'pattern': r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-            'placeholder': 'beispiel@domain.com',
-            'hint': 'Geben Sie eine gültige E-Mail-Adresse ein',
-            'error_message': 'Ungültiges E-Mail-Format'
-        },
-        'telefon': {
-            'pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder': '+49 123 456789',
-            'hint': 'Geben Sie eine Telefonnummer ein (z.B. +49 123 456789)',
-            'error_message': 'Ungültiges Telefonformat'
-        },
-        'mobil': {
-            'pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder': '+49 170 1234567',
-            'hint': 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)',
-            'error_message': 'Ungültiges Mobilnummer-Format'
-        },
-        'fax': {
-            'pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder': '+49 123 456789',
-            'hint': 'Geben Sie eine Faxnummer ein (z.B. +49 123 456789)',
-            'error_message': 'Ungültiges Faxnummer-Format'
-        },
-        'website': {
-            'pattern': r'^https?:\/\/.+\..+$|^www\..+\..+$',
-            'placeholder': 'https://www.example.com',
-            'hint': 'Geben Sie eine Website-URL ein (z.B. https://www.example.com)',
-            'error_message': 'Ungültiges Website-Format (muss mit http:// oder https:// beginnen)'
-        },
-        'linkedin': {
-            'pattern': r'^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$',
-            'placeholder': 'linkedin.com/in/username',
-            'hint': 'Geben Sie Ihr LinkedIn-Profil ein (z.B. linkedin.com/in/username)',
-            'error_message': 'Ungültiges LinkedIn-Profil-Format'
-        },
-        'xing': {
-            'pattern': r'^(https?:\/\/)?(www\.)?xing\.com\/profile\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$',
-            'placeholder': 'xing.com/profile/username',
-            'hint': 'Geben Sie Ihr XING-Profil ein (z.B. xing.com/profile/username)',
-            'error_message': 'Ungültiges XING-Profil-Format'
-        },
-        'sonstige': {
-            'pattern': r'.{3,}',
-            'placeholder': 'Kontaktdaten eingeben...',
-            'hint': 'Geben Sie die entsprechenden Kontaktdaten ein',
-            'error_message': 'Kontaktdaten müssen mindestens 3 Zeichen lang sein'
-        }
-    }
-
-    return validation_config.get(contact_type.lower(), validation_config['sonstige'])
-
-
 class CreateAdminUserForm(forms.Form):
     """Шаг 1: Основные учетные данные администратора"""
 
@@ -368,31 +185,9 @@ class AdminProfileForm(forms.Form):
         })
     )
 
-    # НОВОЕ ПОЛЕ: Тип основного контакта
-    primary_contact_type = forms.ChoiceField(
-        label="Hauptkontakt Typ",
-        choices=[],  # Заполняется динамически из MongoDB
-        required=True,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'data-live-search': 'true'
-        })
-    )
-
-    # Основной контакт (универсальное поле)
-    primary_contact_value = forms.CharField(
-        label="Hauptkontakt",
-        max_length=100,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control contact-type-transition',
-            'placeholder': 'Kontaktdaten eingeben'
-        })
-    )
-
-    # Обязательные system поля
+    # ДОБАВЛЕНЫ обязательные поля email и phone
     email = forms.EmailField(
-        label="System E-Mail",
+        label="E-Mail",
         max_length=100,
         required=True,
         widget=forms.EmailInput(attrs={
@@ -402,7 +197,7 @@ class AdminProfileForm(forms.Form):
     )
 
     phone = forms.CharField(
-        label="System Telefon",
+        label="Telefon",
         max_length=50,
         required=True,
         validators=[
@@ -423,51 +218,6 @@ class AdminProfileForm(forms.Form):
         # Динамически загружаем titles из MongoDB
         title_choices = get_titles_from_mongodb()
         self.fields['title'].choices = title_choices
-
-        # Динамически загружаем типы контактов из MongoDB
-        contact_type_choices = get_contact_types_from_mongodb()
-        self.fields['primary_contact_type'].choices = contact_type_choices
-
-    def clean_primary_contact_value(self):
-        """Улучшенная валидация основного контакта в зависимости от типа"""
-        contact_type = self.cleaned_data.get('primary_contact_type', '').lower()
-        contact_value = self.cleaned_data.get('primary_contact_value', '').strip()
-
-        if not contact_value:
-            raise forms.ValidationError("Hauptkontakt ist erforderlich")
-
-        # Получаем конфигурацию валидации для выбранного типа
-        validation_config = get_contact_validation_config(contact_type)
-
-        # Проверяем по паттерну
-        pattern = validation_config.get('pattern')
-        if pattern and not re.match(pattern, contact_value):
-            error_message = validation_config.get('error_message', 'Ungültiges Format')
-            raise forms.ValidationError(error_message)
-
-        return contact_value
-
-    def clean(self):
-        """Дополнительная кросс-валидация полей"""
-        cleaned_data = super().clean()
-
-        # Проверяем, что главный контакт не дублирует system контакты
-        primary_contact_type = cleaned_data.get('primary_contact_type', '').lower()
-        primary_contact_value = cleaned_data.get('primary_contact_value', '')
-        system_email = cleaned_data.get('email', '')
-        system_phone = cleaned_data.get('phone', '')
-
-        if primary_contact_type == 'email' and primary_contact_value == system_email:
-            raise forms.ValidationError({
-                'primary_contact_value': 'Hauptkontakt E-Mail darf nicht mit System E-Mail identisch sein'
-            })
-
-        if primary_contact_type in ['telefon', 'phone'] and primary_contact_value == system_phone:
-            raise forms.ValidationError({
-                'primary_contact_value': 'Hauptkontakt Telefon darf nicht mit System Telefon identisch sein'
-            })
-
-        return cleaned_data
 
 
 class AdminPermissionsForm(forms.Form):
