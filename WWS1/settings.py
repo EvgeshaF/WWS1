@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'home',
     'mongodb',
-    'users',  # Добавлено приложение users
+    'users',
+    'companies',
 ]
 
 MIDDLEWARE = [

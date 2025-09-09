@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'my/css/companies/registration_success.css' %}">
+{% endblock %}
+
+{% block title %}{{ text.title }} - WWS1{% endblock %}
+{% block header %}{{ text.header }}{% endblock %}
+{% block subtitle %}Registrierung erfolgreich abgeschlossen{% endblock %}
+
+{% block content %}
+    <div class="success-container">
+        <!-- Success Card -->
+        <div class="success-card">
+            <!-- Success Header -->
+            <div class="success-header">
+                <i class="bi bi-check-circle-fill display-1 mb-4"></i>
+                <h1>{{ text.title }}</h1>
+                <p class="lead">Ihre Firma "<strong>{{ company_name }}</strong>" wurde erfolgreich registriert!</p>
+            </div>
+
+            <!-- Success Body -->
+            <div class="success-body">
+                <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-envelope-check-fill me-3 fs-4"></i>
+                    <div>
+                        <strong>Bestätigung versendet!</strong><br>
+                        Eine Bestätigungs-E-Mail wurde an <strong>{{ company_email }}</strong> gesendet.
+                    </div>
+                </div>
+
+                <!-- Next Steps -->
+                <div class="next-steps">
+                    <h3><i class="bi bi-list-check me-2"></i>{{ text.next_steps_title }}</h3>
+                    <div class="steps-list">
+                        {% for step in text.next_steps %}
+                            <div class="step-item">
+                                <i class="bi bi-arrow-right-circle-fill"></i>
+                                <span>{{ step }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Information Cards -->
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <div class="info-card">
+                            <div class="info-header">
+                                <i class="bi bi-clock-history text-primary"></i>
+                                <h5>Bearbeitungszeit</h5>
+                            </div>
+                            <p>Ihre Registrierung wird normalerweise binnen <strong>24 Stunden</strong> bearbeitet.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card">
+                            <div class="info-header">
+                                <i class="bi bi-shield-check text-success"></i>
+                                <h5>Sicherheit</h5>
+                            </div>
+                            <p>Ihre Daten werden <strong>verschlüsselt</strong> übertragen und sicher gespeichert.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-card">
+                            <div class="info-header">
+                                <i class="bi bi-headset text-info"></i>
+                                <h5>Support</h5>
+                            </div>
+                            <p>Bei Fragen erreichen Sie uns unter <strong>support@wws1.de</strong> oder Tel. +49 123 456789.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="actions mt-5">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a href="{% url 'home' %}" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-house-fill me-2"></i>
+                                {{ text.btn_home }}
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'companies:register_company' %}" class="btn btn-outline-secondary btn-lg w-100">
+                                <i class="bi bi-building-add me-2"></i>
+                                {{ text.btn_new_registration }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Resources -->
+                <div class="resources mt-5">
+                    <h4><i class="bi bi-bookmark-star me-2"></i>Nützliche Links</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="resource-list">
+                                <li>
+                                    <a href="#" class="resource-link">
+                                        <i class="bi bi-file-text"></i>
+                                        <span>Nutzungsbedingungen</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="resource-link">
+                                        <i class="bi bi-shield-lock"></i>
+                                        <span>Datenschutzerklärung</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="resource-link">
+                                        <i class="bi bi-question-circle"></i>
+                                        <span>Häufige Fragen (FAQ)</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="resource-list">
+                                <li>
+                                    <a href="#" class="resource-link">
+                                        <i class="bi bi-book"></i>
+                                        <span>Benutzerhandbuch</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="resource-link">
+                                        <i class="bi bi-play-circle"></i>
+                                        <span>Video-Tutorials</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="resource-link">
+                                        <i class="bi bi-telephone"></i>
+                                        <span>Kontakt & Support</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration Summary -->
+                <div class="summary mt-5">
+                    <h4><i class="bi bi-clipboard-check me-2"></i>Registrierungszusammenfassung</h4>
+                    <div class="summary-card">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <strong>Firmenname:</strong><br>
+                                <span class="text-muted">{{ company_name }}</span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>E-Mail-Adresse:</strong><br>
+                                <span class="text-muted">{{ company_email }}</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <strong>Registriert am:</strong><br>
+                                <span class="text-muted">{% now "d.m.Y H:i" %} Uhr</span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>Status:</strong><br>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-hourglass-split me-1"></i>
+                                    Wartend auf Genehmigung
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Button -->
+        <div class="text-center mt-4">
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i>
+                Seite drucken
+            </button>
+        </div>
+    </div>
+
+    <style>
+        @media print {
+            .btn, .navbar, .sidebar, .main-footer {
+                display: none !important;
+            }
+            
+            .success-container {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .success-card {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+            }
+            
+            .success-header {
+                background: #f8f9fa !important;
+                color: #000 !important;
+            }
+        }
+    </style>
+{% endblock %}

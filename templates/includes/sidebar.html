@@ -1,6 +1,6 @@
 {% load static %}
 
-<!-- Боковая панель -->
+<!-- Боковая панель - UPDATED with Companies -->
 <aside class="sidebar bg-primary text-white d-flex flex-column">
     <!-- Основная навигация -->
     <nav class="sidebar-nav flex-grow-1">
@@ -11,6 +11,31 @@
                     <i class="bi bi-house-door me-3"></i>
                     <span>Hauptseite</span>
                 </a>
+            </li>
+
+            <!-- NEW: Firmen/Companies -->
+            <li class="nav-item mb-2">
+                <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#companiesSubmenu">
+                    <i class="bi bi-building me-3"></i>
+                    <span>Firmen</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                </a>
+                <div class="collapse" id="companiesSubmenu">
+                    <ul class="nav flex-column ps-4">
+                        <li class="nav-item">
+                            <a href="{% url 'companies:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-building-add me-2"></i>
+                                <small>Neue Firma registrieren</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'companies:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-list-ul me-2"></i>
+                                <small>Alle Firmen</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
 
             <!-- Пользователи -->

@@ -25,7 +25,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('home.urls')),
     path('mongodb/', include('mongodb.urls')),
-    path('users/', include('users.urls')),  # FIXED: Removed namespace from here
+    path('users/', include('users.urls')),
+    path('companies/', include('companies.urls')),
 ]
 
 if settings.DEBUG:
