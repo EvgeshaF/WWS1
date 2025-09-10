@@ -335,3 +335,182 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest',
                 'HX-Request': 'true'
             }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('Content-Type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                // Если не JSON, возможно это HTML редирект
+                return response.text().then(text => {
+                    // Проверяем заголовки для редиректа
+                    const redirectHeader = response.headers.get('HX-Redirect');
+                    if (redirectHeader) {
+                        return { redirect: redirectHeader };
+                    }
+                    throw new Error('Unexpected response format');
+                });
+            }
+        })
+        .then(data => {
+            hideProgress();
+
+            // Обрабатываем JSON ответ с сообщениями
+            if (data.messages && Array.isArray(data.messages)) {
+                data.messages.forEach(message => {
+                    showToast(message.text, message.tags, message.delay || 5000);
+                });
+
+                // Если есть успешное сообщение, перенаправляем через короткое время
+                const hasSuccess = data.messages.some(msg => msg.tags === 'success');
+                if (hasSuccess) {
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                }
+            }
+
+            // Обрабатываем редирект
+            if (data.redirect) {
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 1500);
+            }
+        })
+        .catch(error => {
+            console.error('Fehler bei der Firmenregistrierung:', error);
+            hideProgress();
+
+            if (error.message.includes('Unexpected response format')) {
+                showToast('Firma wurde möglicherweise erfolgreich registriert. Seite wird aktualisiert...', 'info');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showToast('Fehler beim Registrieren der Firma: ' + error.message, 'error');
+            }
+        });
+    }
+
+    // ==================== PROGRESS FUNCTIONS ====================
+
+    function showProgress() {
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird registriert...';
+        }
+
+        if (progressContainer) {
+            progressContainer.style.display = 'block';
+        }
+
+        if (progressLabel && progressBar) {
+            let progress = 0;
+            currentStep = 0;
+
+            progressInterval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 90) progress = 90;
+
+                progressBar.style.width = progress + '%';
+
+                // Update step label
+                if (currentStep < progressSteps.length - 1) {
+                    if (progress > (currentStep + 1) * 18) {
+                        currentStep++;
+                        progressLabel.textContent = progressSteps[currentStep];
+                    }
+                }
+            }, 300);
+        }
+    }
+
+    function hideProgress() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-building-add me-1"></i>Firma registrieren';
+        }
+
+        // Complete progress bar
+        if (progressBar) {
+            progressBar.style.width = '100%';
+        }
+
+        if (progressLabel) {
+            progressLabel.textContent = 'Registrierung abgeschlossen!';
+        }
+
+        setTimeout(() => {
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+            }
+            if (progressBar) {
+                progressBar.style.width = '0%';
+            }
+            if (progressLabel) {
+                progressLabel.textContent = 'Daten werden verarbeitet...';
+            }
+        }, 2000);
+    }
+
+    // ==================== RESET FORM ====================
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (confirm('Möchten Sie wirklich alle Eingaben zurücksetzen?')) {
+                form.reset();
+
+                // Clear all validation states
+                formFields.forEach(field => {
+                    clearFieldValidation(field);
+                });
+
+                // Scroll to top of modal
+                if (modalBody) {
+                    modalBody.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+
+                showToast('Formular wurde zurückgesetzt', 'info');
+            }
+        });
+    }
+
+    // ==================== GLOBAL TOAST FALLBACK ====================
+
+    // Global toast function fallback if not already defined
+    if (typeof window.showToast === 'undefined') {
+        window.showToast = function(message, type = 'info', delay = 5000) {
+            // Create simple toast if no global system exists
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Auto remove after delay
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, delay);
+        };
+    }
+
+    console.log('✅ Company Registration Form (Modal Version) initialized');
+});
