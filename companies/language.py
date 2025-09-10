@@ -1,304 +1,187 @@
-# companies/language.py
-
 # ========================================
-# Company Registration Form
+# Company Registration Form (Single Company)
 # ========================================
 text_company_registration = {
     'title': "Firmenregistrierung",
     'header': "Registrieren Sie Ihr Unternehmen",
-    'desc': "Füllen Sie alle erforderlichen Felder aus, um Ihr Unternehmen im WWS1 System zu registrieren:",
+    'desc': "Registrieren Sie Ihr Unternehmen als primäre Firma im WWS1 System:",
     'btn': "Firma registrieren",
     'btn_reset': "Formular zurücksetzen",
-    'notification': "* Mit einem Stern markierte Felder sind Pflichtfelder und müssen ausgefüllt werden."
+    'notification': "* Das System unterstützt nur eine Firma pro Installation. Nach der Registrierung können Sie die Firmendaten jederzeit bearbeiten."
 }
 
 # ========================================
-# Registration Success Page
+# Company Already Exists Warning
 # ========================================
-text_registration_success = {
-    'title': "Registrierung erfolgreich",
-    'header': "Ihre Firma wurde erfolgreich registriert!",
-    'desc': "Vielen Dank für Ihre Registrierung. Ihre Daten wurden erfolgreich übermittelt.",
-    'next_steps_title': "Nächste Schritte",
-    'next_steps': [
-        "Sie erhalten in Kürze eine Bestätigungs-E-Mail an die angegebene Adresse",
-        "Unser Team wird Ihre Angaben prüfen und sich binnen 24 Stunden bei Ihnen melden",
-        "Nach der Genehmigung erhalten Sie Ihre Zugangsdaten für das WWS1 System",
-        "Bei Fragen können Sie sich jederzeit an unseren Support wenden"
-    ],
-    'btn_home': "Zur Startseite",
-    'btn_new_registration': "Weitere Firma registrieren"
+text_company_exists = {
+    'title': "Firma bereits registriert",
+    'header': "Nur eine Firma pro System",
+    'desc': "Es ist bereits eine Firma im System registriert. Das WWS1 System ist für die Verwaltung einer einzelnen Firma konzipiert.",
+    'current_company': "Aktuell registrierte Firma:",
+    'options_title': "Verfügbare Optionen:",
+    'option_details': "Firmendetails anzeigen",
+    'option_edit': "Firmendaten bearbeiten",
+    'option_delete': "Firma löschen (nur für Administratoren)",
+    'warning': "Das Löschen der Firma kann nicht rückgängig gemacht werden!",
+    'btn_details': "Firmendetails anzeigen",
+    'btn_edit': "Firma bearbeiten",
+    'btn_delete': "Firma löschen"
 }
 
 # ========================================
-# Company List Page
+# Company Details Page
 # ========================================
-text_company_list = {
-    'title': "Registrierte Firmen",
-    'header': "Übersicht aller Unternehmen",
-    'desc': "Hier finden Sie eine Übersicht aller im System registrierten Unternehmen:",
-    'search_placeholder': "Firma suchen...",
-    'btn_search': "Suchen",
-    'btn_export': "Als CSV exportieren",
-    'btn_new_company': "Neue Firma registrieren",
+text_company_details = {
+    'title': "Firmendetails",
+    'header': "Details Ihrer registrierten Firma",
+    'desc': "Vollständige Informationen über Ihr im System registriertes Unternehmen",
+    'edit_btn': "Firma bearbeiten",
+    'delete_btn': "Firma löschen",
+    'print_btn': "Details drucken",
 
-    # Table headers
-    'table_company': "Firmenname",
-    'table_legal_form': "Rechtsform",
-    'table_industry': "Branche",
-    'table_city': "Stadt",
-    'table_status': "Status",
-    'table_created': "Registriert",
-    'table_actions': "Aktionen",
+    # Section headers
+    'section_basic': "Grunddaten",
+    'section_address': "Adresse",
+    'section_contact': "Kontaktdaten",
+    'section_contact_person': "Ansprechpartner",
+    'section_additional': "Zusätzliche Informationen",
+    'section_system': "Systemdaten",
+
+    # System information
+    'registered_at': "Registriert am:",
+    'last_updated': "Zuletzt aktualisiert:",
+    'status': "Status:",
+    'company_id': "Firmen-ID:",
 
     # Status labels
-    'status_pending': "Wartend",
-    'status_approved': "Genehmigt",
-    'status_rejected': "Abgelehnt",
     'status_active': "Aktiv",
     'status_inactive': "Inaktiv",
+    'status_pending': "Wartend",
+    'status_deleted': "Gelöscht",
 
     # Actions
-    'action_view': "Anzeigen",
     'action_edit': "Bearbeiten",
-    'action_approve': "Genehmigen",
-    'action_reject': "Ablehnen",
-    'action_delete': "Löschen"
+    'action_delete': "Löschen",
+    'action_print': "Drucken",
+    'action_export': "Exportieren"
 }
 
 # ========================================
-# Form Field Labels and Help Texts
+# Company Edit Form
 # ========================================
-form_labels = {
-    # Basic company info
-    'company_name': "Firmenname",
-    'legal_form': "Rechtsform",
-    'tax_number': "Steuernummer",
-    'vat_number': "USt-IdNr.",
-    'registration_number': "Handelsregisternummer",
-    'industry': "Branche",
-
-    # Address
-    'street': "Straße und Hausnummer",
-    'postal_code': "PLZ",
-    'city': "Stadt",
-    'country': "Land",
-
-    # Contact info
-    'phone': "Telefon",
-    'fax': "Fax",
-    'email': "E-Mail",
-    'website': "Website",
-
-    # Contact person
-    'contact_salutation': "Anrede",
-    'contact_first_name': "Vorname",
-    'contact_last_name': "Nachname",
-    'contact_position': "Position",
-    'contact_phone': "Telefon direkt",
-    'contact_email': "E-Mail direkt",
-
-    # Additional
-    'description': "Unternehmensbeschreibung",
-    'terms_accepted': "Nutzungsbedingungen akzeptiert",
-    'newsletter': "Newsletter abonnieren"
+text_company_edit = {
+    'title': "Firma bearbeiten",
+    'header': "Firmendaten aktualisieren",
+    'desc': "Bearbeiten Sie die Daten Ihrer registrierten Firma:",
+    'btn': "Änderungen speichern",
+    'btn_cancel': "Abbrechen",
+    'notification': "* Alle Änderungen werden sofort in der Datenbank gespeichert."
 }
 
 # ========================================
-# Form Help Texts
+# Company Delete Confirmation
 # ========================================
-form_help_texts = {
-    'company_name': "Der vollständige offizielle Name Ihres Unternehmens",
-    'legal_form': "Wählen Sie die passende Rechtsform Ihres Unternehmens",
-    'tax_number': "Ihre beim Finanzamt registrierte Steuernummer",
-    'vat_number': "Umsatzsteuer-Identifikationsnummer (bei EU-Geschäften)",
-    'registration_number': "Falls im Handelsregister eingetragen",
-    'industry': "Wählen Sie die Branche, die am besten zu Ihrem Unternehmen passt",
-    'street': "Vollständige Geschäftsadresse mit Hausnummer",
-    'postal_code': "Postleitzahl des Geschäftssitzes",
-    'city': "Stadt des Geschäftssitzes",
-    'country': "Land des Geschäftssitzes",
-    'phone': "Haupttelefonnummer des Unternehmens",
-    'fax': "Faxnummer (optional)",
-    'email': "Haupt-E-Mail-Adresse des Unternehmens",
-    'website': "Unternehmens-Website (falls vorhanden)",
-    'contact_first_name': "Vorname des Hauptansprechpartners",
-    'contact_last_name': "Nachname des Hauptansprechpartners",
-    'contact_position': "Position/Funktion im Unternehmen",
-    'contact_phone': "Direkte Telefonnummer des Ansprechpartners",
-    'contact_email': "Direkte E-Mail-Adresse des Ansprechpartners",
-    'description': "Kurze Beschreibung Ihres Unternehmens und Ihrer Geschäftstätigkeit",
-    'terms_accepted': "Bestätigung der Nutzungsbedingungen und Datenschutzerklärung",
-    'newsletter': "Regelmäßige Informationen über Updates und Neuigkeiten"
+text_company_delete = {
+    'title': "Firma löschen",
+    'header': "Firma endgültig löschen",
+    'warning_title': "⚠️ Warnung: Unwiderrufliche Aktion",
+    'warning_text': "Das Löschen der Firma kann nicht rückgängig gemacht werden!",
+    'consequences_title': "Folgen der Löschung:",
+    'consequences': [
+        "Alle Firmendaten werden dauerhaft gelöscht",
+        "Alle zugehörigen Dokumente und Berichte werden entfernt",
+        "Sie können anschließend eine neue Firma registrieren",
+        "Alle Benutzerkonten bleiben erhalten"
+    ],
+    'confirm_text': "Geben Sie zur Bestätigung den Firmennamen ein:",
+    'btn_delete': "Firma endgültig löschen",
+    'btn_cancel': "Abbrechen",
+    'placeholder': "Firmenname zur Bestätigung eingeben"
 }
 
 # ========================================
-# Validation Messages
+# System Status Messages
 # ========================================
-validation_messages = {
-    'required_field': "Dieses Feld ist erforderlich",
-    'invalid_format': "Ungültiges Format",
-    'email_invalid': "Ungültige E-Mail-Adresse",
-    'phone_invalid': "Ungültiges Telefonformat",
-    'url_invalid': "Ungültige Website-URL",
-    'tax_number_invalid': "Ungültiges Format der Steuernummer",
-    'vat_number_invalid': "Ungültiges Format der USt-IdNr.",
-    'postal_code_invalid': "Ungültige Postleitzahl",
-    'company_exists': "Eine Firma mit diesen Daten existiert bereits",
-    'email_duplicate': "Diese E-Mail-Adresse wird bereits verwendet",
-    'tax_number_duplicate': "Diese Steuernummer wird bereits verwendet",
-    'terms_required': "Sie müssen die Nutzungsbedingungen akzeptieren",
-    'email_mismatch': "Unternehmens-E-Mail und Kontakt-E-Mail dürfen nicht identisch sein"
+status_messages = {
+    'company_registered': "Firma erfolgreich als primäre Firma registriert",
+    'company_updated': "Firmendaten erfolgreich aktualisiert",
+    'company_deleted': "Firma erfolgreich gelöscht",
+    'company_exists': "Es ist bereits eine Firma registriert: '{company_name}'",
+    'company_not_found': "Keine Firma im System gefunden",
+    'registration_blocked': "Registrierung nicht möglich - bereits eine Firma vorhanden",
+    'single_company_system': "Das System unterstützt nur eine Firma pro Installation",
+    'can_edit_anytime': "Sie können die Firmendaten jederzeit bearbeiten",
+    'delete_requires_admin': "Das Löschen der Firma erfordert Administratorrechte",
+    'confirm_delete': "Löschen bestätigen durch Eingabe des Firmennamens",
+    'delete_irreversible': "Diese Aktion kann nicht rückgängig gemacht werden"
 }
 
 # ========================================
-# Success Messages
+# Navigation and UI Elements
 # ========================================
-success_messages = {
-    'company_registered': "Firma erfolgreich registriert",
-    'data_saved': "Daten erfolgreich gespeichert",
-    'email_sent': "Bestätigungs-E-Mail versendet",
-    'form_validated': "Alle Eingaben sind gültig"
+ui_elements = {
+    'menu_company': "Firma",
+    'menu_details': "Firmendetails",
+    'menu_edit': "Bearbeiten",
+    'menu_register': "Registrieren",
+    'breadcrumb_home': "Startseite",
+    'breadcrumb_company': "Firma",
+    'breadcrumb_details': "Details",
+    'breadcrumb_edit': "Bearbeiten",
+    'breadcrumb_register': "Registrieren",
+
+    # Buttons
+    'btn_save': "Speichern",
+    'btn_cancel': "Abbrechen",
+    'btn_edit': "Bearbeiten",
+    'btn_delete': "Löschen",
+    'btn_register': "Registrieren",
+    'btn_back': "Zurück",
+    'btn_print': "Drucken",
+    'btn_export': "Exportieren",
+
+    # Status indicators
+    'status_active': "✅ Aktiv",
+    'status_inactive': "❌ Inaktiv",
+    'status_pending': "⏳ Wartend",
+    'status_deleted': "🗑️ Gelöscht",
+
+    # System info
+    'system_info': "Systeminformationen",
+    'primary_company': "Primäre Firma",
+    'registration_date': "Registrierungsdatum",
+    'last_update': "Letzte Aktualisierung",
+    'company_id': "Firmen-ID"
 }
 
 # ========================================
-# Error Messages
+# Error Messages (Single Company)
 # ========================================
 error_messages = {
     'system_not_ready': "System ist noch nicht vollständig konfiguriert",
     'database_error': "Datenbankfehler aufgetreten",
+    'company_exists': "Es ist bereits eine Firma registriert",
+    'no_company_found': "Keine Firma gefunden",
     'registration_failed': "Registrierung fehlgeschlagen",
-    'form_invalid': "Formular enthält ungültige Daten",
-    'unexpected_error': "Ein unerwarteter Fehler ist aufgetreten",
+    'update_failed': "Aktualisierung fehlgeschlagen",
+    'delete_failed': "Löschung fehlgeschlagen",
+    'access_denied': "Zugriff verweigert",
+    'invalid_data': "Ungültige Daten übermittelt",
     'network_error': "Netzwerkfehler aufgetreten",
-    'company_creation_failed': "Fehler beim Erstellen der Firma",
-    'duplicate_entry': "Eintrag bereits vorhanden",
-    'validation_failed': "Datenvalidierung fehlgeschlagen"
+    'unexpected_error': "Ein unerwarteter Fehler ist aufgetreten",
+    'company_name_mismatch': "Firmenname stimmt nicht überein",
+    'delete_confirmation_required': "Löschbestätigung erforderlich"
 }
 
 # ========================================
-# Progress Steps
+# Success Messages (Single Company)
 # ========================================
-progress_steps = {
-    'validating': "Daten werden validiert...",
-    'checking_duplicates': "Prüfe auf Duplikate...",
-    'saving_data': "Daten werden gespeichert...",
-    'creating_company': "Firma wird erstellt...",
-    'sending_confirmation': "Bestätigungs-E-Mail wird versendet...",
-    'finalizing': "Registrierung wird abgeschlossen...",
-    'completed': "Registrierung erfolgreich abgeschlossen!"
-}
-
-# ========================================
-# UI Elements
-# ========================================
-ui_elements = {
-    'required_marker': "*",
-    'loading_text': "Wird geladen...",
-    'saving_text': "Wird gespeichert...",
-    'processing_text': "Wird verarbeitet...",
-    'search_placeholder': "Suchen...",
-    'no_results': "Keine Ergebnisse gefunden",
-    'show_more': "Mehr anzeigen",
-    'show_less': "Weniger anzeigen",
-    'back_to_top': "Nach oben",
-    'print_page': "Seite drucken",
-    'export_data': "Daten exportieren"
-}
-
-# ========================================
-# Section Headers
-# ========================================
-section_headers = {
-    'basic_info': "Grunddaten des Unternehmens",
-    'address_info': "Firmenadresse",
-    'contact_info': "Kontaktdaten",
-    'contact_person': "Ansprechpartner",
-    'additional_info': "Zusätzliche Informationen",
-    'terms_privacy': "Nutzungsbedingungen und Datenschutz"
-}
-
-# ========================================
-# Tooltips and Hints
-# ========================================
-tooltips = {
-    'required_field': "Dieses Feld ist erforderlich",
-    'optional_field': "Dieses Feld ist optional",
-    'format_hint': "Bitte beachten Sie das erforderliche Format",
-    'unique_field': "Dieser Wert muss eindeutig sein",
-    'confidential': "Diese Daten werden vertraulich behandelt",
-    'help_available': "Hilfe verfügbar - klicken Sie auf das Info-Symbol"
-}
-
-# ========================================
-# Legal Forms (Extended)
-# ========================================
-legal_forms = {
-    'gmbh': {
-        'full_name': 'Gesellschaft mit beschränkter Haftung',
-        'abbreviation': 'GmbH',
-        'description': 'Kapitalgesellschaft mit beschränkter Haftung'
-    },
-    'ag': {
-        'full_name': 'Aktiengesellschaft',
-        'abbreviation': 'AG',
-        'description': 'Kapitalgesellschaft mit Aktionären'
-    },
-    'ohg': {
-        'full_name': 'Offene Handelsgesellschaft',
-        'abbreviation': 'OHG',
-        'description': 'Personengesellschaft mit unbeschränkter Haftung'
-    },
-    'kg': {
-        'full_name': 'Kommanditgesellschaft',
-        'abbreviation': 'KG',
-        'description': 'Personengesellschaft mit Komplementären und Kommanditisten'
-    },
-    'ug': {
-        'full_name': 'Unternehmergesellschaft',
-        'abbreviation': 'UG',
-        'description': 'Mini-GmbH mit geringerem Stammkapital'
-    },
-    'eg': {
-        'full_name': 'eingetragene Genossenschaft',
-        'abbreviation': 'eG',
-        'description': 'Genossenschaftsunternehmen'
-    },
-    'einzelunternehmen': {
-        'full_name': 'Einzelunternehmen',
-        'abbreviation': 'e.K.',
-        'description': 'Unternehmen einer natürlichen Person'
-    },
-    'freiberufler': {
-        'full_name': 'Freiberufler',
-        'abbreviation': '',
-        'description': 'Selbstständige Tätigkeit in freien Berufen'
-    }
-}
-
-# ========================================
-# Industries (Extended)
-# ========================================
-industries = {
-    'automotive': 'Automobilindustrie',
-    'construction': 'Bauwesen',
-    'chemicals': 'Chemie und Pharmazie',
-    'electronics': 'Elektronik und Elektrotechnik',
-    'energy': 'Energie und Umwelt',
-    'food': 'Lebensmittel und Getränke',
-    'healthcare': 'Gesundheitswesen',
-    'it': 'Informationstechnologie',
-    'logistics': 'Logistik und Transport',
-    'manufacturing': 'Fertigung und Produktion',
-    'retail': 'Einzelhandel',
-    'services': 'Dienstleistungen',
-    'textiles': 'Textil und Bekleidung',
-    'finance': 'Finanz- und Versicherungswesen',
-    'education': 'Bildung und Ausbildung',
-    'tourism': 'Tourismus und Gastgewerbe',
-    'media': 'Medien und Kommunikation',
-    'real_estate': 'Immobilien',
-    'agriculture': 'Land- und Forstwirtschaft',
-    'consulting': 'Beratung',
-    'other': 'Sonstige'
+success_messages = {
+    'company_registered': "Firma '{company_name}' wurde erfolgreich registriert!",
+    'company_updated': "Firmendaten wurden erfolgreich aktualisiert",
+    'company_deleted': "Firma wurde erfolgreich gelöscht",
+    'data_saved': "Daten erfolgreich gespeichert",
+    'changes_applied': "Änderungen wurden übernommen",
+    'registration_complete': "Registrierung abgeschlossen",
+    'primary_company_set': "Als primäre Firma festgelegt"
 }
