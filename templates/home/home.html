@@ -15,14 +15,38 @@
                     <h3 class="mb-0">System bereit!</h3>
                 </div>
                 <p class="welcome-text mb-0">
-                    MongoDB wurde erfolgreich konfiguriert und die Datenbankverbindung ist aktiv.
-                    Das Warehouse Management System ist einsatzbereit.
+                    {% if has_company %}
+                        Das WWS1 System ist vollständig konfiguriert und einsatzbereit für <strong>{{ company_name }}</strong>.
+                        MongoDB-Verbindung aktiv, Administrator erstellt, Firma registriert.
+                    {% else %}
+                        MongoDB wurde erfolgreich konfiguriert und die Datenbankverbindung ist aktiv.
+                        Das Warehouse Management System ist einsatzbereit.
+                    {% endif %}
                 </p>
             </div>
         </div>
 
         <!-- Aktionscards -->
         <div class="row g-4 mb-4">
+            <!-- Firmenregistrierung (nur wenn keine Firma) -->
+            {% if not has_company %}
+            <div class="col-lg-4 col-md-6">
+                <div class="action-card border-warning">
+                    <div class="action-header">
+                        <i class="bi bi-building-add text-warning"></i>
+                        <h5>Firma registrieren</h5>
+                    </div>
+                    <p class="action-text">
+                        Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration abzuschließen.
+                    </p>
+                    <a href="{% url 'companies:register_company' %}" class="action-btn btn btn-warning">
+                        <i class="bi bi-building-add me-1"></i>
+                        Firma registrieren
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Lagerverwaltung -->
             <div class="col-lg-4 col-md-6">
                 <div class="action-card">
@@ -73,6 +97,25 @@
                     </a>
                 </div>
             </div>
+
+            <!-- Firmenverwaltung (nur если есть компания) -->
+            {% if has_company %}
+            <div class="col-lg-4 col-md-6">
+                <div class="action-card">
+                    <div class="action-header">
+                        <i class="bi bi-building"></i>
+                        <h5>Firmenverwaltung</h5>
+                    </div>
+                    <p class="action-text">
+                        Verwalten Sie Ihre Firmendaten, Kontakte und Einstellungen.
+                    </p>
+                    <a href="{% url 'companies:company_list' %}" class="action-btn btn btn-primary">
+                        <i class="bi bi-arrow-right me-1"></i>
+                        Firma verwalten
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Informationscards -->
@@ -100,6 +143,13 @@
                         <span class="text-success fw-bold">{% if admin_count > 0 %}{{ admin_count }} Administrator(en){% else %}Konfiguriert{% endif %}</span>
                     </div>
                     <div class="status-item">
+                        <i class="bi bi-{% if has_company %}check-circle-fill text-success{% else %}exclamation-triangle-fill text-warning{% endif %}"></i>
+                        <span>Firma</span>
+                        <span class="{% if has_company %}text-success{% else %}text-warning{% endif %} fw-bold">
+                            {% if has_company %}{{ company_name }}{% else %}Nicht registriert{% endif %}
+                        </span>
+                    </div>
+                    <div class="status-item">
                         <i class="bi bi-check-circle-fill text-success"></i>
                         <span>Web Interface</span>
                         <span class="text-success fw-bold">Online</span>
@@ -114,6 +164,21 @@
                         <i class="bi bi-lightning-charge text-primary"></i>
                         <h5>Schnellzugriff</h5>
                     </div>
+
+                    {% if not has_company %}
+                    <a href="{% url 'companies:register_company' %}" class="quick-link text-warning">
+                        <i class="bi bi-building-add"></i>
+                        <span>Firma registrieren (erforderlich)</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'companies:company_list' %}" class="quick-link">
+                        <i class="bi bi-building"></i>
+                        <span>Firmendaten bearbeiten</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    {% endif %}
+
                     <a href="#" class="quick-link">
                         <i class="bi bi-plus-circle"></i>
                         <span>Neues Produkt hinzufügen</span>
@@ -142,23 +207,58 @@
                 </div>
             </div>
         </div>
+
+        <!-- Предупреждение если нет компании -->
+        {% if not has_company %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Systemkonfiguration nicht vollständig!</strong>
+                    Bitte registrieren Sie Ihre Firma, um die Konfiguration abzuschließen.
+                    <a href="{% url 'companies:register_company' %}" class="alert-link ms-2">
+                        <i class="bi bi-building-add me-1"></i>
+                        Jetzt registrieren
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Дополнительные стили для домашней страницы -->
     <style>
         .content-wrapper {
-            padding-top: 0; /* ИСПРАВЛЕНО: убираем верхний отступ */
-            min-height: calc(100vh - var(--navbar-height) - 140px); /* ИСПРАВЛЕНО: учитываем высоту header и footer */
+            padding-top: 0;
+            min-height: calc(100vh - var(--navbar-height) - 140px);
         }
 
         .main-header {
-            margin-bottom: 1rem; /* ИСПРАВЛЕНО: уменьшен отступ */
+            margin-bottom: 1rem;
         }
 
         .container-fluid {
             max-width: 1400px;
-            padding-top: 1rem; /* ИСПРАВЛЕНО: добавлен верхний отступ */
-            padding-bottom: 2rem; /* ИСПРАВЛЕНО: добавлен нижний отступ */
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+        }
+
+        .action-card.border-warning {
+            border: 2px solid #ffc107 !important;
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        }
+
+        .action-card.border-warning:hover {
+            box-shadow: 0 8px 20px rgba(255, 193, 7, 0.4);
+        }
+
+        .quick-link.text-warning {
+            font-weight: 600;
+        }
+
+        .quick-link.text-warning:hover {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ff8c00 !important;
         }
 
         @media (max-width: 768px) {
@@ -171,7 +271,7 @@
             }
 
             .content-wrapper {
-                min-height: calc(100vh - var(--navbar-height) - 120px); /* ИСПРАВЛЕНО: меньше для мобильных */
+                min-height: calc(100vh - var(--navbar-height) - 120px);
             }
         }
     </style>

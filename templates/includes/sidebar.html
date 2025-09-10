@@ -1,6 +1,6 @@
 {% load static %}
 
-<!-- Боковая панель - UPDATED with Companies -->
+<!-- Боковая панель - UPDATED with Enhanced Companies -->
 <aside class="sidebar bg-primary text-white d-flex flex-column">
     <!-- Основная навигация -->
     <nav class="sidebar-nav flex-grow-1">
@@ -13,7 +13,7 @@
                 </a>
             </li>
 
-            <!-- NEW: Firmen/Companies -->
+            <!-- Firmen/Companies - ENHANCED -->
             <li class="nav-item mb-2">
                 <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#companiesSubmenu">
                     <i class="bi bi-building me-3"></i>
@@ -22,69 +22,219 @@
                 </a>
                 <div class="collapse" id="companiesSubmenu">
                     <ul class="nav flex-column ps-4">
-                        <li class="nav-item">
-                            <a href="{% url 'companies:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
-                                <i class="bi bi-building-add me-2"></i>
-                                <small>Neue Firma registrieren</small>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'companies:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
-                                <i class="bi bi-list-ul me-2"></i>
-                                <small>Alle Firmen</small>
-                            </a>
-                        </li>
+                        <!-- Условный показ ссылок в зависимости от наличия компании -->
+                        {% if request.resolver_match.app_name == 'companies' or 'company' in request.path %}
+                            <!-- Если мы на странице компаний, показываем все ссылки -->
+                            <li class="nav-item">
+                                <a href="{% url 'companies:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                    <i class="bi bi-building-add me-2"></i>
+                                    <small>Firma registrieren</small>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'companies:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                    <i class="bi bi-building me-2"></i>
+                                    <small>Firmenübersicht</small>
+                                </a>
+                            </li>
+                        {% else %}
+                            <!-- Обычное состояние -->
+                            <li class="nav-item">
+                                <a href="{% url 'companies:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                    <i class="bi bi-building-add me-2"></i>
+                                    <small>Firma registrieren</small>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'companies:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                    <i class="bi bi-building me-2"></i>
+                                    <small>Firmenübersicht</small>
+                                </a>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
             </li>
 
             <!-- Пользователи -->
             <li class="nav-item mb-2">
-                <a href="#" class="nav-link text-white d-flex align-items-center">
+                <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#usersSubmenu">
                     <i class="bi bi-people me-3"></i>
                     <span>Benutzer</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
                 </a>
+                <div class="collapse" id="usersSubmenu">
+                    <ul class="nav flex-column ps-4">
+                        <li class="nav-item">
+                            <a href="{% url 'users:create_admin_step1' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-person-plus me-2"></i>
+                                <small>Administrator erstellen</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-people me-2"></i>
+                                <small>Alle Benutzer</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-person-gear me-2"></i>
+                                <small>Berechtigungen</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
 
             <!-- Склад -->
             <li class="nav-item mb-2">
-                <a href="#" class="nav-link text-white d-flex align-items-center">
+                <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#warehouseSubmenu">
                     <i class="bi bi-box-seam me-3"></i>
                     <span>Lager</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
                 </a>
+                <div class="collapse" id="warehouseSubmenu">
+                    <ul class="nav flex-column ps-4">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                <small>Produkt hinzufügen</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-search me-2"></i>
+                                <small>Produktsuche</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-clipboard-data me-2"></i>
+                                <small>Bestandsübersicht</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-arrow-down-up me-2"></i>
+                                <small>Ein-/Ausgang</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
 
             <!-- Отчеты -->
             <li class="nav-item mb-2">
-                <a href="#" class="nav-link text-white d-flex align-items-center">
+                <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#reportsSubmenu">
                     <i class="bi bi-graph-up me-3"></i>
                     <span>Berichte</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
                 </a>
+                <div class="collapse" id="reportsSubmenu">
+                    <ul class="nav flex-column ps-4">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-bar-chart me-2"></i>
+                                <small>Lagerstatistiken</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-calendar-week me-2"></i>
+                                <small>Monatsberichte</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-download me-2"></i>
+                                <small>Export/Import</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
 
             <!-- База данных -->
             <li class="nav-item mb-2">
-                <a href="#" class="nav-link text-white d-flex align-items-center">
+                <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#databaseSubmenu">
                     <i class="bi bi-database me-3"></i>
                     <span>Datenbank</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
                 </a>
+                <div class="collapse" id="databaseSubmenu">
+                    <ul class="nav flex-column ps-4">
+                        <li class="nav-item">
+                            <a href="{% url 'create_database_step1' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-gear me-2"></i>
+                                <small>Konfiguration</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-archive me-2"></i>
+                                <small>Backup erstellen</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-activity me-2"></i>
+                                <small>Status prüfen</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
 
             <!-- Настройки -->
             <li class="nav-item mb-2">
-                <a href="#" class="nav-link text-white d-flex align-items-center">
+                <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#settingsSubmenu">
                     <i class="bi bi-gear me-3"></i>
                     <span>Einstellungen</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
                 </a>
+                <div class="collapse" id="settingsSubmenu">
+                    <ul class="nav flex-column ps-4">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-sliders me-2"></i>
+                                <small>Systemeinstellungen</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-palette me-2"></i>
+                                <small>Design anpassen</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-bell me-2"></i>
+                                <small>Benachrichtigungen</small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <i class="bi bi-shield-check me-2"></i>
+                                <small>Sicherheit</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
         </ul>
     </nav>
 
     <!-- Информационный блок внизу -->
     <div class="sidebar-footer border-top border-light p-3">
-        <div class="d-flex align-items-center text-white-50">
+        <div class="d-flex align-items-center text-white-50 mb-2">
             <i class="bi bi-info-circle me-2"></i>
             <small>Version 1.0.0</small>
+        </div>
+        <!-- Статус системы -->
+        <div class="d-flex align-items-center text-white-50">
+            <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>
+            <small>System bereit</small>
         </div>
     </div>
 </aside>

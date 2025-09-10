@@ -1,3 +1,5 @@
+# companies/language.py - ОБНОВЛЕННАЯ ВЕРСИЯ
+
 # ========================================
 # Company Registration Form (Single Company)
 # ========================================
@@ -7,7 +9,8 @@ text_company_registration = {
     'desc': "Registrieren Sie Ihr Unternehmen als primäre Firma im WWS1 System:",
     'btn': "Firma registrieren",
     'btn_reset': "Formular zurücksetzen",
-    'notification': "* Das System unterstützt nur eine Firma pro Installation. Nach der Registrierung können Sie die Firmendaten jederzeit bearbeiten."
+    'notification': "* Das System unterstützt nur eine Firma pro Installation. Nach der Registrierung können Sie die Firmendaten jederzeit bearbeiten.",
+    'success_redirect_info': "Nach erfolgreicher Registrierung ist das System vollständig konfiguriert."
 }
 
 # ========================================
@@ -15,9 +18,9 @@ text_company_registration = {
 # ========================================
 text_company_exists = {
     'title': "Firma bereits registriert",
-    'header': "Nur eine Firma pro System",
-    'desc': "Es ist bereits eine Firma im System registriert. Das WWS1 System ist für die Verwaltung einer einzelnen Firma konzipiert.",
-    'current_company': "Aktuell registrierte Firma:",
+    'header': "System vollständig konfiguriert",
+    'desc': "Es ist bereits eine Firma im System registriert. Das WWS1 System ist vollständig eingerichtet und einsatzbereit.",
+    'current_company': "Registrierte Firma:",
     'options_title': "Verfügbare Optionen:",
     'option_details': "Firmendetails anzeigen",
     'option_edit': "Firmendaten bearbeiten",
@@ -25,7 +28,8 @@ text_company_exists = {
     'warning': "Das Löschen der Firma kann nicht rückgängig gemacht werden!",
     'btn_details': "Firmendetails anzeigen",
     'btn_edit': "Firma bearbeiten",
-    'btn_delete': "Firma löschen"
+    'btn_delete': "Firma löschen",
+    'btn_dashboard': "Zur Hauptseite"
 }
 
 # ========================================
@@ -113,7 +117,11 @@ status_messages = {
     'can_edit_anytime': "Sie können die Firmendaten jederzeit bearbeiten",
     'delete_requires_admin': "Das Löschen der Firma erfordert Administratorrechte",
     'confirm_delete': "Löschen bestätigen durch Eingabe des Firmennamens",
-    'delete_irreversible': "Diese Aktion kann nicht rückgängig gemacht werden"
+    'delete_irreversible': "Diese Aktion kann nicht rückgängig gemacht werden",
+    'system_configured': "System ist jetzt vollständig konfiguriert und einsatzbereit!",
+    'setup_complete': "🎉 Systemeinrichtung erfolgreich abgeschlossen!",
+    'admin_first': "Bitte erstellen Sie zuerst einen Administrator",
+    'company_after_admin': "Registrieren Sie jetzt Ihre Firma, um die Konfiguration abzuschließen"
 }
 
 # ========================================
@@ -139,6 +147,8 @@ ui_elements = {
     'btn_back': "Zurück",
     'btn_print': "Drucken",
     'btn_export': "Exportieren",
+    'btn_home': "Zur Hauptseite",
+    'btn_continue': "Weiter",
 
     # Status indicators
     'status_active': "✅ Aktiv",
@@ -151,7 +161,9 @@ ui_elements = {
     'primary_company': "Primäre Firma",
     'registration_date': "Registrierungsdatum",
     'last_update': "Letzte Aktualisierung",
-    'company_id': "Firmen-ID"
+    'company_id': "Firmen-ID",
+    'setup_status': "Einrichtungsstatus",
+    'configuration_complete': "Konfiguration abgeschlossen"
 }
 
 # ========================================
@@ -170,7 +182,10 @@ error_messages = {
     'network_error': "Netzwerkfehler aufgetreten",
     'unexpected_error': "Ein unerwarteter Fehler ist aufgetreten",
     'company_name_mismatch': "Firmenname stimmt nicht überein",
-    'delete_confirmation_required': "Löschbestätigung erforderlich"
+    'delete_confirmation_required': "Löschbestätigung erforderlich",
+    'admin_required': "Administrator-Rechte erforderlich",
+    'mongodb_not_configured': "MongoDB ist nicht konfiguriert",
+    'no_admin_found': "Kein Administrator im System gefunden"
 }
 
 # ========================================
@@ -183,5 +198,54 @@ success_messages = {
     'data_saved': "Daten erfolgreich gespeichert",
     'changes_applied': "Änderungen wurden übernommen",
     'registration_complete': "Registrierung abgeschlossen",
-    'primary_company_set': "Als primäre Firma festgelegt"
+    'primary_company_set': "Als primäre Firma festgelegt",
+    'system_ready': "System ist jetzt vollständig eingerichtet und einsatzbereit!",
+    'configuration_complete': "Systemkonfiguration erfolgreich abgeschlossen",
+    'setup_finished': "Einrichtung beendet - Sie können nun mit der Arbeit beginnen"
+}
+
+# ========================================
+# Setup Flow Messages
+# ========================================
+setup_flow = {
+    'step1_mongodb': "Schritt 1: MongoDB konfigurieren",
+    'step2_admin': "Schritt 2: Administrator erstellen",
+    'step3_company': "Schritt 3: Firma registrieren",
+    'step4_complete': "Schritt 4: System bereit!",
+
+    'flow_description': "Das WWS1 System wird in 3 einfachen Schritten eingerichtet:",
+    'flow_steps': [
+        "MongoDB-Datenbankverbindung konfigurieren",
+        "Ersten Administrator-Account erstellen",
+        "Firma als primäres Unternehmen registrieren"
+    ],
+
+    'current_step': "Aktueller Schritt:",
+    'next_step': "Nächster Schritt:",
+    'completed_steps': "Abgeschlossene Schritte:",
+    'remaining_steps': "Verbleibende Schritte:",
+
+    'progress_mongodb': "MongoDB ✅",
+    'progress_admin': "Administrator ✅",
+    'progress_company': "Firma ✅",
+    'progress_complete': "System bereit ✅"
+}
+
+# ========================================
+# Company Registration Success Flow
+# ========================================
+success_flow = {
+    'registration_success_title': "Firmenregistrierung erfolgreich!",
+    'registration_success_message': "Ihre Firma wurde erfolgreich als primäres Unternehmen registriert.",
+    'system_ready_title': "System vollständig konfiguriert",
+    'system_ready_message': "Das WWS1 Warehouse Management System ist jetzt einsatzbereit.",
+    'next_steps_title': "Empfohlene nächste Schritte:",
+    'next_steps': [
+        "Erkunden Sie die Lagerverwaltungsfunktionen",
+        "Fügen Sie weitere Benutzer hinzu (optional)",
+        "Konfigurieren Sie Produktkategorien",
+        "Importieren Sie bestehende Lagerbestände"
+    ],
+    'btn_get_started': "System erkunden",
+    'btn_dashboard': "Zum Dashboard"
 }

@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'my/css/companies/register_company.css' %}">
+{% endblock %}
+
+{% block title %}{{ text.title }} - WWS1{% endblock %}
+{% block header %}{{ text.header }}{% endblock %}
+{% block subtitle %}{{ company.company_name }}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <!-- Навигация -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Startseite</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'companies:company_list' %}">Firma</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'companies:company_details' %}">Details</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Bearbeiten</li>
+            </ol>
+        </nav>
+
+        <!-- Alert -->
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            {{ text.desc }}
+            <br><small class="text-muted mt-1">{{ text.notification }}</small>
+        </div>
+
+        <form method="post" action="{% url 'companies:company_edit' %}">
+            {% csrf_token %}
+
+            <!-- Basic Company Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-building me-2"></i>
+                        Grunddaten des Unternehmens
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.company_name.id_for_label }}" class="form-label">
+                                    <i class="bi bi-building-fill me-1"></i>
+                                    {{ form.company_name.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.company_name }}
+                                {% if form.company_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.company_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.legal_form.id_for_label }}" class="form-label">
+                                    <i class="bi bi-journal-text me-1"></i>
+                                    {{ form.legal_form.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.legal_form }}
+                                {% if form.legal_form.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.legal_form.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.tax_number.id_for_label }}" class="form-label">
+                                    <i class="bi bi-receipt me-1"></i>
+                                    {{ form.tax_number.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.tax_number }}
+                                {% if form.tax_number.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.tax_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.vat_number.id_for_label }}" class="form-label">
+                                    <i class="bi bi-percent me-1"></i>
+                                    {{ form.vat_number.label }}
+                                </label>
+                                {{ form.vat_number }}
+                                {% if form.vat_number.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.vat_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.registration_number.id_for_label }}" class="form-label">
+                                    <i class="bi bi-hash me-1"></i>
+                                    {{ form.registration_number.label }}
+                                </label>
+                                {{ form.registration_number }}
+                                {% if form.registration_number.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.registration_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.industry.id_for_label }}" class="form-label">
+                                    <i class="bi bi-gear-wide-connected me-1"></i>
+                                    {{ form.industry.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.industry }}
+                                {% if form.industry.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.industry.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        Firmenadresse
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="{{ form.street.id_for_label }}" class="form-label">
+                                    <i class="bi bi-signpost me-1"></i>
+                                    {{ form.street.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.street }}
+                                {% if form.street.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.street.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.postal_code.id_for_label }}" class="form-label">
+                                    <i class="bi bi-mailbox me-1"></i>
+                                    {{ form.postal_code.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.postal_code }}
+                                {% if form.postal_code.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.postal_code.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.city.id_for_label }}" class="form-label">
+                                    <i class="bi bi-building-up me-1"></i>
+                                    {{ form.city.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.city.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.country.id_for_label }}" class="form-label">
+                                    <i class="bi bi-globe me-1"></i>
+                                    {{ form.country.label }}<span class="text-danger">*</span>
+                                </label>
+                                {{ form.country }}
+                                {% if form.country.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.country.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-telephone me-2"></i>
+                        Kontaktdaten
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb

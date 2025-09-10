@@ -424,6 +424,9 @@ def create_admin_step3(request):
                     logger.info(f"Total contacts count: {len(user_data['profile']['contacts'])}")
 
                     # Use UserManager.create_user
+                    # В функции create_admin_step3, в части где создание администратора успешно:
+
+                    # Use UserManager.create_user
                     if user_manager.create_user(user_data):
                         # Clear session
                         if 'admin_creation' in request.session:
@@ -440,9 +443,15 @@ def create_admin_step3(request):
                         else:
                             contact_info = f"{main_contacts} Hauptkontakte"
 
-                        success_msg = f"Administrator '{user_data['username']}' wurde erfolgreich erstellt! Kontakte: {contact_info}"
+                        success_msg = f"Administrator '{user_data['username']}' wurde erfolgreich erstellt!"
                         logger.success(success_msg)
                         messages.success(request, success_msg)
+
+                        # НОВОЕ СООБЩЕНИЕ: информируем о следующем шаге
+                        messages.info(request, "Nächster Schritt: Registrieren Sie Ihre Firma, um die Systemkonfiguration abzuschließen.")
+
+                        # ИЗМЕНЕНО: перенаправляем на регистрацию компании с параметром
+                        company_registration_url = reverse('companies:register_company') + '?from_admin=true'
 
                         return render_with_messages(
                             request,
@@ -454,10 +463,8 @@ def create_admin_step3(request):
                                 'contact_count': total_contacts,
                                 'primary_email': primary_email
                             },
-                            reverse('home')
+                            company_registration_url  # ИЗМЕНЕНО: теперь на регистрацию компании
                         )
-                    else:
-                        messages.error(request, "Fehler beim Erstellen des Administrators")
 
                 except Exception as e:
                     logger.exception(f"CRITICAL ERROR creating admin: {e}")

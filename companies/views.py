@@ -329,35 +329,46 @@ class CompanyManager:
 
 # ==================== ERWEITERTE VIEW FUNCTIONS ====================
 
+# companies/views.py - ОБНОВЛЕННАЯ ФУНКЦИЯ register_company
+
 @ratelimit(key='ip', rate='3/m', method='POST')
 @require_http_methods(["GET", "POST"])
 @never_cache
 def register_company(request):
-    """Firmenregistrierung mit Einschränkung auf eine Firma"""
+    """Firmenregistrierung с проверкой завершенности настройки системы"""
     try:
-        # Prüfen, ob MongoDB konfiguriert ist
+        # Проверяем, что MongoDB кonfigурiert
         config = MongoConfig.read_config()
         if not config.get('setup_completed'):
             messages.error(request, "System ist noch nicht vollständig konfiguriert")
             return redirect('home')
 
+        # НОВАЯ ПРОВЕРКА: есть ли администраторы в системе
+        from users.user_utils import UserManager
+        user_manager = UserManager()
+        admin_count = user_manager.get_admin_count()
+
+        if admin_count == 0:
+            messages.warning(request, "Bitte erstellen Sie zuerst einen Administrator")
+            return redirect('users:create_admin_step1')
+
         company_manager = CompanyManager()
 
-        # KRITISCHE PRÜFUNG: Bereits registrierte Firma?
+        # КРИТИЧЕСКАЯ ПРОВЕРКА: Bereits registrierte Firma?
         if company_manager.has_active_company():
             existing_company = company_manager.get_primary_company()
             company_name = existing_company.get('company_name', 'Unbekannt')
 
             logger.warning(f"Versuch der Neuregistrierung blockiert. Existierende Firma: {company_name}")
 
-            messages.warning(
+            messages.info(
                 request,
-                f"Es ist bereits eine Firma registriert: '{company_name}'. "
-                f"Das System unterstützt nur eine Firma pro Installation."
+                f"Firma '{company_name}' ist bereits registriert. "
+                f"Das System ist vollständig konfiguriert."
             )
 
-            # Umleitung zur Firmenanzeige oder Hauptseite
-            return redirect('companies:company_details')  # Oder 'home'
+            # Umleitung zur Hauptseite - система полностью настроена
+            return redirect('home')
 
         if request.method == 'POST':
             logger.info("Verarbeitung der Firmenregistrierung")
@@ -406,14 +417,14 @@ def register_company(request):
                     # Zusätzliche Daten
                     'description': form.cleaned_data.get('description', ''),
                     'newsletter_subscription': form.cleaned_data.get('newsletter', False),
-                    'email': form.cleaned_data['email']  # Für Einzigartigkeit
+                    'email': form.cleaned_data['email']  # Для Einzigartigkeit
                 }
 
                 # Firma erstellen
                 success, message = company_manager.create_company(company_data)
 
                 if success:
-                    # Erfolgreiche Registrierung
+                    # Erfolgreiche Registrierung - СИСТЕМА ПОЛНОСТЬЮ НАСТРОЕНА
                     request.session['registered_company'] = {
                         'name': company_data['company_name'],
                         'email': company_data['email'],
@@ -423,16 +434,17 @@ def register_company(request):
 
                     logger.success(message)
                     messages.success(request, message)
-                    messages.info(
+                    messages.success(
                         request,
-                        "Ihre Firma ist jetzt als primäre Firma im System registriert."
+                        "🎉 System ist jetzt vollständig konfiguriert und einsatzbereit!"
                     )
 
+                    # ПЕРЕНАПРАВЛЯЕМ НА ГЛАВНУЮ СТРАНИЦУ - всё готово!
                     return render_with_messages(
                         request,
                         'companies/register_company.html',
                         {'form': form, 'text': language.text_company_registration},
-                        reverse('companies:registration_success')
+                        reverse('home')  # ИЗМЕНЕНО: теперь на главную после успеха
                     )
                 else:
                     # Registrierung fehlgeschlagen
@@ -446,9 +458,22 @@ def register_company(request):
             context = {'form': form, 'text': language.text_company_registration}
             return render_with_messages(request, 'companies/register_company.html', context)
 
-        # GET-Anfrage
+        # GET-Anfrage - показываем форму регистрации
         form = CompanyRegistrationForm()
-        context = {'form': form, 'text': language.text_company_registration}
+
+        # Проверяем, идет ли пользователь после создания админа
+        came_from_admin_creation = request.GET.get('from_admin') == 'true'
+        if came_from_admin_creation:
+            messages.info(
+                request,
+                "Administrator erfolgreich erstellt! Jetzt registrieren Sie Ihre Firma, um die Systemkonfiguration abzuschließen."
+            )
+
+        context = {
+            'form': form,
+            'text': language.text_company_registration,
+            'came_from_admin': came_from_admin_creation
+        }
         return render(request, 'companies/register_company.html', context)
 
     except Exception as e:
@@ -456,10 +481,11 @@ def register_company(request):
         messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
         return redirect('home')
 
+# Дополнительные методы для companies/views.py
 
 @require_http_methods(["GET"])
 def company_details(request):
-    """Zeigt Details der registrierten Firma an"""
+    """Показывает детали зарегистрированной компании"""
     try:
         company_manager = CompanyManager()
 
@@ -484,25 +510,306 @@ def company_details(request):
         return redirect('home')
 
 
-@require_http_methods(["GET"])
-def company_list(request):
-    """Zeigt die einzige registrierte Firma an (anstatt einer Liste)"""
+@ratelimit(key='ip', rate='3/m', method='POST')
+@require_http_methods(["GET", "POST"])
+@never_cache
+def company_edit(request):
+    """Редактирование данных компании"""
     try:
         company_manager = CompanyManager()
 
         if not company_manager.has_active_company():
-            # Keine Firma registriert - zur Registrierung weiterleiten
-            messages.info(request, "Noch keine Firma registriert. Registrieren Sie jetzt Ihre Firma.")
+            messages.error(request, "Keine Firma zum Bearbeiten gefunden")
             return redirect('companies:register_company')
 
-        # Umleitung zu Firmendetails (da es nur eine gibt)
-        return redirect('companies:company_details')
+        primary_company = company_manager.get_primary_company()
+
+        if request.method == 'POST':
+            # Загружаем форму с существующими данными
+            form_data = {
+                'company_name': request.POST.get('company_name'),
+                'legal_form': request.POST.get('legal_form'),
+                'tax_number': request.POST.get('tax_number'),
+                'vat_number': request.POST.get('vat_number', ''),
+                'registration_number': request.POST.get('registration_number', ''),
+                'industry': request.POST.get('industry'),
+                'street': request.POST.get('street'),
+                'postal_code': request.POST.get('postal_code'),
+                'city': request.POST.get('city'),
+                'country': request.POST.get('country'),
+                'phone': request.POST.get('phone'),
+                'fax': request.POST.get('fax', ''),
+                'email': request.POST.get('email'),
+                'website': request.POST.get('website', ''),
+                'contact_salutation': request.POST.get('contact_salutation'),
+                'contact_first_name': request.POST.get('contact_first_name'),
+                'contact_last_name': request.POST.get('contact_last_name'),
+                'contact_position': request.POST.get('contact_position', ''),
+                'contact_phone': request.POST.get('contact_phone', ''),
+                'contact_email': request.POST.get('contact_email', ''),
+                'description': request.POST.get('description', ''),
+                'newsletter': request.POST.get('newsletter') == 'on'
+            }
+
+            form = CompanyRegistrationForm(form_data)
+
+            if form.is_valid():
+                # Подготавливаем обновленные данные
+                updated_data = {
+                    'company_name': form.cleaned_data['company_name'],
+                    'legal_form': form.cleaned_data['legal_form'],
+                    'tax_number': form.cleaned_data['tax_number'],
+                    'vat_number': form.cleaned_data.get('vat_number', ''),
+                    'registration_number': form.cleaned_data.get('registration_number', ''),
+                    'industry': form.cleaned_data['industry'],
+                    'address': {
+                        'street': form.cleaned_data['street'],
+                        'postal_code': form.cleaned_data['postal_code'],
+                        'city': form.cleaned_data['city'],
+                        'country': form.cleaned_data['country']
+                    },
+                    'contact_info': {
+                        'phone': form.cleaned_data['phone'],
+                        'fax': form.cleaned_data.get('fax', ''),
+                        'email': form.cleaned_data['email'],
+                        'website': form.cleaned_data.get('website', '')
+                    },
+                    'contact_person': {
+                        'salutation': form.cleaned_data['contact_salutation'],
+                        'first_name': form.cleaned_data['contact_first_name'],
+                        'last_name': form.cleaned_data['contact_last_name'],
+                        'position': form.cleaned_data.get('contact_position', ''),
+                        'phone': form.cleaned_data.get('contact_phone', ''),
+                        'email': form.cleaned_data.get('contact_email', '')
+                    },
+                    'description': form.cleaned_data.get('description', ''),
+                    'newsletter_subscription': form.cleaned_data.get('newsletter', False)
+                }
+
+                success, message = company_manager.update_company(updated_data)
+
+                if success:
+                    messages.success(request, message)
+                    return redirect('companies:company_details')
+                else:
+                    messages.error(request, message)
+            else:
+                messages.error(request, "Bitte korrigieren Sie die Formularfehler")
+
+        else:
+            # GET request - заполняем форму существующими данными
+            initial_data = {
+                'company_name': primary_company.get('company_name', ''),
+                'legal_form': primary_company.get('legal_form', ''),
+                'tax_number': primary_company.get('tax_number', ''),
+                'vat_number': primary_company.get('vat_number', ''),
+                'registration_number': primary_company.get('registration_number', ''),
+                'industry': primary_company.get('industry', ''),
+            }
+
+            # Добавляем адрес
+            address = primary_company.get('address', {})
+            initial_data.update({
+                'street': address.get('street', ''),
+                'postal_code': address.get('postal_code', ''),
+                'city': address.get('city', ''),
+                'country': address.get('country', ''),
+            })
+
+            # Добавляем контакты
+            contact_info = primary_company.get('contact_info', {})
+            initial_data.update({
+                'phone': contact_info.get('phone', ''),
+                'fax': contact_info.get('fax', ''),
+                'email': contact_info.get('email', ''),
+                'website': contact_info.get('website', ''),
+            })
+
+            # Добавляем контактное лицо
+            contact_person = primary_company.get('contact_person', {})
+            initial_data.update({
+                'contact_salutation': contact_person.get('salutation', ''),
+                'contact_first_name': contact_person.get('first_name', ''),
+                'contact_last_name': contact_person.get('last_name', ''),
+                'contact_position': contact_person.get('position', ''),
+                'contact_phone': contact_person.get('phone', ''),
+                'contact_email': contact_person.get('email', ''),
+            })
+
+            # Дополнительные поля
+            initial_data.update({
+                'description': primary_company.get('description', ''),
+                'newsletter': primary_company.get('newsletter_subscription', False)
+            })
+
+            form = CompanyRegistrationForm(initial=initial_data)
+
+        context = {
+            'form': form,
+            'text': language.text_company_edit,
+            'company': primary_company
+        }
+
+        return render(request, 'companies/company_edit.html', context)
 
     except Exception as e:
-        logger.error(f"Fehler beim Abrufen der Firmenliste: {e}")
-        messages.error(request, "Fehler beim Laden der Firmendaten")
-        return redirect('home')
+        logger.error(f"Fehler beim Bearbeiten der Firmendaten: {e}")
+        messages.error(request, "Fehler beim Laden der Bearbeitungsseite")
+        return redirect('companies:company_details')
 
+
+@ratelimit(key='ip', rate='2/m', method='POST')
+@require_http_methods(["GET", "POST"])
+@never_cache
+def company_delete(request):
+    """Удаление компании с подтверждением"""
+    try:
+        company_manager = CompanyManager()
+
+        if not company_manager.has_active_company():
+            messages.error(request, "Keine Firma zum Löschen gefunden")
+            return redirect('home')
+
+        primary_company = company_manager.get_primary_company()
+        company_name = primary_company.get('company_name', 'Unbekannt')
+
+        if request.method == 'POST':
+            # Проверяем подтверждение
+            confirmation_name = request.POST.get('confirmation_name', '').strip()
+
+            if confirmation_name != company_name:
+                messages.error(request, "Firmenname stimmt nicht überein")
+                context = {
+                    'company': primary_company,
+                    'text': language.text_company_delete
+                }
+                return render(request, 'companies/company_delete.html', context)
+
+            # Выполняем удаление
+            success, message = company_manager.delete_company(soft_delete=True)
+
+            if success:
+                # Очищаем сессию если есть
+                if 'registered_company' in request.session:
+                    del request.session['registered_company']
+                    request.session.modified = True
+
+                messages.success(request, message)
+                messages.info(request, "Sie können jetzt eine neue Firma registrieren")
+                return redirect('companies:register_company')
+            else:
+                messages.error(request, message)
+
+        # GET request - показываем форму подтверждения
+        context = {
+            'company': primary_company,
+            'text': language.text_company_delete
+        }
+
+        return render(request, 'companies/company_delete.html', context)
+
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen der Firma: {e}")
+        messages.error(request, "Fehler beim Löschen der Firma")
+        return redirect('companies:company_details')
+
+
+@require_http_methods(["GET"])
+def company_status_api(request):
+    """API endpoint для получения статуса компании"""
+    try:
+        company_manager = CompanyManager()
+        stats = company_manager.get_company_stats()
+
+        if company_manager.has_active_company():
+            primary_company = company_manager.get_primary_company()
+            response_data = {
+                'has_company': True,
+                'company_name': primary_company.get('company_name', ''),
+                'company_email': primary_company.get('contact_info', {}).get('email', ''),
+                'registration_date': primary_company.get('created_at').isoformat() if primary_company.get('created_at') else None,
+                'stats': stats,
+                'status': 'active'
+            }
+        else:
+            response_data = {
+                'has_company': False,
+                'company_name': None,
+                'stats': stats,
+                'status': 'not_registered'
+            }
+
+        return JsonResponse(response_data)
+
+    except Exception as e:
+        logger.error(f"Fehler beim Abrufen des Firmenstatus: {e}")
+        return JsonResponse({
+            'error': 'Fehler beim Abrufen des Status',
+            'has_company': False,
+            'status': 'error'
+        }, status=500)
+
+
+@require_http_methods(["POST"])
+def validate_company_data(request):
+    """API endpoint для валидации данных компании"""
+    try:
+        # Получаем данные из запроса
+        field_name = request.POST.get('field_name')
+        field_value = request.POST.get('field_value', '').strip()
+
+        if not field_name or not field_value:
+            return JsonResponse({
+                'is_valid': False,
+                'error': 'Feldname und Wert sind erforderlich'
+            })
+
+        # Выполняем валидацию в зависимости от поля
+        is_valid = True
+        error_message = ''
+
+        if field_name == 'company_name':
+            if len(field_value) < 2:
+                is_valid = False
+                error_message = 'Firmenname muss mindestens 2 Zeichen lang sein'
+            elif len(field_value) > 200:
+                is_valid = False
+                error_message = 'Firmenname darf maximal 200 Zeichen lang sein'
+
+        elif field_name == 'tax_number':
+            import re
+            clean_number = re.sub(r'[^0-9]', '', field_value)
+            if len(clean_number) < 10:
+                is_valid = False
+                error_message = 'Steuernummer muss mindestens 10 Ziffern enthalten'
+            elif not re.match(r'^[0-9\/\-\s]+$', field_value):
+                is_valid = False
+                error_message = 'Ungültiges Format der Steuernummer'
+
+        elif field_name == 'email':
+            import re
+            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+            if not re.match(email_pattern, field_value):
+                is_valid = False
+                error_message = 'Ungültiges E-Mail-Format'
+
+        elif field_name == 'postal_code':
+            if not field_value.isdigit() or len(field_value) not in [4, 5, 6]:
+                is_valid = False
+                error_message = 'PLZ muss 4-6 Ziffern enthalten'
+
+        return JsonResponse({
+            'is_valid': is_valid,
+            'error': error_message,
+            'field_name': field_name
+        })
+
+    except Exception as e:
+        logger.error(f"Fehler bei der Feldvalidierung: {e}")
+        return JsonResponse({
+            'is_valid': False,
+            'error': 'Validierungsfehler aufgetreten'
+        }, status=500)
 
 def render_toast_response(request):
     """JSON-Antwort mit Nachrichten für HTMX"""
