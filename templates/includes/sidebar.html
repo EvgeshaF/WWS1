@@ -23,16 +23,16 @@
                 <div class="collapse" id="companiesSubmenu">
                     <ul class="nav flex-column ps-4">
                         <!-- Условный показ ссылок в зависимости от наличия компании -->
-                        {% if request.resolver_match.app_name == 'companies' or 'company' in request.path %}
+                        {% if request.resolver_match.app_name == 'company' or 'company' in request.path %}
                             <!-- Если мы на странице компаний, показываем все ссылки -->
                             <li class="nav-item">
-                                <a href="{% url 'companies:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <a href="{% url 'company:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
                                     <i class="bi bi-building-add me-2"></i>
                                     <small>Firma registrieren</small>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'companies:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <a href="{% url 'company:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
                                     <i class="bi bi-building me-2"></i>
                                     <small>Firmenübersicht</small>
                                 </a>
@@ -40,13 +40,13 @@
                         {% else %}
                             <!-- Обычное состояние -->
                             <li class="nav-item">
-                                <a href="{% url 'companies:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <a href="{% url 'company:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
                                     <i class="bi bi-building-add me-2"></i>
                                     <small>Firma registrieren</small>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'companies:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                                <a href="{% url 'company:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
                                     <i class="bi bi-building me-2"></i>
                                     <small>Firmenübersicht</small>
                                 </a>

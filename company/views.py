@@ -1,4 +1,4 @@
-# companies/views.py - Views для управления компаниями
+# company/views.py - Исправленная версия с обратной совместимостью
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -16,7 +16,7 @@ from django_ratelimit.decorators import ratelimit
 
 
 class CompanyManager:
-    """Менеджер для работы с компаниями в MongoDB"""
+    """Менеджер для работы с компанией в MongoDB - с обратной совместимостью"""
 
     def __init__(self):
         self.db = MongoConnection.get_database()
@@ -31,6 +31,7 @@ class CompanyManager:
             logger.error("Имя базы данных не найдено в конфигурации")
             self.companies_collection_name = None
         else:
+            # Используем старое название коллекции для совместимости
             self.companies_collection_name = f"{db_name}_companies"
             logger.info(f"Коллекция компаний: {self.companies_collection_name}")
 
@@ -46,12 +47,11 @@ class CompanyManager:
                 logger.info(f"Создаем коллекцию компаний: {self.companies_collection_name}")
                 collection = self.db.create_collection(self.companies_collection_name)
 
-                # Создаем индексы
+                # Создаем только базовые индексы
                 try:
-                    collection.create_index("company_name", unique=True, name="idx_company_name_unique")
                     collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
-                    collection.create_index([("is_primary", 1), ("deleted", 1)], name="idx_primary_not_deleted")
                     collection.create_index("created_at", name="idx_created_at")
+                    collection.create_index("company_name", name="idx_company_name")
                     logger.success("Индексы для компаний созданы")
                 except Exception as e:
                     logger.warning(f"Ошибка создания индексов для компаний: {e}")
@@ -63,40 +63,21 @@ class CompanyManager:
             return None
 
     def create_company(self, company_data):
-        """Создает новую компанию"""
+        """Создает компанию"""
         try:
             collection = self.get_collection()
             if collection is None:
                 return False
 
-            # Проверяем, что компания с таким именем не существует
+            # Проверяем, что активной компании еще нет (для режима одной компании)
             existing_company = collection.find_one({
-                'company_name': company_data['company_name'],
-                'deleted': {'$ne': True}
-            })
-
-            if existing_company:
-                logger.error(f"Компания '{company_data['company_name']}' уже существует")
-                return False
-
-            # Если это первая компания или установлен флаг is_primary
-            if company_data.get('is_primary', False):
-                # Снимаем флаг primary с других компаний
-                collection.update_many(
-                    {'is_primary': True, 'deleted': {'$ne': True}},
-                    {'$set': {'is_primary': False, 'modified_at': datetime.datetime.now()}}
-                )
-
-            # Проверяем, есть ли вообще активные компании
-            active_companies_count = collection.count_documents({
                 'deleted': {'$ne': True},
                 'is_active': True
             })
 
-            # Если это первая активная компания, делаем её primary
-            if active_companies_count == 0:
-                company_data['is_primary'] = True
-                logger.info("Это первая компания - устанавливаем как primary")
+            if existing_company:
+                logger.error("Активная компания уже существует в системе")
+                return False
 
             # Устанавливаем системные поля
             now = datetime.datetime.now()
@@ -104,7 +85,8 @@ class CompanyManager:
                 'created_at': now,
                 'modified_at': now,
                 'deleted': False,
-                'is_active': True
+                'is_active': True,
+                'is_primary': True  # Всегда primary для единственной компании
             })
 
             # Создаем компанию
@@ -120,8 +102,8 @@ class CompanyManager:
             logger.error(f"Ошибка создания компании: {e}")
             return False
 
-    def has_active_company(self):
-        """Проверяет, есть ли активные компании"""
+    def has_company(self):
+        """Проверяет, есть ли активная компания в системе"""
         try:
             collection = self.get_collection()
             if collection is None:
@@ -135,18 +117,21 @@ class CompanyManager:
             return count > 0
 
         except Exception as e:
-            logger.error(f"Ошибка проверки активных компаний: {e}")
+            logger.error(f"Ошибка проверки существования компании: {e}")
             return False
 
-    def get_primary_company(self):
-        """Возвращает основную компанию"""
+    def has_active_company(self):
+        """Метод для обратной совместимости - проверяет, есть ли активная компания"""
+        return self.has_company()
+
+    def get_company(self):
+        """Возвращает активную компанию"""
         try:
             collection = self.get_collection()
             if collection is None:
                 return None
 
             company = collection.find_one({
-                'is_primary': True,
                 'deleted': {'$ne': True},
                 'is_active': True
             })
@@ -154,11 +139,15 @@ class CompanyManager:
             return company
 
         except Exception as e:
-            logger.error(f"Ошибка получения основной компании: {e}")
+            logger.error(f"Ошибка получения компании: {e}")
             return None
 
+    def get_primary_company(self):
+        """Метод для обратной совместимости - возвращает основную компанию"""
+        return self.get_company()
+
     def list_companies(self, include_deleted=False):
-        """Возвращает список компаний"""
+        """Возвращает список компаний (для совместимости)"""
         try:
             collection = self.get_collection()
             if collection is None:
@@ -174,6 +163,32 @@ class CompanyManager:
         except Exception as e:
             logger.error(f"Ошибка получения списка компаний: {e}")
             return []
+
+    def update_company(self, company_data):
+        """Обновляет данные компании"""
+        try:
+            collection = self.get_collection()
+            if collection is None:
+                return False
+
+            # Устанавливаем время модификации
+            company_data['modified_at'] = datetime.datetime.now()
+
+            # Обновляем единственную активную компанию
+            result = collection.update_one(
+                {'deleted': {'$ne': True}, 'is_active': True},
+                {'$set': company_data}
+            )
+
+            if result.modified_count > 0:
+                logger.success("Данные компании обновлены")
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Ошибка обновления компании: {e}")
+            return False
 
 
 @never_cache
@@ -231,12 +246,19 @@ def render_with_messages(request, template_name, context, success_redirect=None)
 @require_http_methods(["GET", "POST"])
 @never_cache
 def register_company(request):
-    """Регистрация новой компании"""
+    """Регистрация компании (только если еще не создана)"""
     try:
         # Проверяем, что MongoDB настроен
         config = MongoConfig.read_config()
         if not config.get('setup_completed'):
             messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+            return redirect('home')
+
+        company_manager = CompanyManager()
+
+        # Проверяем, что компания еще не создана
+        if company_manager.has_company():
+            messages.info(request, "Firma ist bereits im System registriert")
             return redirect('home')
 
         # Проверяем параметр from_admin для показа специального сообщения
@@ -252,7 +274,6 @@ def register_company(request):
                 logger.info(f"Creating company: {company_data['company_name']}")
 
                 # Создаем компанию
-                company_manager = CompanyManager()
                 if company_manager.create_company(company_data):
                     success_msg = f"Firma '{company_data['company_name']}' wurde erfolgreich registriert!"
                     logger.success(success_msg)
@@ -261,7 +282,7 @@ def register_company(request):
                     # Перенаправляем на главную страницу
                     return render_with_messages(
                         request,
-                        'companies/register_company.html',
+                        'company/register_company.html',
                         {'form': form, 'from_admin': from_admin},
                         reverse('home')
                     )
@@ -273,7 +294,7 @@ def register_company(request):
 
             # Рендерим форму с ошибками
             context = {'form': form, 'from_admin': from_admin}
-            return render_with_messages(request, 'companies/register_company.html', context)
+            return render_with_messages(request, 'company/register_company.html', context)
 
         # GET request
         form = CompanyRegistrationForm()
@@ -292,21 +313,96 @@ def register_company(request):
 @require_http_methods(["GET"])
 @never_cache
 def company_list(request):
-    """Список компаний"""
+    """Список компаний (для совместимости - показывает единственную компанию)"""
     try:
         company_manager = CompanyManager()
-        companies = company_manager.list_companies()
-        primary_company = company_manager.get_primary_company()
+        company = company_manager.get_company()
+
+        # Создаем список из одной компании для совместимости с шаблонами
+        company = [company] if company else []
+        primary_company = company
 
         context = {
-            'companies': companies,
+            'company': company,
             'primary_company': primary_company,
-            'companies_count': len(companies)
+            'companies_count': len(company),
+            'company': company  # Добавляем для совместимости
         }
 
         return render(request, 'companies/company_list.html', context)
 
     except Exception as e:
         logger.error(f"Error in company_list: {e}")
-        messages.error(request, "Fehler beim Laden der Firmenliste")
+        messages.error(request, "Fehler beim Laden der Firmendaten")
+        return redirect('home')
+
+
+@require_http_methods(["GET"])
+@never_cache
+def company_details(request):
+    """Показать детали компании"""
+    try:
+        company_manager = CompanyManager()
+        company = company_manager.get_company()
+
+        if not company:
+            messages.warning(request, "Keine Firma im System gefunden")
+            return redirect('company:register_company')
+
+        context = {
+            'company': company
+        }
+
+        return render(request, 'companies/company_details.html', context)
+
+    except Exception as e:
+        logger.error(f"Error in company_details: {e}")
+        messages.error(request, "Fehler beim Laden der Firmendaten")
+        return redirect('home')
+
+
+@require_http_methods(["GET", "POST"])
+@never_cache
+def edit_company(request):
+    """Редактирование данных компании"""
+    try:
+        company_manager = CompanyManager()
+        company = company_manager.get_company()
+
+        if not company:
+            messages.warning(request, "Keine Firma im System gefunden")
+            return redirect('company:register_company')
+
+        if request.method == 'POST':
+            form = CompanyRegistrationForm(request.POST)
+            if form.is_valid():
+                company_data = form.cleaned_data.copy()
+
+                if company_manager.update_company(company_data):
+                    messages.success(request, "Firmendaten wurden erfolgreich aktualisiert")
+                    return redirect('company:company_details')
+                else:
+                    messages.error(request, "Fehler beim Aktualisieren der Firmendaten")
+            else:
+                messages.error(request, "Bitte korrigieren Sie die Formularfehler")
+        else:
+            # Предзаполняем форму данными компании
+            initial_data = {key: company.get(key, '') for key in [
+                'company_name', 'legal_form', 'commercial_register', 'tax_number', 'vat_id',
+                'street', 'postal_code', 'city', 'country', 'email', 'phone', 'fax', 'website',
+                'ceo_name', 'contact_person', 'description', 'industry'
+            ]}
+            form = CompanyRegistrationForm(initial=initial_data)
+
+        context = {
+            'form': form,
+            'company': company,
+            'edit_mode': True
+        }
+
+        return render(request, 'companies/edit_company.html', context)
+
+    except Exception as e:
+        logger.error(f"Error in edit_company: {e}")
+        messages.error(request, "Fehler beim Bearbeiten der Firmendaten")
         return redirect('home')

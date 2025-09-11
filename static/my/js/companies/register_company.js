@@ -1,4 +1,4 @@
-// static/my/js/companies/register_company_modal.js - Modal Company Registration with Tabs
+// static/my/js/company/register_company_modal.js - Modal Company Registration with Tabs
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('company-form');

@@ -28,12 +28,12 @@ def home(request):
 
         # Шаг 3: Проверяем, есть ли зарегистрированная компания
         # ИСПРАВЛЕНО: Используем локальный импорт для избежания циклических зависимостей
-        from companies.views import CompanyManager
+        from company.views import CompanyManager
         company_manager = CompanyManager()
 
-        if not company_manager.has_active_company():
+        if not company_manager.has_company():
             # Нет компании - перенаправляем на регистрацию компании
-            return redirect('companies:register_company')
+            return redirect('company:register_company')
 
         # Все настроено - показываем главную страницу
         primary_company = company_manager.get_primary_company()

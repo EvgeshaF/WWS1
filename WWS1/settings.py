@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'home',
     'mongodb',
     'users',
-    'companies',
+    'company',
 ]
 
 MIDDLEWARE = [

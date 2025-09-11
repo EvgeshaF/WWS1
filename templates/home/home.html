@@ -39,7 +39,7 @@
                     <p class="action-text">
                         Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration abzuschließen.
                     </p>
-                    <a href="{% url 'companies:register_company' %}" class="action-btn btn btn-warning">
+                    <a href="{% url 'company:register_company' %}" class="action-btn btn btn-warning">
                         <i class="bi bi-building-add me-1"></i>
                         Firma registrieren
                     </a>
@@ -109,7 +109,7 @@
                     <p class="action-text">
                         Verwalten Sie Ihre Firmendaten, Kontakte und Einstellungen.
                     </p>
-                    <a href="{% url 'companies:company_list' %}" class="action-btn btn btn-primary">
+                    <a href="{% url 'company:company_list' %}" class="action-btn btn btn-primary">
                         <i class="bi bi-arrow-right me-1"></i>
                         Firma verwalten
                     </a>
@@ -166,13 +166,13 @@
                     </div>
 
                     {% if not has_company %}
-                    <a href="{% url 'companies:register_company' %}" class="quick-link text-warning">
+                    <a href="{% url 'company:register_company' %}" class="quick-link text-warning">
                         <i class="bi bi-building-add"></i>
                         <span>Firma registrieren (erforderlich)</span>
                         <i class="bi bi-chevron-right"></i>
                     </a>
                     {% else %}
-                    <a href="{% url 'companies:company_list' %}" class="quick-link">
+                    <a href="{% url 'company:company_list' %}" class="quick-link">
                         <i class="bi bi-building"></i>
                         <span>Firmendaten bearbeiten</span>
                         <i class="bi bi-chevron-right"></i>
@@ -216,7 +216,7 @@
                     <i class="bi bi-exclamation-triangle me-2"></i>
                     <strong>Systemkonfiguration nicht vollständig!</strong>
                     Bitte registrieren Sie Ihre Firma, um die Konfiguration abzuschließen.
-                    <a href="{% url 'companies:register_company' %}" class="alert-link ms-2">
+                    <a href="{% url 'company:register_company' %}" class="alert-link ms-2">
                         <i class="bi bi-building-add me-1"></i>
                         Jetzt registrieren
                     </a>

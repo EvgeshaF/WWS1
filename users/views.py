@@ -451,7 +451,7 @@ def create_admin_step3(request):
                         messages.info(request, "Nächster Schritt: Registrieren Sie Ihre Firma, um die Systemkonfiguration abzuschließen.")
 
                         # ИЗМЕНЕНО: перенаправляем на регистрацию компании с параметром
-                        company_registration_url = reverse('companies:register_company') + '?from_admin=true'
+                        company_registration_url = reverse('company:register_company') + '?from_admin=true'
 
                         return render_with_messages(
                             request,

@@ -1,4 +1,4 @@
-# companies/forms.py - Формы для регистрации компании
+# company/forms.py - Упрощенная форма для одной компании
 
 from django import forms
 from django.core.validators import RegexValidator
@@ -6,7 +6,7 @@ import re
 
 
 class CompanyRegistrationForm(forms.Form):
-    """Форма для регистрации компании"""
+    """Форма для регистрации единственной компании"""
 
     # Основная информация о компании
     company_name = forms.CharField(
@@ -217,17 +217,6 @@ class CompanyRegistrationForm(forms.Form):
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'z.B. IT-Dienstleistungen, Handel, Produktion...'
-        })
-    )
-
-    # Status Flags
-    is_primary = forms.BooleanField(
-        label="Als Hauptfirma festlegen",
-        required=False,
-        initial=True,
-        help_text="Diese Firma wird als Standard für alle Operationen verwendet",
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
         })
     )
 

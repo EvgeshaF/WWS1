@@ -26,7 +26,7 @@ urlpatterns = [
     path('', include('home.urls')),
     path('mongodb/', include('mongodb.urls')),
     path('users/', include('users.urls')),
-    path('companies/', include('companies.urls')),
+    path('company/', include('company.urls')),
 ]
 
 if settings.DEBUG:
