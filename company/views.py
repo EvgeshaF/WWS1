@@ -193,7 +193,7 @@ def register_company(request):
 
                 return render_with_messages(
                     request,
-                    'companies/register_company.html',
+                    'company/register_company.html',
                     {'form': form, 'from_admin': from_admin, 'is_editing': is_editing},
                     reverse('home')
                 )
@@ -204,7 +204,7 @@ def register_company(request):
             messages.error(request, "Bitte korrigieren Sie die Fehler im Formular")
 
         context = {'form': form, 'from_admin': from_admin, 'is_editing': is_editing}
-        return render_with_messages(request, 'companies/register_company.html', context)
+        return render_with_messages(request, 'company/register_company.html', context)
 
     # GET request - предзаполняем форму существующими данными
     initial_data = {}
@@ -220,7 +220,7 @@ def register_company(request):
         'is_editing': is_editing,
         'company_name': existing_company.get('company_name', '') if existing_company else ''
     }
-    return render(request, 'companies/register_company.html', context)
+    return render(request, 'company/register_company.html', context)
 
 
 def company_info(request):
@@ -233,7 +233,7 @@ def company_info(request):
         return redirect('company:register_company')
 
     context = {'company': company}
-    return render(request, 'companies/company_info.html', context)
+    return render(request, 'company/company_info.html', context)
 
 
 def edit_company(request):
