@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // PLZ validation
-    const postalCodeField = document.getElementById('{{ form.postal_code.id_for_label }}');
+    const postalCodeField = form.querySelector('input[name="postal_code"]');
     if (postalCodeField) {
         postalCodeField.addEventListener('input', function() {
             const value = this.value.replace(/\D/g, ''); // Nur Zahlen
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // VAT ID formatting
-    const vatIdField = document.getElementById('{{ form.vat_id.id_for_label }}');
+    const vatIdField = form.querySelector('input[name="vat_id"]');
     if (vatIdField) {
         vatIdField.addEventListener('input', function() {
             let value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -90,6 +90,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (value.length > 11) {
                 value = value.substring(0, 11);
             }
+            this.value = value;
+        });
+    }
+
+    // Commercial register formatting
+    const hrField = form.querySelector('input[name="commercial_register"]');
+    if (hrField) {
+        hrField.addEventListener('input', function() {
+            let value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
             this.value = value;
         });
     }
@@ -262,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function validateField(field) {
         const value = field.value.trim();
-        const fieldId = field.id;
+        const fieldName = field.name;
 
         clearFieldError(field);
 
@@ -291,4 +300,172 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 new URL(value);
             } catch {
-                setFieldError(field,
+                setFieldError(field, 'Ungültiges URL-Format (z.B. https://www.firma.de)');
+                return false;
+            }
+        }
+
+        // Phone/Fax validation
+        if ((fieldName === 'phone' || fieldName === 'fax') && value) {
+            const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,20}$/;
+            if (!phoneRegex.test(value)) {
+                setFieldError(field, 'Ungültiges Telefonformat');
+                return false;
+            }
+        }
+
+        // Postal code validation
+        if (fieldName === 'postal_code' && value) {
+            const plzRegex = /^[0-9]{5}$/;
+            if (!plzRegex.test(value)) {
+                setFieldError(field, 'PLZ muss aus 5 Ziffern bestehen');
+                return false;
+            }
+        }
+
+        // VAT ID validation
+        if (fieldName === 'vat_id' && value) {
+            const vatRegex = /^DE[0-9]{9}$/;
+            if (!vatRegex.test(value)) {
+                setFieldError(field, 'Ungültiges Format (DE + 9 Ziffern)');
+                return false;
+            }
+        }
+
+        // Commercial register validation
+        if (fieldName === 'commercial_register' && value) {
+            const hrRegex = /^HR[AB][0-9]+$/;
+            if (!hrRegex.test(value)) {
+                setFieldError(field, 'Ungültiges Format (z.B. HRB12345)');
+                return false;
+            }
+        }
+
+        // Company name validation
+        if (fieldName === 'company_name' && value) {
+            if (value.length < 2) {
+                setFieldError(field, 'Firmenname muss mindestens 2 Zeichen haben');
+                return false;
+            }
+            if (value.length > 100) {
+                setFieldError(field, 'Firmenname darf maximal 100 Zeichen haben');
+                return false;
+            }
+        }
+
+        // String length validation for all text fields
+        if ((field.type === 'text' || field.type === 'textarea') && value) {
+            const maxLength = field.maxLength || 500;
+            if (value.length > maxLength) {
+                setFieldError(field, `Maximal ${maxLength} Zeichen erlaubt`);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function setFieldError(field, message) {
+        field.classList.add('is-invalid');
+        field.classList.remove('is-valid');
+
+        // Remove existing error message
+        const existingError = field.parentNode.querySelector('.invalid-feedback');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Create new error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback d-block';
+        errorDiv.textContent = message;
+        field.parentNode.appendChild(errorDiv);
+    }
+
+    function clearFieldError(field) {
+        field.classList.remove('is-invalid');
+
+        // Remove error message
+        const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+
+        // Add valid class if field has value
+        if (field.value.trim()) {
+            field.classList.add('is-valid');
+        } else {
+            field.classList.remove('is-valid');
+        }
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'info', delay = 5000) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        // Create toast element
+        const toastId = 'toast_' + Date.now();
+        const toastBg = type === 'success' ? 'bg-success' :
+                       type === 'error' ? 'bg-danger' :
+                       type === 'warning' ? 'bg-warning' : 'bg-primary';
+
+        const toastHTML = `
+            <div id="${toastId}" class="toast ${toastBg} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header ${toastBg} text-white border-0">
+                    <i class="bi bi-${getToastIcon(type)} me-2"></i>
+                    <strong class="me-auto">System</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+        // Initialize and show toast
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: delay });
+        toast.show();
+
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            toastElement.remove();
+        });
+    }
+
+    function getToastIcon(type) {
+        switch (type) {
+            case 'success': return 'check-circle-fill';
+            case 'error': return 'exclamation-triangle-fill';
+            case 'warning': return 'exclamation-triangle-fill';
+            default: return 'info-circle-fill';
+        }
+    }
+
+    // Initialize form validation on page load
+    form.querySelectorAll('input, select, textarea').forEach(field => {
+        // Set initial state
+        if (field.value.trim()) {
+            validateField(field);
+        }
+    });
+
+    // Handle tab switching with Bootstrap events
+    document.querySelectorAll('#companyTabs button[data-bs-toggle="tab"]').forEach((tabButton, index) => {
+        tabButton.addEventListener('shown.bs.tab', function () {
+            currentTabIndex = index;
+            updateNavigationButtons();
+        });
+    });
+
+    console.log('Company registration form initialized');
+});
