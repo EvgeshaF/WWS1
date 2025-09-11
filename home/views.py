@@ -1,8 +1,9 @@
+# home/views.py - ОБНОВЛЕННЫЙ с правильным импортом CompanyManager
+
 from django.shortcuts import render, redirect
 
 from mongodb.mongodb_config import MongoConfig
 from users.user_utils import UserManager
-from companies.views import CompanyManager
 
 
 def home(request):
@@ -26,7 +27,10 @@ def home(request):
             return redirect('users:create_admin_step1')
 
         # Шаг 3: Проверяем, есть ли зарегистрированная компания
+        # ИСПРАВЛЕНО: Используем локальный импорт для избежания циклических зависимостей
+        from companies.views import CompanyManager
         company_manager = CompanyManager()
+
         if not company_manager.has_active_company():
             # Нет компании - перенаправляем на регистрацию компании
             return redirect('companies:register_company')

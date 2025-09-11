@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'my/css/users/create_admin_step1-3.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/companies.css' %}">
+{% endblock %}
+
+{% block content %}
+    <!-- Модальное окно регистрации компании -->
+    <div class="modal fade show" id="companyModal" tabindex="-1" aria-labelledby="companyModalLabel" aria-modal="true" role="dialog" style="display: block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="companyModalLabel">
+                        <i class="bi bi-building-add me-2"></i>
+                        Firma registrieren
+                    </h5>
+                    {% if from_admin %}
+                    <span class="badge bg-light text-dark ms-auto">Letzter Schritt</span>
+                    {% endif %}
+                </div>
+                <div class="modal-body">
+
+                    {% if from_admin %}
+                    <div class="alert alert-success" role="alert">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                            <strong>Administrator erfolgreich erstellt!</strong>
+                        </div>
+                        <p class="mb-0">
+                            Der erste Administrator wurde erfolgreich im System angelegt.
+                            Um die Systemkonfiguration zu vervollständigen, registrieren Sie jetzt Ihre Firma.
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Registrieren Sie Ihre Firma, um sie im Warehouse Management System zu verwenden.
+                    </div>
+                    {% endif %}
+
+                    <form method="post" id="company-form">
+                        {% csrf_token %}
+
+                        <!-- Tabs für bessere Organisation -->
+                        <ul class="nav nav-tabs mb-4" id="companyTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab">
+                                    <i class="bi bi-building me-1"></i>
+                                    Grunddaten
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="address-tab" data-bs-toggle="tab" data-bs-target="#address" type="button" role="tab">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    Adresse
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    Kontakt
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Details
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="companyTabContent">
+
+                            <!-- Tab 1: Grunddaten -->
+                            <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="{{ form.company_name.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-building me-1"></i>
+                                                {{ form.company_name.label }}
+                                            </label>
+                                            {{ form.company_name }}
+                                            {% if form.company_name.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.company_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.legal_form.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-shield-check me-1"></i>
+                                                {{ form.legal_form.label }}
+                                            </label>
+                                            {{ form.legal_form }}
+                                            {% if form.legal_form.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.legal_form.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.commercial_register.id_for_label }}" class="form-label">
+                                                <i class="bi bi-card-list me-1"></i>
+                                                {{ form.commercial_register.label }}
+                                            </label>
+                                            {{ form.commercial_register }}
+                                            {% if form.commercial_register.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.commercial_register.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Optional: z.B. HRB 12345
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.tax_number.id_for_label }}" class="form-label">
+                                                <i class="bi bi-receipt me-1"></i>
+                                                {{ form.tax_number.label }}
+                                            </label>
+                                            {{ form.tax_number }}
+                                            {% if form.tax_number.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.tax_number.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Optional: Steuernummer
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.vat_id.id_for_label }}" class="form-label">
+                                                <i class="bi bi-percent me-1"></i>
+                                                {{ form.vat_id.label }}
+                                            </label>
+                                            {{ form.vat_id }}
+                                            {% if form.vat_id.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.vat_id.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Optional: DE + 9 Ziffern
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 2: Adresse -->
+                            <div class="tab-pane fade" id="address" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="{{ form.street.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-signpost me-1"></i>
+                                                {{ form.street.label }}
+                                            </label>
+                                            {{ form.street }}
+                                            {% if form.street.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.street.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.postal_code.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-mailbox me-1"></i>
+                                                {{ form.postal_code.label }}
+                                            </label>
+                                            {{ form.postal_code }}
+                                            {% if form.postal_code.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.postal_code.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.city.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-building me-1"></i>
+                                                {{ form.city.label }}
+                                            </label>
+                                            {{ form.city }}
+                                            {% if form.city.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.city.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.country.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-globe me-1"></i>
+                                                {{ form.country.label }}
+                                            </label>
+                                            {{ form.country }}
+                                            {% if form.country.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.country.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 3: Kontakt -->
+                            <div class="tab-pane fade" id="contact" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.email.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-envelope me-1"></i>
+                                                {{ form.email.label }}
+                                            </label>
+                                            {{ form.email }}
+                                            {% if form.email.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Haupt E-Mail-Adresse der Firma
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.phone.id_for_label }}" class="form-label required-field">
+                                                <i class="bi bi-telephone me-1"></i>
+                                                {{ form.phone.label }}
+                                            </label>
+                                            {{ form.phone }}
+                                            {% if form.phone.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.phone.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Haupttelefonnummer der Firma
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.fax.id_for_label }}" class="form-label">
+                                                <i class="bi bi-printer me-1"></i>
+                                                {{ form.fax.label }}
+                                            </label>
+                                            {{ form.fax }}
+                                            {% if form.fax.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.fax.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Optional: Faxnummer
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.website.id_for_label }}" class="form-label">
+                                                <i class="bi bi-globe me-1"></i>
+                                                {{ form.website.label }}
+                                            </label>
+                                            {{ form.website }}
+                                            {% if form.website.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.website.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Optional: Firmenwebsite
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 4: Details -->
+                            <div class="tab-pane fade" id="details" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.ceo_name.id_for_label }}" class="form-label">
+                                                <i class="bi bi-person-tie me-1"></i>
+                                                {{ form.ceo_name.label }}
+                                            </label>
+                                            {{ form.ceo_name }}
+                                            {% if form.ceo_name.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.ceo_name.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Optional: Name des Geschäftsführers
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.contact_person.id_for_label }}" class="form-label">
+                                                <i class="bi bi-person-check me-1"></i>
+                                                {{ form.contact_person.label }}
+                                            </label>
+                                            {{ form.contact_person }}
+                                            {% if form.contact_person.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.contact_person.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-lightbulb me-1"></i>
+                                                Optional: Hauptansprechpartner
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.industry.id_for_label }}" class="form-label">
+                                        <i class="bi bi-briefcase me-1"></i>
+                                        {{ form.industry.label }}
+                                    </label>
+                                    {{ form.industry }}
+                                    {% if form.industry.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.industry.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Optional: Geschäftsbereich/Branche
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">
+                                        <i class="bi bi-card-text me-1"></i>
+                                        {{ form.description.label }}
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Optional: Kurze Beschreibung der Geschäftstätigkeit
+                                    </div>
+                                </div>
+
+                                <div class="form-check p-3 bg-light rounded">
+                                    {{ form.is_primary }}
+                                    <label class="form-check-label" for="{{ form.is_primary.id_for_label }}">
+                                        <strong>{{ form.is_primary.label }}</strong>
+                                    </label>
+                                    <div class="form-text mt-2">{{ form.is_primary.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <div class="d-flex justify-content-between w-100 align-items-center">
+                        <div>
+                            {% if not from_admin %}
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-house me-1"></i>
+                                Zur Startseite
+                            </a>
+                            {% else %}
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Nach der Registrierung ist Ihr System vollständig eingerichtet
+                            </small>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" id="prev-tab-btn" style="display: none;">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Zurück
+                            </button>
+                            <button type="button" class="btn btn-primary" id="next-tab-btn">
+                                <span id="next-btn-text">
+                                    <i class="bi bi-arrow-right me-1"></i>
+                                    Weiter
+                                </span>
+                            </button>
+                            <button type="submit" class="btn btn-success" id="submit-btn" style="display: none;" form="company-form">
+                                <i class="bi bi-building-add me-1"></i>
+                                Firma registrieren
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Полупрозрачный фон -->
+    <div class="modal-backdrop fade show"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'my/js/companies/register_company.js' %}"></script>
+{% endblock %}
