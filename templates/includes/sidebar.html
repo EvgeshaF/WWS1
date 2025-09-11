@@ -13,48 +13,30 @@
                 </a>
             </li>
 
-            <!-- Firmen/Companies - ENHANCED -->
-            <li class="nav-item mb-2">
-                <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#companiesSubmenu">
-                    <i class="bi bi-building me-3"></i>
-                    <span>Firmen</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
+            <!-- Замените секцию Firmen на: -->
+<li class="nav-item mb-2">
+    <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#companiesSubmenu">
+        <i class="bi bi-building me-3"></i>
+        <span>Firma</span>
+        <i class="bi bi-chevron-down ms-auto"></i>
+    </a>
+    <div class="collapse" id="companiesSubmenu">
+        <ul class="nav flex-column ps-4">
+            <li class="nav-item">
+                <a href="{% url 'company:company_info' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                    <i class="bi bi-building me-2"></i>
+                    <small>Firmeninfo</small>
                 </a>
-                <div class="collapse" id="companiesSubmenu">
-                    <ul class="nav flex-column ps-4">
-                        <!-- Условный показ ссылок в зависимости от наличия компании -->
-                        {% if request.resolver_match.app_name == 'company' or 'company' in request.path %}
-                            <!-- Если мы на странице компаний, показываем все ссылки -->
-                            <li class="nav-item">
-                                <a href="{% url 'company:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
-                                    <i class="bi bi-building-add me-2"></i>
-                                    <small>Firma registrieren</small>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'company:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
-                                    <i class="bi bi-building me-2"></i>
-                                    <small>Firmenübersicht</small>
-                                </a>
-                            </li>
-                        {% else %}
-                            <!-- Обычное состояние -->
-                            <li class="nav-item">
-                                <a href="{% url 'company:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
-                                    <i class="bi bi-building-add me-2"></i>
-                                    <small>Firma registrieren</small>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'company:company_list' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
-                                    <i class="bi bi-building me-2"></i>
-                                    <small>Firmenübersicht</small>
-                                </a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </div>
             </li>
+            <li class="nav-item">
+                <a href="{% url 'company:edit_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
+                    <i class="bi bi-pencil me-2"></i>
+                    <small>Bearbeiten</small>
+                </a>
+            </li>
+        </ul>
+    </div>
+</li>
 
             <!-- Пользователи -->
             <li class="nav-item mb-2">

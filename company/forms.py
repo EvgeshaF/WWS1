@@ -1,53 +1,68 @@
-# company/forms.py - Упрощенная форма для одной компании
-
 from django import forms
 from django.core.validators import RegexValidator
 import re
 
 
 class CompanyRegistrationForm(forms.Form):
-    """Форма для регистрации единственной компании"""
+    """Форма регистрации компании"""
 
-    # Основная информация о компании
+    LEGAL_FORM_CHOICES = [
+        ('', '-- Auswählen --'),
+        ('gmbh', 'GmbH'),
+        ('ag', 'AG'),
+        ('ug', 'UG (haftungsbeschränkt)'),
+        ('ohg', 'OHG'),
+        ('kg', 'KG'),
+        ('gbr', 'GbR'),
+        ('eg', 'eG'),
+        ('einzelunternehmen', 'Einzelunternehmen'),
+        ('freiberufler', 'Freiberufler'),
+        ('sonstige', 'Sonstige'),
+    ]
+
+    COUNTRY_CHOICES = [
+        ('', '-- Land auswählen --'),
+        ('deutschland', 'Deutschland'),
+        ('oesterreich', 'Österreich'),
+        ('schweiz', 'Schweiz'),
+        ('niederlande', 'Niederlande'),
+        ('belgien', 'Belgien'),
+        ('frankreich', 'Frankreich'),
+        ('sonstige', 'Sonstige'),
+    ]
+
+    # Grunddaten
     company_name = forms.CharField(
         label="Firmenname",
         max_length=100,
-        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Name Ihrer Firma eingeben...',
-            'autofocus': True
+            'placeholder': 'Firmenname eingeben'
         })
     )
 
     legal_form = forms.ChoiceField(
         label="Rechtsform",
-        choices=[
-            ('', '-- Rechtsform auswählen --'),
-            ('gmbh', 'GmbH'),
-            ('ag', 'AG'),
-            ('kg', 'KG'),
-            ('ohg', 'OHG'),
-            ('eg', 'eG'),
-            ('einzelunternehmen', 'Einzelunternehmen'),
-            ('gbr', 'GbR'),
-            ('ug', 'UG (haftungsbeschränkt)'),
-            ('other', 'Sonstige')
-        ],
-        required=True,
+        choices=LEGAL_FORM_CHOICES,
         widget=forms.Select(attrs={
-            'class': 'form-select'
+            'class': 'form-control'
         })
     )
 
-    # Handelsregister
+    # Registrierungsdaten
     commercial_register = forms.CharField(
-        label="Handelsregisternummer",
+        label="Handelsregister",
         max_length=50,
         required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^HR[AB][0-9]+$',
+                message='Format: HRA12345 oder HRB12345'
+            )
+        ],
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'z.B. HRB 12345'
+            'placeholder': 'z.B. HRB12345'
         })
     )
 
@@ -57,18 +72,18 @@ class CompanyRegistrationForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'z.B. 123/456/78901'
+            'placeholder': 'Steuernummer'
         })
     )
 
     vat_id = forms.CharField(
-        label="Umsatzsteuer-ID",
-        max_length=20,
+        label="USt-IdNr.",
+        max_length=15,
         required=False,
         validators=[
             RegexValidator(
                 regex=r'^DE[0-9]{9}$',
-                message='Ungültiges Format (DE + 9 Ziffern)'
+                message='Format: DE123456789'
             )
         ],
         widget=forms.TextInput(attrs={
@@ -81,21 +96,19 @@ class CompanyRegistrationForm(forms.Form):
     street = forms.CharField(
         label="Straße und Hausnummer",
         max_length=100,
-        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Musterstraße 123'
+            'placeholder': 'Straße und Hausnummer'
         })
     )
 
     postal_code = forms.CharField(
-        label="Postleitzahl",
+        label="PLZ",
         max_length=10,
-        required=True,
         validators=[
             RegexValidator(
                 regex=r'^[0-9]{5}$',
-                message='PLZ muss 5 Ziffern haben'
+                message='PLZ muss aus 5 Ziffern bestehen'
             )
         ],
         widget=forms.TextInput(attrs={
@@ -106,39 +119,35 @@ class CompanyRegistrationForm(forms.Form):
 
     city = forms.CharField(
         label="Stadt",
-        max_length=100,
-        required=True,
+        max_length=50,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Musterstadt'
+            'placeholder': 'Stadt'
         })
     )
 
-    country = forms.CharField(
+    country = forms.ChoiceField(
         label="Land",
-        max_length=100,
-        initial='Deutschland',
-        required=True,
-        widget=forms.TextInput(attrs={
+        choices=COUNTRY_CHOICES,
+        initial='deutschland',
+        widget=forms.Select(attrs={
             'class': 'form-control'
         })
     )
 
     # Kontaktdaten
     email = forms.EmailField(
-        label="Firmen E-Mail",
+        label="E-Mail",
         max_length=100,
-        required=True,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'info@firma.de'
+            'placeholder': 'firma@domain.com'
         })
     )
 
     phone = forms.CharField(
         label="Telefon",
         max_length=50,
-        required=True,
         validators=[
             RegexValidator(
                 regex=r'^[\+]?[0-9\s\-\(\)]{7,20}$',
@@ -177,7 +186,7 @@ class CompanyRegistrationForm(forms.Form):
         })
     )
 
-    # Geschäftsführer/Ansprechpartner
+    # Details
     ceo_name = forms.CharField(
         label="Geschäftsführer",
         max_length=100,
@@ -194,19 +203,7 @@ class CompanyRegistrationForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Name des Ansprechpartners'
-        })
-    )
-
-    # Zusätzliche Informationen
-    description = forms.CharField(
-        label="Firmenbeschreibung",
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 3,
-            'placeholder': 'Kurze Beschreibung der Geschäftstätigkeit...'
+            'placeholder': 'Hauptansprechpartner'
         })
     )
 
@@ -216,36 +213,39 @@ class CompanyRegistrationForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'z.B. IT-Dienstleistungen, Handel, Produktion...'
+            'placeholder': 'z.B. Handel, Dienstleistung'
+        })
+    )
+
+    description = forms.CharField(
+        label="Beschreibung",
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Kurze Beschreibung der Geschäftstätigkeit'
+        })
+    )
+
+    is_primary = forms.BooleanField(
+        label="Als Hauptfirma festlegen",
+        required=False,
+        initial=True,
+        help_text="Diese Firma wird als primäre Firma im System verwendet",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
         })
     )
 
     def clean_vat_id(self):
-        """Validiert die Umsatzsteuer-ID"""
-        vat_id = self.cleaned_data.get('vat_id')
-        if vat_id:
-            vat_id = vat_id.upper().replace(' ', '')
-            if not re.match(r'^DE[0-9]{9}$', vat_id):
-                raise forms.ValidationError(
-                    "Ungültiges Format. Erwartetes Format: DE123456789"
-                )
+        vat_id = self.cleaned_data.get('vat_id', '').strip().upper()
+        if vat_id and not re.match(r'^DE[0-9]{9}$', vat_id):
+            raise forms.ValidationError('USt-IdNr. muss im Format DE123456789 sein')
         return vat_id
 
     def clean_commercial_register(self):
-        """Validiert die Handelsregisternummer"""
-        hr_number = self.cleaned_data.get('commercial_register')
-        if hr_number:
-            hr_number = hr_number.upper().replace(' ', '')
-            # Basis-Validierung für deutsche HR-Nummern
-            if not re.match(r'^HR[AB][0-9]+$', hr_number):
-                # Warnung, aber nicht kritisch
-                pass
-        return hr_number
-
-    def clean_phone(self):
-        """Bereinigt die Telefonnummer"""
-        phone = self.cleaned_data.get('phone')
-        if phone:
-            # Entfernt überschüssige Leerzeichen
-            phone = ' '.join(phone.split())
-        return phone
+        hr = self.cleaned_data.get('commercial_register', '').strip().upper()
+        if hr and not re.match(r'^HR[AB][0-9]+$', hr):
+            raise forms.ValidationError('Handelsregister muss im Format HRA12345 oder HRB12345 sein')
+        return hr
