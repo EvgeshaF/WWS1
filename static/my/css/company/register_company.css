@@ -1,0 +1,689 @@
+/* ==================== ОСНОВНЫЕ ПЕРЕМЕННЫЕ ==================== */
+:root {
+    --primary-color: #0d6efd;
+    --primary-dark: #0056b3;
+    --primary-light: rgba(13, 110, 253, 0.1);
+    --surface-color: #ffffff;
+    --background-color: #f8f9fa;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+    --border-radius: 15px;
+    --border-radius-sm: 8px;
+}
+
+/* ==================== МОДАЛЬНАЯ СТРАНИЦА ==================== */
+.modal-page {
+    overflow: hidden;
+}
+
+.modal-page .main-header,
+.modal-page .main-footer {
+    display: none !important;
+}
+
+.modal-page .main-content {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+}
+
+.modal-page .main-container {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%) !important;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-page .welcome-section,
+.modal-page .container > *:not(.modal) {
+    display: none !important;
+}
+
+/* ==================== МОДАЛЬНЫЕ ОКНА ==================== */
+.company-modal .modal-content {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    border: none;
+    backdrop-filter: blur(10px);
+    max-width: 900px;
+    width: 100%;
+}
+
+.company-modal .modal-header {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    padding: 1.5rem 2rem;
+    color: white;
+}
+
+.company-modal .modal-body {
+    padding: 2rem;
+    background: var(--surface-color);
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.company-modal .modal-footer {
+    border-top: 1px solid var(--border-color);
+    background: #f8f9fa;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    padding: 1.25rem 2rem;
+}
+
+/* ==================== ТАБЫ НАВИГАЦИИ ==================== */
+.company-tabs {
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px 10px 0 0;
+    padding: 0.5rem 0.5rem 0 0.5rem;
+}
+
+.company-tabs .nav-link {
+    border: none;
+    border-radius: 8px 8px 0 0;
+    padding: 1rem 1.5rem;
+    margin-right: 0.25rem;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: #6c757d;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.company-tabs .nav-link::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    background: var(--primary-color);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.company-tabs .nav-link:hover {
+    background: rgba(13, 110, 253, 0.05);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.company-tabs .nav-link:hover::before {
+    width: 80%;
+}
+
+.company-tabs .nav-link.active {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    transform: translateY(-2px);
+}
+
+.company-tabs .nav-link.active::before {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==================== ПРОГРЕСС-БАР ==================== */
+.company-progress {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: rgba(13, 110, 253, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.company-progress .progress-bar {
+    transition: width 0.3s ease;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 4px;
+}
+
+.company-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* ==================== СТИЛИ ФОРМ ==================== */
+.company-form .form-control,
+.company-form .form-select {
+    border: 1.5px solid #dee2e6;
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    font-size: 0.95rem;
+}
+
+.company-form .form-control:focus,
+.company-form .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    transform: translateY(-1px);
+}
+
+.company-form .form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.company-form .form-label i {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+.company-form .form-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    background-color: rgba(13, 110, 253, 0.05);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    border-left: 3px solid var(--primary-color);
+}
+
+.company-form .form-text i {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* ==================== КАРТОЧКИ СЕКЦИЙ ==================== */
+.company-section-card {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.company-section-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.company-section-card .card-header {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+}
+
+.company-section-card .card-header.bg-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+    color: white;
+}
+
+.company-section-card .card-header.bg-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
+    color: white;
+}
+
+.company-section-card .card-header.bg-success {
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%) !important;
+    color: white;
+}
+
+.company-section-card .card-header.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #f59e0b 100%) !important;
+    color: #000;
+}
+
+.company-section-card .card-body {
+    padding: 1.5rem;
+}
+
+/* ==================== КОНТАКТНОЕ УПРАВЛЕНИЕ ==================== */
+.company-contact-management {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    transition: all 0.3s ease;
+    padding: 2rem;
+    text-align: center;
+}
+
+.company-contact-management:hover {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-light) 0%, #ffffff 100%);
+}
+
+.company-contact-summary {
+    background: linear-gradient(135deg, var(--primary-light) 0%, rgba(13, 110, 253, 0.05) 100%);
+    border: 1px solid rgba(13, 110, 253, 0.2);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.company-contact-badge {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
+/* ==================== КНОПКИ ==================== */
+.company-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.company-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.company-btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+    color: white;
+}
+
+.company-btn-success {
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+    color: white;
+}
+
+.company-btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    background: transparent;
+}
+
+.company-btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.company-btn i {
+    font-size: 0.9rem;
+}
+
+/* ==================== ВАЛИДАЦИЯ ПОЛЕЙ ==================== */
+.company-form .is-valid {
+    border-color: #198754 !important;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+}
+
+.company-form .is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.company-form .invalid-feedback {
+    display: block !important;
+    width: 100%;
+    margin-top: 0.5rem;
+    font-size: 0.875em;
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    border-left: 3px solid #dc3545;
+}
+
+/* ==================== АНИМАЦИИ ==================== */
+.company-tab-pane {
+    animation: companyFadeInUp 0.4s ease-out;
+}
+
+@keyframes companyFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.company-modal.show {
+    animation: companyModalSlideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes companyModalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ==================== МОДАЛЬНЫЙ БЭКДРОП ==================== */
+.company-modal-backdrop {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(13, 110, 253, 0.2) 100%);
+    backdrop-filter: blur(3px);
+}
+
+/* ==================== ДОПОЛНИТЕЛЬНЫЕ КОНТАКТЫ ==================== */
+.company-additional-contacts-modal .modal-header {
+    background: linear-gradient(145deg, #17a2b8 0%, #138496 100%) !important;
+}
+
+.company-contacts-table {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    background: var(--surface-color);
+}
+
+.company-contacts-table th {
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.9em;
+    border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.company-contacts-table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f3f4;
+    text-align: center;
+}
+
+.company-contacts-table tbody tr {
+    transition: all 0.2s ease;
+    animation: companyFadeInUp 0.3s ease-out;
+}
+
+.company-contacts-table tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.03);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ==================== ТИПЫ КОНТАКТОВ ==================== */
+.company-contact-type-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.company-contact-type-email {
+    background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    border-color: #90caf9;
+}
+
+.company-contact-type-mobile {
+    background: linear-gradient(145deg, #f3e5f5 0%, #e1bee7 100%);
+    color: #7b1fa2;
+    border-color: #ce93d8;
+}
+
+.company-contact-type-fax {
+    background: linear-gradient(145deg, #fff3e0 0%, #ffcc02 100%);
+    color: #ef6c00;
+    border-color: #ffb74d;
+}
+
+.company-contact-type-website {
+    background: linear-gradient(145deg, #e0f2f1 0%, #b2dfdb 100%);
+    color: #00695c;
+    border-color: #80cbc4;
+}
+
+.company-contact-type-linkedin {
+    background: linear-gradient(145deg, #e3f2fd 0%, #81d4fa 100%);
+    color: #0277bd;
+    border-color: #4fc3f7;
+}
+
+.company-contact-type-xing {
+    background: linear-gradient(145deg, #e8f5e8 0%, #a5d6a7 100%);
+    color: #388e3c;
+    border-color: #81c784;
+}
+
+.company-contact-type-other {
+    background: linear-gradient(145deg, #f5f5f5 0%, #e0e0e0 100%);
+    color: #616161;
+    border-color: #bdbdbd;
+}
+
+/* ==================== ЗНАЧЕНИЯ КОНТАКТОВ ==================== */
+.company-contact-value {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 0.9em;
+    background: linear-gradient(145deg, #f8f9fa 0%, #ffffff 100%);
+    padding: 0.5rem 0.8rem;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    word-break: break-all;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    display: inline-block;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.company-contact-value:hover {
+    background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+    border-color: #adb5bd;
+    white-space: normal;
+    word-wrap: break-word;
+    max-width: none;
+}
+
+/* ==================== КНОПКИ ДЕЙСТВИЙ ==================== */
+.company-action-btn {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.8em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+}
+
+.company-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.company-action-btn:active {
+    transform: translateY(0);
+}
+
+/* ==================== ПЛЕЙСХОЛДЕР ПУСТОЙ ТАБЛИЦЫ ==================== */
+.company-empty-contacts-placeholder {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    background: linear-gradient(145deg, #fafafa 0%, #f8f9fa 100%);
+    padding: 3rem 2rem;
+    margin: 1rem 0;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.company-empty-contacts-placeholder:hover {
+    border-color: #adb5bd;
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.company-empty-contacts-placeholder .display-4 {
+    font-size: 3rem;
+    opacity: 0.5;
+    color: #6c757d;
+}
+
+/* ==================== ИНДИКАТОРЫ ЗАГРУЗКИ ==================== */
+.company-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.company-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--primary-light);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: companySpinner 1s linear infinite;
+}
+
+@keyframes companySpinner {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==================== АДАПТИВНОСТЬ ==================== */
+@media (max-width: 768px) {
+    .company-modal .modal-content {
+        margin: 1rem;
+        max-width: calc(100vw - 2rem);
+    }
+
+    .company-modal .modal-body {
+        padding: 1.5rem;
+        max-height: 60vh;
+    }
+
+    .company-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .company-form .form-control,
+    .company-form .form-select {
+        font-size: 0.9rem;
+        padding: 0.625rem 0.875rem;
+    }
+
+    .company-contacts-table th,
+    .company-contacts-table td {
+        padding: 0.5rem;
+        font-size: 0.9em;
+    }
+
+    .company-contact-value {
+        font-size: 0.8em;
+        padding: 0.3rem 0.5rem;
+        max-width: 150px;
+    }
+
+    .company-action-btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7em;
+        min-width: 28px;
+        height: 28px;
+    }
+
+    .company-contact-type-badge {
+        font-size: 0.7em;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .company-empty-contacts-placeholder {
+        padding: 2rem 1.5rem;
+    }
+
+    .company-empty-contacts-placeholder .display-4 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .company-modal .modal-dialog {
+        margin: 1rem;
+    }
+
+    .company-contacts-table {
+        font-size: 0.8em;
+    }
+
+    .company-contact-type-badge {
+        display: block;
+        text-align: center;
+        margin-bottom: 0.2rem;
+    }
+
+    .company-action-btn {
+        display: block;
+        margin: 0.1rem 0;
+        width: 100%;
+    }
+}
+
+/* ==================== УЛУЧШЕННЫЕ ПЕРЕХОДЫ ==================== */
+* {
+    transition: all 0.2s ease;
+}
+
+button, .btn {
+    transition: all 0.2s ease;
+}
+
+/* ==================== ГРАДИЕНТНАЯ ГРАНИЦА ==================== */
+.company-gradient-border {
+    border-image: linear-gradient(45deg, #0d6efd, #6f42c1) 1;
+}
+
+/* ==================== СОВРЕМЕННАЯ КАРТОЧКА ==================== */
+.company-card-modern {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+}

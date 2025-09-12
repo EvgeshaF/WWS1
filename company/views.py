@@ -167,7 +167,7 @@ def render_with_messages(request, template_name, context, success_redirect=None)
 
 
 def register_company(request):
-    """Регистрация компании (создание или редактирование единственной)"""
+    """Регистрация компании (создание или редактирование единственной) - MODAL VERSION"""
     # Проверяем конфигурацию MongoDB
     config_status = MongoConfig.check_config_completeness()
     if config_status != 'complete':
@@ -214,14 +214,20 @@ def register_company(request):
         initial_data = {k: v for k, v in existing_company.items() if k not in excluded_fields}
 
     form = CompanyRegistrationForm(initial=initial_data)
+
+    # ДОБАВЛЯЕМ класс для модальной страницы
     context = {
         'form': form,
         'from_admin': from_admin,
         'is_editing': is_editing,
-        'company_name': existing_company.get('company_name', '') if existing_company else ''
+        'company_name': existing_company.get('company_name', '') if existing_company else '',
+        'modal_page': True  # Флаг для модальной страницы
     }
-    return render(request, 'company/register_company.html', context)
 
+    # Добавляем CSS класс к body через context processor или middleware
+    response = render(request, 'company/register_company.html', context)
+
+    return response
 
 def company_info(request):
     """Показывает информацию о компании"""
