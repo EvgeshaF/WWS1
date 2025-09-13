@@ -1,6 +1,6 @@
-// register_company.js - УЛУЧШЕННАЯ ВЕРСИЯ
+// register_company.js - ИСПРАВЛЕННАЯ ВЕРСИЯ для работы с дополнительными контактами
 
-// ==================== КОНСТАНТЫ И КОНФИГУРАЦИЯ ====================
+// ==================== КОНФИГУРАЦИЯ ====================
 const CONFIG = {
     VALIDATION_PATTERNS: {
         EMAIL: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
@@ -9,8 +9,8 @@ const CONFIG = {
         VAT_ID: /^DE[0-9]{9}$/,
         COMMERCIAL_REGISTER: /^HR[AB][0-9]+$/,
         WEBSITE: /^https?:\/\/([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
-        LINKEDIN: /(https?:\/\/)?(www\.)?linkedin\.com\/company\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$/,
-        XING: /(https?:\/\/)?(www\.)?xing\.com\/companies\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$/
+        LINKEDIN: /(https?:\/\/)?(www\.)?linkedin\.com\/(company|in)\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$/,
+        XING: /(https?:\/\/)?(www\.)?xing\.com\/(companies|profile)\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$/
     },
 
     MESSAGES: {
@@ -22,27 +22,14 @@ const CONFIG = {
             INVALID_WEBSITE: 'Website muss mit http:// oder https:// beginnen',
             INVALID_VAT: 'USt-IdNr. muss im Format DE123456789 sein',
             INVALID_REGISTER: 'Handelsregister muss im Format HRA12345 oder HRB12345 sein',
-            INVALID_LINKEDIN: 'Ungültiges LinkedIn-Profil-Format',
-            INVALID_XING: 'Ungültiges XING-Profil-Format',
-            MIN_LENGTH: 'Mindestens {min} Zeichen erforderlich',
-            MAX_LENGTH: 'Maximal {max} Zeichen erlaubt',
             CONTACT_SAVED: 'Kontakt erfolgreich hinzugefügt',
             CONTACT_UPDATED: 'Kontakt erfolgreich aktualisiert',
             CONTACT_DELETED: 'Kontakt erfolgreich gelöscht',
             FORM_SUCCESS: 'Firma erfolgreich registriert!',
-            NETWORK_ERROR: 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung.',
-            SERVER_ERROR: 'Serverfehler. Bitte versuchen Sie es später erneut.',
-            VALIDATION_ERROR: 'Ungültige Daten. Bitte überprüfen Sie Ihre Eingaben.',
-            FILL_PREVIOUS_TABS: 'Bitte füllen Sie zuerst die vorherigen Tabs aus',
             FILL_REQUIRED_FIELDS: 'Bitte füllen Sie alle erforderlichen Felder aus',
-            CORRECT_ERRORS: 'Bitte korrigieren Sie alle Fehler im Formular',
-            UNSAVED_CHANGES: 'Sie haben ungespeicherte Änderungen. Möchten Sie die Seite wirklich verlassen?'
+            CORRECT_ERRORS: 'Bitte korrigieren Sie alle Fehler im Formular'
         }
-    },
-
-    DEBOUNCE_DELAY: 300,
-    AUTOSAVE_DELAY: 2000,
-    TOAST_DELAY: 5000
+    }
 };
 
 // ==================== УТИЛИТЫ ====================
@@ -55,26 +42,8 @@ class Utils {
         };
     }
 
-    static throttle(func, delay) {
-        let inThrottle;
-        return (...args) => {
-            if (!inThrottle) {
-                func.apply(this, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, delay);
-            }
-        };
-    }
-
-    static escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     static createElement(tag, attributes = {}, textContent = '') {
         const element = document.createElement(tag);
-
         Object.entries(attributes).forEach(([key, value]) => {
             if (key === 'className') {
                 element.className = value;
@@ -82,16 +51,10 @@ class Utils {
                 element.setAttribute(key, value);
             }
         });
-
         if (textContent) {
             element.textContent = textContent;
         }
-
         return element;
-    }
-
-    static formatMessage(template, params = {}) {
-        return template.replace(/\{(\w+)\}/g, (match, key) => params[key] || match);
     }
 
     static getCachedElement(id, cache = new Map()) {
@@ -104,9 +67,9 @@ class Utils {
 
 // ==================== ВАЛИДАТОР ====================
 class FormValidator {
-    constructor(messages = CONFIG.MESSAGES.de) {
-        this.messages = messages;
+    constructor() {
         this.patterns = CONFIG.VALIDATION_PATTERNS;
+        this.messages = CONFIG.MESSAGES.de;
     }
 
     validateField(field) {
@@ -115,13 +78,11 @@ class FormValidator {
 
         this.clearFieldValidation(field);
 
-        // Проверка обязательных полей
         if (field.hasAttribute('required') && !value) {
             this.setFieldError(field, this.messages.FIELD_REQUIRED);
             return false;
         }
 
-        // Пропускаем валидацию пустых необязательных полей
         if (!value && !field.hasAttribute('required')) {
             return true;
         }
@@ -134,12 +95,7 @@ class FormValidator {
             postal_code: () => this.patterns.GERMAN_POSTAL.test(value) || this.messages.INVALID_POSTAL,
             website: () => this.patterns.WEBSITE.test(value) || this.messages.INVALID_WEBSITE,
             vat_id: () => this.patterns.VAT_ID.test(value) || this.messages.INVALID_VAT,
-            commercial_register: () => this.patterns.COMMERCIAL_REGISTER.test(value) || this.messages.INVALID_REGISTER,
-            company_name: () => {
-                if (value.length < 2) return Utils.formatMessage(this.messages.MIN_LENGTH, { min: 2 });
-                if (value.length > 100) return Utils.formatMessage(this.messages.MAX_LENGTH, { max: 100 });
-                return true;
-            }
+            commercial_register: () => this.patterns.COMMERCIAL_REGISTER.test(value) || this.messages.INVALID_REGISTER
         };
 
         const rule = validationRules[fieldName];
@@ -163,9 +119,9 @@ class FormValidator {
             mobile: () => this.patterns.GERMAN_PHONE.test(value) || this.messages.INVALID_PHONE,
             fax: () => this.patterns.GERMAN_PHONE.test(value) || this.messages.INVALID_PHONE,
             website: () => this.patterns.WEBSITE.test(value) || this.messages.INVALID_WEBSITE,
-            linkedin: () => this.patterns.LINKEDIN.test(value) || this.messages.INVALID_LINKEDIN,
-            xing: () => this.patterns.XING.test(value) || this.messages.INVALID_XING,
-            other: () => value.length >= 3 || Utils.formatMessage(this.messages.MIN_LENGTH, { min: 3 })
+            linkedin: () => this.patterns.LINKEDIN.test(value) || 'Ungültiges LinkedIn-Format',
+            xing: () => this.patterns.XING.test(value) || 'Ungültiges XING-Format',
+            other: () => value.length >= 3 || 'Mindestens 3 Zeichen erforderlich'
         };
 
         const rule = contactValidation[type];
@@ -175,37 +131,22 @@ class FormValidator {
     setFieldError(field, message) {
         field.classList.add('is-invalid');
         field.classList.remove('is-valid');
-        field.setAttribute('aria-invalid', 'true');
-
         this.removeExistingFeedback(field);
 
         const errorDiv = Utils.createElement('div', {
-            className: 'invalid-feedback d-block',
-            role: 'alert',
-            'aria-live': 'polite'
+            className: 'invalid-feedback d-block'
         }, message);
-
-        const errorId = `${field.id || field.name}_error`;
-        errorDiv.id = errorId;
-        field.setAttribute('aria-describedby', errorId);
-
         field.parentNode.appendChild(errorDiv);
     }
 
     setFieldSuccess(field) {
         field.classList.add('is-valid');
         field.classList.remove('is-invalid');
-        field.setAttribute('aria-invalid', 'false');
-        field.removeAttribute('aria-describedby');
-
         this.removeExistingFeedback(field);
     }
 
     clearFieldValidation(field) {
         field.classList.remove('is-invalid', 'is-valid');
-        field.removeAttribute('aria-invalid');
-        field.removeAttribute('aria-describedby');
-
         this.removeExistingFeedback(field);
     }
 
@@ -217,93 +158,12 @@ class FormValidator {
     }
 }
 
-// ==================== СИСТЕМА УВЕДОМЛЕНИЙ ====================
-class ToastManager {
-    constructor() {
-        this.container = this.createContainer();
-    }
-
-    createContainer() {
-        let container = document.querySelector('#toast-container');
-        if (!container) {
-            container = Utils.createElement('div', {
-                id: 'toast-container',
-                className: 'position-fixed top-0 end-0 p-3',
-                style: 'z-index: 9999;'
-            });
-            document.body.appendChild(container);
-        }
-        return container;
-    }
-
-    show(message, type = 'info', delay = CONFIG.TOAST_DELAY) {
-        const toastId = `toast_${Date.now()}`;
-        const config = this.getTypeConfig(type);
-
-        const toast = this.createToast(toastId, message, config);
-        this.container.appendChild(toast);
-
-        const bootstrapToast = new bootstrap.Toast(toast, { delay });
-        bootstrapToast.show();
-
-        toast.addEventListener('hidden.bs.toast', () => toast.remove());
-
-        return bootstrapToast;
-    }
-
-    getTypeConfig(type) {
-        const configs = {
-            success: { bg: 'bg-success', icon: 'bi-check-circle-fill', title: 'Erfolg' },
-            error: { bg: 'bg-danger', icon: 'bi-x-circle-fill', title: 'Fehler' },
-            warning: { bg: 'bg-warning', icon: 'bi-exclamation-triangle-fill', title: 'Warnung' },
-            info: { bg: 'bg-info', icon: 'bi-info-circle-fill', title: 'Info' }
-        };
-        return configs[type] || configs.info;
-    }
-
-    createToast(id, message, config) {
-        const toast = Utils.createElement('div', {
-            id,
-            className: `toast ${config.bg} text-white`,
-            role: 'alert',
-            'aria-live': 'assertive',
-            'aria-atomic': 'true'
-        });
-
-        const header = Utils.createElement('div', {
-            className: `toast-header ${config.bg} text-white border-0`
-        });
-
-        const icon = Utils.createElement('i', { className: `bi ${config.icon} me-2` });
-        const title = Utils.createElement('strong', { className: 'me-auto' }, config.title);
-        const closeBtn = Utils.createElement('button', {
-            type: 'button',
-            className: 'btn-close btn-close-white',
-            'data-bs-dismiss': 'toast',
-            'aria-label': 'Close'
-        });
-
-        header.appendChild(icon);
-        header.appendChild(title);
-        header.appendChild(closeBtn);
-
-        const body = Utils.createElement('div', { className: 'toast-body' }, message);
-
-        toast.appendChild(header);
-        toast.appendChild(body);
-
-        return toast;
-    }
-}
-
 // ==================== МЕНЕДЖЕР ДОПОЛНИТЕЛЬНЫХ КОНТАКТОВ ====================
 class CompanyAdditionalContactManager {
     constructor() {
         this.additionalContacts = [];
         this.editingIndex = -1;
-        this.deletingIndex = -1;
         this.validator = new FormValidator();
-        this.toastManager = new ToastManager();
         this.elementCache = new Map();
 
         this.contactTypeLabels = {
@@ -325,37 +185,6 @@ class CompanyAdditionalContactManager {
             xing: 'bi-person-badge',
             other: 'bi-question-circle'
         };
-
-        this.contactHints = {
-            email: {
-                placeholder: 'marketing@firma.de',
-                hint: 'Geben Sie eine zusätzliche E-Mail-Adresse ein (z.B. marketing@firma.de)'
-            },
-            mobile: {
-                placeholder: '+49 170 1234567',
-                hint: 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)'
-            },
-            fax: {
-                placeholder: '+49 123 456789',
-                hint: 'Geben Sie eine zusätzliche Faxnummer ein (z.B. +49 123 456789)'
-            },
-            website: {
-                placeholder: 'https://shop.firma.de',
-                hint: 'Geben Sie eine zusätzliche Website ein (z.B. https://shop.firma.de)'
-            },
-            linkedin: {
-                placeholder: 'linkedin.com/company/firma',
-                hint: 'Geben Sie das LinkedIn-Profil ein (z.B. linkedin.com/company/firma)'
-            },
-            xing: {
-                placeholder: 'xing.com/companies/firma',
-                hint: 'Geben Sie das XING-Profil ein (z.B. xing.com/companies/firma)'
-            },
-            other: {
-                placeholder: 'Kontaktdaten eingeben...',
-                hint: 'Geben Sie die entsprechenden Kontaktdaten ein'
-            }
-        };
     }
 
     init() {
@@ -366,8 +195,6 @@ class CompanyAdditionalContactManager {
     }
 
     bindEvents() {
-        const debouncedValidation = Utils.debounce(() => this.validateContactValue(), CONFIG.DEBOUNCE_DELAY);
-
         // Основные кнопки управления
         this.addEventListenerSafe('manage-additional-contacts', 'click', () => this.openAdditionalContactsModal());
         this.addEventListenerSafe('add-contact-btn', 'click', () => this.openContactModal());
@@ -376,8 +203,7 @@ class CompanyAdditionalContactManager {
 
         // Обработчики формы
         this.addEventListenerSafe('contactType', 'change', (e) => this.updateContactHints(e.target.value));
-        this.addEventListenerSafe('contactValue', 'input', debouncedValidation);
-        this.addEventListenerSafe('contactValue', 'blur', () => this.validateContactValue());
+        this.addEventListenerSafe('contactValue', 'input', () => this.validateContactValue());
 
         // Обработчики модальных окон
         this.addModalEventListener('contactModal', 'hidden.bs.modal', () => this.resetContactForm());
@@ -401,16 +227,14 @@ class CompanyAdditionalContactManager {
     }
 
     loadExistingData() {
-        const input = Utils.getCachedElement('additionalContactsDataInput', this.elementCache);
-        if (input && input.value) {
+        // Загружаем из глобальной переменной, установленной в шаблоне
+        if (typeof window.initialAdditionalContactsData !== 'undefined') {
             try {
-                const existingData = JSON.parse(input.value);
-                if (Array.isArray(existingData)) {
-                    this.additionalContacts = existingData;
-                    console.log('Загружены существующие дополнительные контакты:', this.additionalContacts.length);
-                }
+                this.additionalContacts = window.initialAdditionalContactsData || [];
+                console.log('Загружены существующие дополнительные контакты:', this.additionalContacts.length);
             } catch (e) {
                 console.error('Ошибка загрузки существующих контактов:', e);
+                this.additionalContacts = [];
             }
         }
     }
@@ -465,7 +289,6 @@ class CompanyAdditionalContactManager {
 
     setModalTitle(titleElement, iconClass, text) {
         if (!titleElement) return;
-
         titleElement.innerHTML = '';
         const icon = Utils.createElement('i', { className: `bi ${iconClass} me-2` });
         titleElement.appendChild(icon);
@@ -474,7 +297,6 @@ class CompanyAdditionalContactManager {
 
     setButtonContent(button, iconClass, text) {
         if (!button) return;
-
         button.innerHTML = '';
         const icon = Utils.createElement('i', { className: `bi ${iconClass} me-1` });
         button.appendChild(icon);
@@ -502,13 +324,8 @@ class CompanyAdditionalContactManager {
         form.reset();
         form.querySelectorAll('.is-invalid, .is-valid').forEach(el => {
             el.classList.remove('is-invalid', 'is-valid');
-            el.removeAttribute('aria-invalid');
-            el.removeAttribute('aria-describedby');
         });
-
-        // Очистка feedback элементов
         form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
-
         this.updateContactHints('');
     }
 
@@ -518,22 +335,44 @@ class CompanyAdditionalContactManager {
 
         if (!valueInput || !hintElement) return;
 
-        const config = this.contactHints[type];
+        const hints = {
+            email: {
+                placeholder: 'marketing@firma.de',
+                hint: 'Geben Sie eine zusätzliche E-Mail-Adresse ein'
+            },
+            mobile: {
+                placeholder: '+49 170 1234567',
+                hint: 'Geben Sie eine Mobilnummer ein'
+            },
+            fax: {
+                placeholder: '+49 123 456789',
+                hint: 'Geben Sie eine Faxnummer ein'
+            },
+            website: {
+                placeholder: 'https://shop.firma.de',
+                hint: 'Geben Sie eine Website-URL ein'
+            },
+            linkedin: {
+                placeholder: 'linkedin.com/company/firma',
+                hint: 'Geben Sie das LinkedIn-Profil ein'
+            },
+            xing: {
+                placeholder: 'xing.com/companies/firma',
+                hint: 'Geben Sie das XING-Profil ein'
+            },
+            other: {
+                placeholder: 'Kontaktdaten eingeben...',
+                hint: 'Geben Sie die entsprechenden Kontaktdaten ein'
+            }
+        };
 
+        const config = hints[type];
         if (config) {
             valueInput.placeholder = config.placeholder;
-
-            hintElement.innerHTML = '';
-            const icon = Utils.createElement('i', { className: 'bi bi-lightbulb me-1' });
-            hintElement.appendChild(icon);
-            hintElement.appendChild(document.createTextNode(config.hint));
+            hintElement.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${config.hint}`;
         } else {
             valueInput.placeholder = 'Kontaktdaten eingeben...';
-
-            hintElement.innerHTML = '';
-            const icon = Utils.createElement('i', { className: 'bi bi-lightbulb me-1' });
-            hintElement.appendChild(icon);
-            hintElement.appendChild(document.createTextNode('Wählen Sie zuerst den Kontakttyp aus'));
+            hintElement.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Wählen Sie zuerst den Kontakttyp aus';
         }
 
         this.validator.clearFieldValidation(valueInput);
@@ -578,12 +417,12 @@ class CompanyAdditionalContactManager {
 
         // Валидация
         if (!type) {
-            this.toastManager.show('Kontakttyp ist erforderlich', 'error');
+            this.showToast('Kontakttyp ist erforderlich', 'error');
             return;
         }
 
         if (!value) {
-            this.toastManager.show('Kontaktdaten sind erforderlich', 'error');
+            this.showToast('Kontaktdaten sind erforderlich', 'error');
             return;
         }
 
@@ -595,10 +434,10 @@ class CompanyAdditionalContactManager {
 
         if (this.editingIndex >= 0) {
             this.additionalContacts[this.editingIndex] = contactData;
-            this.toastManager.show(CONFIG.MESSAGES.de.CONTACT_UPDATED, 'success');
+            this.showToast(CONFIG.MESSAGES.de.CONTACT_UPDATED, 'success');
         } else {
             this.additionalContacts.push(contactData);
-            this.toastManager.show(CONFIG.MESSAGES.de.CONTACT_SAVED, 'success');
+            this.showToast(CONFIG.MESSAGES.de.CONTACT_SAVED, 'success');
         }
 
         this.updateDisplay();
@@ -625,7 +464,7 @@ class CompanyAdditionalContactManager {
         if (this.deletingIndex >= 0) {
             this.additionalContacts.splice(this.deletingIndex, 1);
             this.updateDisplay();
-            this.toastManager.show(CONFIG.MESSAGES.de.CONTACT_DELETED, 'info');
+            this.showToast(CONFIG.MESSAGES.de.CONTACT_DELETED, 'info');
 
             const modalElement = Utils.getCachedElement('deleteContactModal', this.elementCache);
             if (modalElement) {
@@ -653,10 +492,7 @@ class CompanyAdditionalContactManager {
         tableContainer.style.display = 'block';
         placeholder.style.display = 'none';
 
-        // Очищаем таблицу
         tableBody.innerHTML = '';
-
-        // Добавляем строки
         this.additionalContacts.forEach((contact, index) => {
             const row = this.createContactRow(contact, index);
             tableBody.appendChild(row);
@@ -720,7 +556,7 @@ class CompanyAdditionalContactManager {
     createActionButton(iconClass, title, buttonClass, onClick) {
         const button = Utils.createElement('button', {
             type: 'button',
-            className: `btn btn-sm ${buttonClass} company-action-btn`,
+            className: `btn btn-sm ${buttonClass}`,
             title
         });
 
@@ -772,6 +608,14 @@ class CompanyAdditionalContactManager {
         }
     }
 
+    showToast(message, type = 'info') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+    }
+
     getAdditionalContactsData() {
         return this.additionalContacts;
     }
@@ -791,12 +635,7 @@ class CompanyFormManager {
         this.currentTabIndex = 0;
         this.tabs = ['basic', 'registration', 'address', 'details'];
         this.validator = new FormValidator();
-        this.toastManager = new ToastManager();
         this.elementCache = new Map();
-
-        // Дебаунсированные функции
-        this.debouncedValidation = Utils.debounce((field) => this.validateField(field), CONFIG.DEBOUNCE_DELAY);
-        this.debouncedAutosave = Utils.debounce(() => this.saveFormDataToSessionStorage(), CONFIG.AUTOSAVE_DELAY);
 
         this.nextTabBtn = null;
         this.prevTabBtn = null;
@@ -814,14 +653,6 @@ class CompanyFormManager {
 
         this.bindEvents();
         this.setupFormValidation();
-        this.setupSpecialFieldValidation();
-        this.setupKeyboardShortcuts();
-        this.setupAutoSave();
-        this.setupErrorHandling();
-        this.setupBeforeUnloadProtection();
-
-        this.initializeFormValidation();
-        this.loadFormDataFromSessionStorage();
         this.updateProgress();
         this.updateNavigationButtons();
 
@@ -862,7 +693,7 @@ class CompanyFormManager {
                 } else {
                     e.preventDefault();
                     e.stopPropagation();
-                    this.toastManager.show(CONFIG.MESSAGES.de.FILL_PREVIOUS_TABS, 'warning');
+                    this.showToast('Bitte füllen Sie zuerst die vorherigen Tabs aus', 'warning');
                 }
             });
 
@@ -876,77 +707,13 @@ class CompanyFormManager {
 
     setupFormValidation() {
         const requiredFields = this.form.querySelectorAll('[required]');
-
         requiredFields.forEach(field => {
             field.addEventListener('blur', () => this.validateField(field));
-            field.addEventListener('input', () => {
+            field.addEventListener('input', Utils.debounce(() => {
                 this.validator.clearFieldValidation(field);
-                this.debouncedValidation(field);
-            });
+                this.validateField(field);
+            }, 300));
         });
-    }
-
-    setupSpecialFieldValidation() {
-        // PLZ валидация с форматированием
-        const postalCodeField = this.form.querySelector('input[name="postal_code"]');
-        if (postalCodeField) {
-            postalCodeField.addEventListener('input', Utils.throttle(function() {
-                const value = this.value.replace(/\D/g, '');
-                this.value = value.substring(0, 5);
-            }, 100));
-        }
-
-        // VAT ID форматирование
-        const vatIdField = this.form.querySelector('input[name="vat_id"]');
-        if (vatIdField) {
-            vatIdField.addEventListener('input', Utils.throttle(function() {
-                let value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                if (value.length > 0 && !value.startsWith('DE')) {
-                    value = 'DE' + value;
-                }
-                if (value.length > 11) {
-                    value = value.substring(0, 11);
-                }
-                this.value = value;
-            }, 100));
-        }
-
-        // Handelsregister форматирование
-        const hrField = this.form.querySelector('input[name="commercial_register"]');
-        if (hrField) {
-            hrField.addEventListener('input', Utils.throttle(function() {
-                let value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                this.value = value;
-            }, 100));
-        }
-
-        // Телефонные номера - улучшенное форматирование
-        const phoneFields = this.form.querySelectorAll('input[name="phone"], input[name="fax"]');
-        phoneFields.forEach(field => {
-            field.addEventListener('input', Utils.throttle(this.formatPhoneNumber.bind(this), 150));
-        });
-    }
-
-    formatPhoneNumber(e) {
-        const input = e.target;
-        let value = input.value.replace(/\D/g, '');
-
-        // Форматируем как немецкий номер
-        if (value.startsWith('49')) {
-            value = '+49 ' + this.formatGermanNumber(value.substring(2));
-        } else if (value.startsWith('0')) {
-            value = '+49 ' + this.formatGermanNumber(value.substring(1));
-        } else if (value.length > 0 && !value.startsWith('+')) {
-            value = '+49 ' + this.formatGermanNumber(value);
-        }
-
-        input.value = value.substring(0, 20); // Ограничиваем длину
-    }
-
-    formatGermanNumber(number) {
-        if (number.length <= 3) return number;
-        if (number.length <= 7) return number.substring(0, 3) + ' ' + number.substring(3);
-        return number.substring(0, 3) + ' ' + number.substring(3, 7) + ' ' + number.substring(7);
     }
 
     nextTab() {
@@ -956,10 +723,9 @@ class CompanyFormManager {
                 this.switchToTab(this.currentTabIndex);
                 this.updateProgress();
                 this.updateNavigationButtons();
-                this.focusFirstField();
             }
         } else {
-            this.toastManager.show(CONFIG.MESSAGES.de.FILL_REQUIRED_FIELDS, 'warning');
+            this.showToast(CONFIG.MESSAGES.de.FILL_REQUIRED_FIELDS, 'warning');
         }
     }
 
@@ -969,18 +735,7 @@ class CompanyFormManager {
             this.switchToTab(this.currentTabIndex);
             this.updateProgress();
             this.updateNavigationButtons();
-            this.focusFirstField();
         }
-    }
-
-    focusFirstField() {
-        setTimeout(() => {
-            const currentPane = document.getElementById(this.tabs[this.currentTabIndex]);
-            const firstInput = currentPane.querySelector('input, select, textarea');
-            if (firstInput) {
-                firstInput.focus();
-            }
-        }, 100);
     }
 
     switchToTab(index) {
@@ -1030,30 +785,6 @@ class CompanyFormManager {
                 this.nextBtnText.appendChild(document.createTextNode(text));
             }
         }
-
-        this.updateTabIndicators();
-    }
-
-    updateTabIndicators() {
-        const tabButtons = document.querySelectorAll('#companyTabs button[data-bs-toggle="tab"]');
-        tabButtons.forEach((button, index) => {
-            const isCompleted = index < this.currentTabIndex;
-            const isCurrent = index === this.currentTabIndex;
-
-            button.classList.remove('completed', 'current');
-            button.removeAttribute('aria-current');
-
-            if (isCompleted) {
-                button.classList.add('completed');
-                const icon = button.querySelector('i');
-                if (icon && !icon.classList.contains('bi-check-circle-fill')) {
-                    icon.className = 'bi bi-check-circle-fill me-1';
-                }
-            } else if (isCurrent) {
-                button.classList.add('current');
-                button.setAttribute('aria-current', 'step');
-            }
-        });
     }
 
     validateCurrentTab() {
@@ -1092,8 +823,7 @@ class CompanyFormManager {
 
     submitForm() {
         if (!this.validateAllTabs()) {
-            this.toastManager.show(CONFIG.MESSAGES.de.CORRECT_ERRORS, 'error');
-            this.highlightErrorTabs();
+            this.showToast(CONFIG.MESSAGES.de.CORRECT_ERRORS, 'error');
             return;
         }
 
@@ -1115,7 +845,7 @@ class CompanyFormManager {
     }
 
     async sendFormData(formData) {
-        const response = await fetch(this.form.action || window.location.pathname, {
+        const response = await fetch(window.location.pathname, {
             method: 'POST',
             body: formData,
             headers: {
@@ -1125,19 +855,7 @@ class CompanyFormManager {
         });
 
         if (!response.ok) {
-            const errorDetails = {
-                status: response.status,
-                statusText: response.statusText,
-                url: response.url
-            };
-
-            if (response.status >= 400 && response.status < 500) {
-                throw new Error('CLIENT_ERROR', { cause: errorDetails });
-            } else if (response.status >= 500) {
-                throw new Error('SERVER_ERROR', { cause: errorDetails });
-            } else {
-                throw new Error('NETWORK_ERROR', { cause: errorDetails });
-            }
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         return response.json();
@@ -1149,37 +867,28 @@ class CompanyFormManager {
         // Обрабатываем сообщения
         if (data.messages && data.messages.length > 0) {
             data.messages.forEach(message => {
-                this.toastManager.show(message.text, message.tags, message.delay);
+                this.showToast(message.text, message.tags);
             });
 
             // Если успех, перенаправляем на главную
             const hasSuccess = data.messages.some(msg => msg.tags === 'success');
             if (hasSuccess) {
-                this.handleFormSubmissionSuccess();
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
             }
         } else {
-            // Если нет сообщений, показываем стандартное
-            this.toastManager.show(CONFIG.MESSAGES.de.FORM_SUCCESS, 'success');
-            this.handleFormSubmissionSuccess();
+            this.showToast(CONFIG.MESSAGES.de.FORM_SUCCESS, 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
         }
     }
 
     handleSubmitError(error) {
         console.error('Ошибка отправки формы:', error);
         this.setSubmitButtonLoading(false);
-
-        let message;
-        if (error.message === 'CLIENT_ERROR') {
-            message = CONFIG.MESSAGES.de.VALIDATION_ERROR;
-        } else if (error.message === 'SERVER_ERROR') {
-            message = CONFIG.MESSAGES.de.SERVER_ERROR;
-        } else if (error.message === 'NETWORK_ERROR') {
-            message = CONFIG.MESSAGES.de.NETWORK_ERROR;
-        } else {
-            message = 'Ein unerwarteter Fehler ist aufgetreten';
-        }
-
-        this.toastManager.show(message, 'error');
+        this.showToast('Ein unerwarteter Fehler ist aufgetreten', 'error');
     }
 
     setSubmitButtonLoading(isLoading) {
@@ -1188,9 +897,7 @@ class CompanyFormManager {
             this.submitBtn.innerHTML = '';
 
             const spinner = Utils.createElement('span', {
-                className: 'spinner-border spinner-border-sm me-2',
-                role: 'status',
-                'aria-hidden': 'true'
+                className: 'spinner-border spinner-border-sm me-2'
             });
             this.submitBtn.appendChild(spinner);
             this.submitBtn.appendChild(document.createTextNode('Wird registriert...'));
@@ -1221,478 +928,14 @@ class CompanyFormManager {
         return isValid;
     }
 
-    highlightErrorTabs() {
-        const tabButtons = document.querySelectorAll('#companyTabs button[data-bs-toggle="tab"]');
-
-        this.tabs.forEach((tabId, index) => {
-            const pane = document.getElementById(tabId);
-            const hasErrors = pane.querySelectorAll('.is-invalid').length > 0;
-            const tabButton = tabButtons[index];
-
-            if (hasErrors) {
-                tabButton.classList.add('has-errors');
-                setTimeout(() => tabButton.classList.remove('has-errors'), 3000);
-            }
-        });
-    }
-
-    handleFormSubmissionSuccess() {
-        this.form.dataset.submitted = 'true';
-        this.clearFormDataFromSessionStorage();
-
-        // Перенаправляем на главную после задержки
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 2000);
-    }
-
-    // Автосохранение и защита от потери данных
-    setupAutoSave() {
-        this.form.addEventListener('input', this.debouncedAutosave);
-        this.form.addEventListener('change', this.debouncedAutosave);
-    }
-
-    saveFormDataToSessionStorage() {
-        try {
-            const formData = new FormData(this.form);
-            const formObject = { current_tab: this.currentTabIndex };
-
-            for (let [key, value] of formData.entries()) {
-                formObject[key] = value;
-            }
-
-            if (window.companyContactManager) {
-                formObject.additional_contacts = window.companyContactManager.getAdditionalContactsData();
-            }
-
-            sessionStorage.setItem('companyFormData', JSON.stringify(formObject));
-        } catch (e) {
-            console.error('Ошибка сохранения данных формы:', e);
-        }
-    }
-
-    loadFormDataFromSessionStorage() {
-        try {
-            const savedData = sessionStorage.getItem('companyFormData');
-            if (!savedData) return;
-
-            const formObject = JSON.parse(savedData);
-
-            // Восстанавливаем поля формы
-            Object.entries(formObject).forEach(([key, value]) => {
-                if (key === 'current_tab') {
-                    this.currentTabIndex = Math.min(value, this.tabs.length - 1);
-                } else if (key === 'additional_contacts') {
-                    if (window.companyContactManager) {
-                        window.companyContactManager.loadAdditionalContacts(value);
-                    }
-                } else {
-                    const field = this.form.querySelector(`[name="${key}"]`);
-                    if (field) {
-                        if (field.type === 'checkbox') {
-                            field.checked = value === 'on';
-                        } else {
-                            field.value = value;
-                        }
-                    }
-                }
-            });
-
-            // Переключаемся на сохраненный таб
-            this.switchToTab(this.currentTabIndex);
-            this.updateProgress();
-            this.updateNavigationButtons();
-
-            console.log('Данные формы восстановлены из session storage');
-        } catch (e) {
-            console.error('Ошибка загрузки данных формы:', e);
-        }
-    }
-
-    clearFormDataFromSessionStorage() {
-        try {
-            sessionStorage.removeItem('companyFormData');
-        } catch (e) {
-            console.error('Ошибка очистки данных формы:', e);
-        }
-    }
-
-    setupBeforeUnloadProtection() {
-        let formSubmitted = false;
-
-        this.form.addEventListener('submit', () => {
-            formSubmitted = true;
-        });
-
-        window.addEventListener('beforeunload', (e) => {
-            if (formSubmitted || this.form.dataset.submitted === 'true') return;
-
-            // Проверяем наличие несохраненных изменений
-            const hasChanges = this.hasUnsavedChanges();
-            if (hasChanges) {
-                e.returnValue = CONFIG.MESSAGES.de.UNSAVED_CHANGES;
-                return CONFIG.MESSAGES.de.UNSAVED_CHANGES;
-            }
-        });
-    }
-
-    hasUnsavedChanges() {
-        const formFields = this.form.querySelectorAll('input, select, textarea');
-        for (let field of formFields) {
-            if (field.type === 'checkbox') {
-                if (field.defaultChecked !== field.checked) return true;
-            } else {
-                if (field.defaultValue !== field.value) return true;
-            }
-        }
-
-        if (window.companyContactManager && window.companyContactManager.additionalContacts.length > 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            // Ctrl/Cmd + Enter для отправки формы (только на последнем табе)
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                if (this.currentTabIndex === this.tabs.length - 1) {
-                    e.preventDefault();
-                    this.submitForm();
-                }
-                return;
-            }
-
-            // Escape для возврата назад
-            if (e.key === 'Escape' && this.currentTabIndex > 0) {
-                e.preventDefault();
-                this.prevTab();
-                return;
-            }
-
-            // Навигация стрелками (только с Ctrl/Cmd)
-            if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'ArrowRight' && this.currentTabIndex < this.tabs.length - 1) {
-                    e.preventDefault();
-                    this.nextTab();
-                } else if (e.key === 'ArrowLeft' && this.currentTabIndex > 0) {
-                    e.preventDefault();
-                    this.prevTab();
-                }
-            }
-        });
-    }
-
-    setupErrorHandling() {
-        // Глобальная обработка ошибок JavaScript
-        window.addEventListener('error', (e) => {
-            console.error('JavaScript error:', e.error);
-            this.toastManager.show('Ein unerwarteter Fehler ist aufgetreten', 'error');
-        });
-
-        // Обработка неперехваченных Promise ошибок
-        window.addEventListener('unhandledrejection', (e) => {
-            console.error('Unhandled promise rejection:', e.reason);
-            this.toastManager.show('Ein unerwarteter Fehler ist aufgetreten', 'error');
-        });
-    }
-
-    initializeFormValidation() {
-        // Валидируем все поля, которые уже имеют значения
-        this.form.querySelectorAll('input, select, textarea').forEach(field => {
-            if (field.value.trim()) {
-                this.validateField(field);
-            }
-        });
-    }
-}
-
-// ==================== ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ====================
-
-/**
- * Инициализация расширенных возможностей
- */
-class FormEnhancements {
-    static initializeSelect2() {
-        if (typeof $ !== 'undefined' && $.fn.select2) {
-            console.log('Инициализация Select2...');
-
-            const selects = [
-                { selector: 'select[name="legal_form"]', placeholder: 'Rechtsform auswählen...' },
-                { selector: 'select[name="country"]', placeholder: 'Land auswählen...' },
-                { selector: 'select[name="industry"]', placeholder: 'Branche auswählen...' }
-            ];
-
-            selects.forEach(({ selector, placeholder }) => {
-                const element = document.querySelector(selector);
-                if (element) {
-                    $(element).select2({
-                        theme: 'bootstrap-5',
-                        placeholder,
-                        allowClear: false,
-                        minimumResultsForSearch: 10,
-                        width: '100%'
-                    });
-                }
-            });
-
-            console.log('Select2 инициализирован');
-        }
-    }
-
-    static initializeTooltips() {
-        if (typeof bootstrap !== 'undefined') {
-            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-            const tooltipList = Array.from(tooltipTriggerList).map(tooltipTriggerEl => {
-                return new bootstrap.Tooltip(tooltipTriggerEl, {
-                    trigger: 'hover focus'
-                });
-            });
-            console.log(`Инициализировано ${tooltipList.length} тултипов`);
-        }
-    }
-
-    static initializeCharCounters() {
-        const textareas = document.querySelectorAll('textarea[maxlength]');
-        textareas.forEach(textarea => {
-            const maxLength = parseInt(textarea.getAttribute('maxlength'));
-            if (!maxLength) return;
-
-            const counter = Utils.createElement('div', {
-                className: 'char-counter text-muted small mt-1',
-                style: 'text-align: right;'
-            });
-
-            const updateCounter = () => {
-                const remaining = maxLength - textarea.value.length;
-                counter.textContent = `${textarea.value.length}/${maxLength} Zeichen`;
-
-                counter.className = 'char-counter small mt-1 ' +
-                    (remaining < 20 ? 'text-danger' :
-                     remaining < 50 ? 'text-warning' : 'text-muted');
-            };
-
-            textarea.parentNode.appendChild(counter);
-            textarea.addEventListener('input', updateCounter);
-            updateCounter();
-        });
-    }
-
-    static initializeProgressiveFields() {
-        const postalCodeField = document.querySelector('input[name="postal_code"]');
-        const cityField = document.querySelector('input[name="city"]');
-
-        if (postalCodeField && cityField) {
-            const cityMap = new Map([
-                ['10115', 'Berlin'], ['20095', 'Hamburg'], ['80331', 'München'],
-                ['50667', 'Köln'], ['60311', 'Frankfurt am Main'], ['70173', 'Stuttgart'],
-                ['40213', 'Düsseldorf'], ['44135', 'Dortmund'], ['45127', 'Essen'],
-                ['28195', 'Bremen'], ['01067', 'Dresden'], ['30159', 'Hannover'],
-                ['90402', 'Nürnberg'], ['86150', 'Augsburg']
-            ]);
-
-            postalCodeField.addEventListener('blur', function() {
-                const postalCode = this.value.trim();
-                const suggestedCity = cityMap.get(postalCode);
-
-                if (suggestedCity && !cityField.value.trim()) {
-                    cityField.value = suggestedCity;
-                    cityField.dispatchEvent(new Event('input', { bubbles: true }));
-
-                    if (window.companyFormManager) {
-                        window.companyFormManager.toastManager.show(
-                            `Stadt automatisch ergänzt: ${suggestedCity}`,
-                            'info',
-                            3000
-                        );
-                    }
-                }
-            });
-        }
-    }
-
-    static initializeAll() {
-        try {
-            this.initializeSelect2();
-            this.initializeTooltips();
-            this.initializeCharCounters();
-            this.initializeProgressiveFields();
-            console.log('✅ Все дополнительные функции инициализированы');
-        } catch (error) {
-            console.error('❌ Ошибка инициализации дополнительных функций:', error);
+    showToast(message, type = 'info') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else {
+            console.log(`[${type.toUpperCase()}] ${message}`);
         }
     }
 }
-
-// ==================== УТИЛИТЫ ОТЛАДКИ ====================
-const DEBUG_UTILS = {
-    validateForm: () => {
-        if (!window.companyFormManager) return null;
-
-        const results = {
-            overall: true,
-            tabs: {},
-            errors: [],
-            warnings: []
-        };
-
-        // Проверяем каждый таб
-        window.companyFormManager.tabs.forEach((tabName, index) => {
-            const isValid = window.companyFormManager.validateTabsUpTo(index);
-            results.tabs[tabName] = isValid;
-
-            if (!isValid) {
-                results.overall = false;
-                results.errors.push(`Tab "${tabName}" содержит ошибки`);
-            }
-        });
-
-        console.group('🔍 Результаты валидации формы');
-        console.log('📊 Общий результат:', results.overall ? '✅ Валидна' : '❌ Содержит ошибки');
-        console.log('📋 Результаты по табам:', results.tabs);
-
-        if (results.errors.length > 0) {
-            console.error('❌ Ошибки:', results.errors);
-        }
-
-        if (results.warnings.length > 0) {
-            console.warn('⚠️ Предупреждения:', results.warnings);
-        }
-
-        console.groupEnd();
-        return results;
-    },
-
-    getFormSummary: () => {
-        if (!window.companyFormManager || !window.companyFormManager.form) return null;
-
-        const form = window.companyFormManager.form;
-        const formData = new FormData(form);
-
-        return {
-            companyName: formData.get('company_name') || '',
-            legalForm: formData.get('legal_form') || '',
-            industry: formData.get('industry') || '',
-            address: {
-                street: formData.get('street') || '',
-                postalCode: formData.get('postal_code') || '',
-                city: formData.get('city') || '',
-                country: formData.get('country') || ''
-            },
-            contacts: {
-                email: formData.get('email') || '',
-                phone: formData.get('phone') || '',
-                fax: formData.get('fax') || '',
-                website: formData.get('website') || ''
-            },
-            additionalContacts: window.companyContactManager ?
-                window.companyContactManager.additionalContacts : [],
-            registration: {
-                commercialRegister: formData.get('commercial_register') || '',
-                taxNumber: formData.get('tax_number') || '',
-                vatId: formData.get('vat_id') || ''
-            },
-            people: {
-                ceo: formData.get('ceo_name') || '',
-                contact: formData.get('contact_person') || ''
-            },
-            isPrimary: formData.get('is_primary') === 'on'
-        };
-    },
-
-    previewData: () => {
-        const summary = DEBUG_UTILS.getFormSummary();
-        if (!summary) {
-            console.error('Не удалось получить данные формы');
-            return null;
-        }
-
-        console.group('👀 Предварительный просмотр данных компании');
-        console.log('🏢 Основная информация:');
-        console.log(`  Название: ${summary.companyName}`);
-        console.log(`  Правовая форма: ${summary.legalForm}`);
-        console.log(`  Отрасль: ${summary.industry || 'Не указана'}`);
-
-        console.log('📍 Адрес:');
-        console.log(`  ${summary.address.street}`);
-        console.log(`  ${summary.address.postalCode} ${summary.address.city}`);
-        console.log(`  ${summary.address.country}`);
-
-        console.log('📞 Контакты:');
-        console.log(`  Email: ${summary.contacts.email}`);
-        console.log(`  Телефон: ${summary.contacts.phone}`);
-        if (summary.contacts.fax) console.log(`  Факс: ${summary.contacts.fax}`);
-        if (summary.contacts.website) console.log(`  Сайт: ${summary.contacts.website}`);
-
-        if (summary.additionalContacts.length > 0) {
-            console.log('📱 Дополнительные контакты:');
-            summary.additionalContacts.forEach((contact, index) => {
-                console.log(`  ${index + 1}. ${contact.type}: ${contact.value}`);
-            });
-        }
-
-        if (summary.registration.commercialRegister || summary.registration.taxNumber || summary.registration.vatId) {
-            console.log('📋 Регистрационные данные:');
-            if (summary.registration.commercialRegister) console.log(`  Торговый реестр: ${summary.registration.commercialRegister}`);
-            if (summary.registration.taxNumber) console.log(`  Налоговый номер: ${summary.registration.taxNumber}`);
-            if (summary.registration.vatId) console.log(`  НДС ID: ${summary.registration.vatId}`);
-        }
-
-        if (summary.people.ceo || summary.people.contact) {
-            console.log('👥 Ответственные лица:');
-            if (summary.people.ceo) console.log(`  Директор: ${summary.people.ceo}`);
-            if (summary.people.contact) console.log(`  Контактное лицо: ${summary.people.contact}`);
-        }
-
-        console.log(`⭐ Основная компания: ${summary.isPrimary ? 'Да' : 'Нет'}`);
-        console.groupEnd();
-
-        return summary;
-    },
-
-    exportData: () => {
-        const summary = DEBUG_UTILS.getFormSummary();
-        if (summary) {
-            const dataStr = JSON.stringify(summary, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'company_form_data.json';
-            link.click();
-            URL.revokeObjectURL(url);
-            console.log('✅ Данные формы экспортированы');
-        }
-    },
-
-    showStats: () => {
-        console.group('📈 Статистика формы');
-
-        if (window.companyFormManager) {
-            const form = window.companyFormManager.form;
-            const totalFields = form.querySelectorAll('input, select, textarea').length;
-            const filledFields = Array.from(form.querySelectorAll('input, select, textarea')).filter(field => {
-                if (field.type === 'checkbox') return field.checked;
-                return field.value.trim() !== '';
-            }).length;
-            const validFields = form.querySelectorAll('.is-valid').length;
-            const invalidFields = form.querySelectorAll('.is-invalid').length;
-
-            console.log(`📝 Всего полей: ${totalFields}`);
-            console.log(`✏️ Заполнено полей: ${filledFields} (${Math.round(filledFields/totalFields*100)}%)`);
-            console.log(`✅ Валидных полей: ${validFields}`);
-            console.log(`❌ Невалидных полей: ${invalidFields}`);
-            console.log(`📄 Текущий таб: ${window.companyFormManager.currentTabIndex + 1}/${window.companyFormManager.tabs.length}`);
-        }
-
-        if (window.companyContactManager) {
-            console.log(`📞 Дополнительных контактов: ${window.companyContactManager.additionalContacts.length}`);
-        }
-
-        console.groupEnd();
-    }
-};
 
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -1707,161 +950,22 @@ document.addEventListener('DOMContentLoaded', function() {
         window.companyFormManager = new CompanyFormManager();
         companyFormManager.init();
 
-        // Инициализируем дополнительные возможности
-        setTimeout(() => {
-            FormEnhancements.initializeAll();
-        }, 500);
-
-        // Делаем функции доступными глобально для onclick handlers
-        window.openContactModal = (index) => companyContactManager.openContactModal(index);
-        window.confirmDeleteContact = (index) => companyContactManager.confirmDeleteContact(index);
-
-        // Отладочные функции
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            window.validateCompanyForm = DEBUG_UTILS.validateForm;
-            window.getCompanyFormSummary = DEBUG_UTILS.getFormSummary;
-            window.previewCompanyData = DEBUG_UTILS.previewData;
-            window.exportCompanyData = DEBUG_UTILS.exportData;
-            window.showCompanyFormStats = DEBUG_UTILS.showStats;
-
-            // Горячие клавиши для отладки
-            document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.shiftKey) {
-                    switch(e.key) {
-                        case 'D':
-                            e.preventDefault();
-                            DEBUG_UTILS.validateForm();
-                            break;
-                        case 'S':
-                            e.preventDefault();
-                            DEBUG_UTILS.showStats();
-                            break;
-                        case 'E':
-                            e.preventDefault();
-                            DEBUG_UTILS.exportData();
-                            break;
-                        case 'P':
-                            e.preventDefault();
-                            DEBUG_UTILS.previewData();
-                            break;
-                    }
-                }
-            });
-
-            console.log('🎯 Debug режим активен. Доступные функции:');
-            console.log('  - validateCompanyForm()');
-            console.log('  - getCompanyFormSummary()');
-            console.log('  - previewCompanyData()');
-            console.log('  - exportCompanyData()');
-            console.log('  - showCompanyFormStats()');
-            console.log('🎹 Горячие клавиши:');
-            console.log('  - Ctrl+Shift+D: Валидация');
-            console.log('  - Ctrl+Shift+S: Статистика');
-            console.log('  - Ctrl+Shift+E: Экспорт');
-            console.log('  - Ctrl+Shift+P: Просмотр');
-        }
-
         console.log('✅ Регистрация компании полностью инициализирована');
 
     } catch (error) {
         console.error('❌ Критическая ошибка инициализации:', error);
-
-        // Показываем пользователю сообщение об ошибке
-        const alertDiv = Utils.createElement('div', {
-            className: 'alert alert-danger alert-dismissible fade show position-fixed',
-            style: 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;',
-            role: 'alert'
-        });
-
-        alertDiv.innerHTML = `
-            <strong>Fehler!</strong> Die Formular-Initialisierung ist fehlgeschlagen.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-
-        document.body.appendChild(alertDiv);
-
-        // Автоматически скрываем через 10 секунд
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 10000);
     }
 });
 
-// ==================== ГЛОБАЛЬНЫЙ DEBUG ОБЪЕКТ ====================
-window.COMPANY_FORM_DEBUG = {
-    version: '3.0.0',
-    initialized: true,
-    timestamp: new Date().toISOString(),
-
-    managers: {
-        form: () => window.companyFormManager,
-        contacts: () => window.companyContactManager
-    },
-
-    utils: DEBUG_UTILS,
-
-    config: CONFIG,
-
-    classes: {
-        Utils,
-        FormValidator,
-        ToastManager,
-        CompanyAdditionalContactManager,
-        CompanyFormManager,
-        FormEnhancements
-    },
-
-    reinit: () => {
-        console.log('🔄 Переинициализация компонентов...');
-
-        if (window.companyContactManager) {
-            window.companyContactManager.init();
-        }
-
-        if (window.companyFormManager) {
-            window.companyFormManager.init();
-        }
-
-        FormEnhancements.initializeAll();
-
-        console.log('✅ Переинициализация завершена');
+// Делаем функции доступными глобально для onclick handlers
+window.openContactModal = (index) => {
+    if (window.companyContactManager) {
+        window.companyContactManager.openContactModal(index);
     }
 };
 
-// ==================== ИНФОРМАЦИЯ О МОДУЛЕ ====================
-console.group('🏢 Company Registration Module v3.0');
-console.log('📦 Version: 3.0.0 (Production Ready)');
-console.log('🏗️ Architecture: Modular ES6+ Classes');
-console.log('🚀 Performance: Optimized with caching and debouncing');
-console.log('🔒 Security: XSS protection and input sanitization');
-console.log('♿ Accessibility: ARIA labels and keyboard navigation');
-console.log('📱 Responsive: Mobile-first design');
-console.log('🌐 i18n Ready: Configurable messages');
-console.log('🔧 Debug Tools:', window.location.hostname.includes('localhost') ? 'Enabled' : 'Disabled');
-
-if (window.location.hostname.includes('localhost')) {
-    console.log('🎮 Available in window.COMPANY_FORM_DEBUG');
-    console.log('📋 Managers:', Object.keys(window.COMPANY_FORM_DEBUG.managers).length);
-    console.log('🛠️ Utils:', Object.keys(window.COMPANY_FORM_DEBUG.utils).length);
-    console.log('🏗️ Classes:', Object.keys(window.COMPANY_FORM_DEBUG.classes).length);
-}
-
-console.groupEnd();
-
-// ==================== ЭКСПОРТ (для тестирования) ====================
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        CONFIG,
-        Utils,
-        FormValidator,
-        ToastManager,
-        CompanyAdditionalContactManager,
-        CompanyFormManager,
-        FormEnhancements,
-        DEBUG_UTILS
-    };
-}
-
-console.log('📄 register_company.js v3.0 - Ready for production! 🎉');
+window.confirmDeleteContact = (index) => {
+    if (window.companyContactManager) {
+        window.companyContactManager.confirmDeleteContact(index);
+    }
+};
