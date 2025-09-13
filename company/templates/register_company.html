@@ -1,384 +1,26 @@
 {% extends 'base.html' %}
 
-{# Подключаем CSS файл #}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/company.css' %}">
+<link rel="stylesheet" href="{% static 'css/create_company_step1-3.css' %}">
 
 {% block content %}
 
-        <div class="modal fade show company-modal" id="companyRegistrationModal" tabindex="-1" style="display: block;">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <!-- Modal Header -->
-                    <div class="modal-header">
-                        <h4 class="modal-title mb-0">
-                            <i class="bi bi-building-add me-2"></i>
-                            {% if is_editing %}
-                                Firma bearbeiten: {{ company_name|default:"" }}
-                            {% else %}
-                                Firma registrieren
-                            {% endif %}
-                        </h4>
-                        <div class="ms-auto">
-                            <span class="badge bg-light text-primary fs-6">
-                                Schritt <span id="current-step">1</span> von 4
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Modal Body -->
-                    <div class="modal-body">
-                        <!-- Progress Indicator -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <div class="progress company-progress mb-2">
-                                    <div class="progress-bar" id="progress-bar" role="progressbar" style="width: 25%"></div>
-                                </div>
-                                <div class="company-progress-labels">
-                                    <span>Grunddaten</span>
-                                    <span>Registrierung</span>
-                                    <span>Adresse</span>
-                                    <span>Kontakte & Details</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tab Navigation -->
-                        <ul class="nav nav-tabs company-tabs" id="companyTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" 
-                                        type="button" role="tab" aria-controls="basic" aria-selected="true">
-                                    <i class="bi bi-building me-1"></i>Grunddaten
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="registration-tab" data-bs-toggle="tab" data-bs-target="#registration" 
-                                        type="button" role="tab" aria-controls="registration" aria-selected="false">
-                                    <i class="bi bi-file-text me-1"></i>Registrierung
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="address-tab" data-bs-toggle="tab" data-bs-target="#address" 
-                                        type="button" role="tab" aria-controls="address" aria-selected="false">
-                                    <i class="bi bi-geo-alt me-1"></i>Adresse
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" 
-                                        type="button" role="tab" aria-controls="details" aria-selected="false">
-                                    <i class="bi bi-person-vcard me-1"></i>Kontakte & Details
-                                </button>
-                            </li>
-                        </ul>
-
-                        <!-- Tab Content -->
-                        <div class="tab-content" id="companyTabContent">
-                            <!-- Form -->
-                            <form id="company-form" method="post" class="company-form">
-                                {% csrf_token %}
-                                
-                                <!-- Grunddaten Tab -->
-                                <div class="tab-pane fade show active company-tab-pane" id="basic" role="tabpanel" aria-labelledby="basic-tab">
-                                    <div class="row">
-                                        <div class="col-md-8">
-                                            <div class="mb-3">
-                                                <label for="{{ form.company_name.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-building"></i>{{ form.company_name.label }}
-                                                    {% if form.company_name.field.required %}<span class="text-danger">*</span>{% endif %}
-                                                </label>
-                                                {{ form.company_name }}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="mb-3">
-                                                <label for="{{ form.legal_form.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-shield-check"></i>{{ form.legal_form.label }}
-                                                    {% if form.legal_form.field.required %}<span class="text-danger">*</span>{% endif %}
-                                                </label>
-                                                {{ form.legal_form }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.industry.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-briefcase"></i>{{ form.industry.label }}
-                                                </label>
-                                                {{ form.industry }}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.country.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-globe"></i>{{ form.country.label }}
-                                                    {% if form.country.field.required %}<span class="text-danger">*</span>{% endif %}
-                                                </label>
-                                                {{ form.country }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="{{ form.description.id_for_label }}" class="form-label">
-                                            <i class="bi bi-card-text"></i>{{ form.description.label }}
-                                        </label>
-                                        {{ form.description }}
-                                    </div>
-                                </div>
-
-                                <!-- Registrierung Tab -->
-                                <div class="tab-pane fade company-tab-pane" id="registration" role="tabpanel" aria-labelledby="registration-tab">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.commercial_register.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-file-earmark-text"></i>{{ form.commercial_register.label }}
-                                                </label>
-                                                {{ form.commercial_register }}
-                                                {% if form.commercial_register.help_text %}
-                                                <div class="form-text">
-                                                    <i class="bi bi-info-circle me-1"></i>{{ form.commercial_register.help_text }}
-                                                </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.tax_number.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-calculator"></i>{{ form.tax_number.label }}
-                                                </label>
-                                                {{ form.tax_number }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.vat_id.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-receipt"></i>{{ form.vat_id.label }}
-                                                </label>
-                                                {{ form.vat_id }}
-                                                {% if form.vat_id.help_text %}
-                                                <div class="form-text">
-                                                    <i class="bi bi-info-circle me-1"></i>{{ form.vat_id.help_text }}
-                                                </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Adresse Tab -->
-                                <div class="tab-pane fade company-tab-pane" id="address" role="tabpanel" aria-labelledby="address-tab">
-                                    <div class="row">
-                                        <div class="col-md-8">
-                                            <div class="mb-3">
-                                                <label for="{{ form.street.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-geo-alt"></i>{{ form.street.label }}
-                                                    {% if form.street.field.required %}<span class="text-danger">*</span>{% endif %}
-                                                </label>
-                                                {{ form.street }}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="mb-3">
-                                                <label for="{{ form.postal_code.id_for_label }}" class="form-label">
-                                                    <i class="bi bi-mailbox"></i>{{ form.postal_code.label }}
-                                                    {% if form.postal_code.field.required %}<span class="text-danger">*</span>{% endif %}
-                                                </label>
-                                                {{ form.postal_code }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="{{ form.city.id_for_label }}" class="form-label">
-                                            <i class="bi bi-buildings"></i>{{ form.city.label }}
-                                            {% if form.city.field.required %}<span class="text-danger">*</span>{% endif %}
-                                        </label>
-                                        {{ form.city }}
-                                    </div>
-                                </div>
-
-                                <!-- Kontakte & Details Tab -->
-                                <div class="tab-pane fade company-tab-pane" id="details" role="tabpanel" aria-labelledby="details-tab">
-                                    <!-- Grundkontakte -->
-                                    <div class="company-section-card mb-4">
-                                        <div class="card-header bg-primary text-white">
-                                            <h6 class="card-title mb-0">
-                                                <i class="bi bi-telephone me-2"></i>Grundkontakte
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label for="{{ form.email.id_for_label }}" class="form-label">
-                                                            <i class="bi bi-envelope"></i>{{ form.email.label }}
-                                                            {% if form.email.field.required %}<span class="text-danger">*</span>{% endif %}
-                                                        </label>
-                                                        {{ form.email }}
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label for="{{ form.phone.id_for_label }}" class="form-label">
-                                                            <i class="bi bi-telephone"></i>{{ form.phone.label }}
-                                                            {% if form.phone.field.required %}<span class="text-danger">*</span>{% endif %}
-                                                        </label>
-                                                        {{ form.phone }}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label for="{{ form.fax.id_for_label }}" class="form-label">
-                                                            <i class="bi bi-printer"></i>{{ form.fax.label }}
-                                                        </label>
-                                                        {{ form.fax }}
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label for="{{ form.website.id_for_label }}" class="form-label">
-                                                            <i class="bi bi-globe"></i>{{ form.website.label }}
-                                                        </label>
-                                                        {{ form.website }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Zusätzliche Kontakte -->
-                                    <div class="company-section-card mb-4">
-                                        <div class="card-header bg-info text-white">
-                                            <h6 class="card-title mb-0">
-                                                <i class="bi bi-person-vcard me-2"></i>Zusätzliche Kontakte
-                                                <span class="company-contact-badge" id="additional-contacts-count">0</span>
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="company-contact-management">
-                                                <div class="text-center py-4">
-                                                    <i class="bi bi-person-plus display-4 text-muted mb-3"></i>
-                                                    <p class="mb-2"><strong>Zusätzliche Kontakte hinzufügen</strong></p>
-                                                    <p class="text-muted small mb-3">Optional: Weitere Kontaktmöglichkeiten für bessere Kommunikation</p>
-                                                    <button type="button" class="btn btn-outline-primary company-btn" id="manage-additional-contacts">
-                                                        <i class="bi bi-plus-circle me-1"></i>Kontakte verwalten
-                                                    </button>
-                                                </div>
-                                                
-                                                <!-- Summary area -->
-                                                <div class="company-contact-summary d-none" id="contacts-summary">
-                                                    <p class="mb-0" id="contacts-summary-text">Keine zusätzlichen Kontakte hinzugefügt</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Personen -->
-                                    <div class="company-section-card mb-4">
-                                        <div class="card-header bg-success text-white">
-                                            <h6 class="card-title mb-0">
-                                                <i class="bi bi-people me-2"></i>Personen
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label for="{{ form.ceo_name.id_for_label }}" class="form-label">
-                                                            <i class="bi bi-person-badge"></i>{{ form.ceo_name.label }}
-                                                        </label>
-                                                        {{ form.ceo_name }}
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="mb-3">
-                                                        <label for="{{ form.contact_person.id_for_label }}" class="form-label">
-                                                            <i class="bi bi-person-lines-fill"></i>{{ form.contact_person.label }}
-                                                        </label>
-                                                        {{ form.contact_person }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Einstellungen -->
-                                    <div class="company-section-card">
-                                        <div class="card-header bg-warning text-dark">
-                                            <h6 class="card-title mb-0">
-                                                <i class="bi bi-gear me-2"></i>Einstellungen
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="form-check">
-                                                {{ form.is_primary }}
-                                                <label class="form-check-label" for="{{ form.is_primary.id_for_label }}">
-                                                    <i class="bi bi-star me-1"></i>{{ form.is_primary.label }}
-                                                </label>
-                                                {% if form.is_primary.help_text %}
-                                                <div class="form-text">{{ form.is_primary.help_text }}</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Hidden field for additional contacts data -->
-                                <input type="hidden" id="additionalContactsDataInput" name="additional_contacts_data" value="[]">
-                            </form>
-                        </div>
-
-                        <!-- Navigation Buttons -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-outline-secondary company-btn" id="prev-tab-btn" style="display: none;">
-                                        <i class="bi bi-arrow-left me-1"></i>Zurück
-                                    </button>
-                                    
-                                    <div class="ms-auto">
-                                        <button type="button" class="btn btn-primary company-btn" id="next-tab-btn">
-                                            <span id="next-btn-text">
-                                                <i class="bi bi-arrow-right me-1"></i>Weiter
-                                            </span>
-                                        </button>
-                                        
-                                        <button type="submit" class="btn btn-success company-btn" id="submit-btn" style="display: none;">
-                                            <i class="bi bi-building-add me-1"></i>
-                                            {% if is_editing %}Firma aktualisieren{% else %}Firma registrieren{% endif %}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    <!-- Additional Contacts Modal -->
-    <div class="modal fade company-additional-contacts-modal" id="additionalContactsModal" tabindex="-1" aria-labelledby="additionalContactsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <!-- Главное модальное окно регистрации компании -->
+    <div class="modal fade show company-modal" id="companyRegistrationModal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
+                <!-- Заголовок модального окна -->
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title" id="additionalContactsModalLabel">
-                        <i class="bi bi-person-vcard me-2"></i>Zusätzliche Kontakte verwalten
+                        <i class="bi bi-person-lines-fill me-2"></i>Zusätzliche Kontakte verwalten
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="mb-0">
-                            <i class="bi bi-list-ul me-1"></i>Kontaktliste 
+                            <i class="bi bi-list-ul me-1"></i>Kontaktliste
                             <span class="badge bg-primary ms-2" id="modal-contacts-count">0</span>
                         </h6>
                         <button type="button" class="btn btn-primary btn-sm company-btn" id="add-contact-btn">
@@ -386,9 +28,9 @@
                         </button>
                     </div>
 
-                    <!-- Contacts Table -->
+                    <!-- Таблица контактов -->
                     <div class="table-responsive" id="contacts-table-container" style="display: none;">
-                        <table class="table table-sm table-hover company-contacts-table">
+                        <table class="table table-sm table-hover contacts-table">
                             <thead class="table-light">
                                 <tr>
                                     <th>Typ</th>
@@ -398,24 +40,24 @@
                                 </tr>
                             </thead>
                             <tbody id="contacts-table-body">
-                                <!-- Contacts will be inserted here -->
+                                <!-- Контакты добавляются динамически -->
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Empty State -->
-                    <div class="text-center py-5 company-empty-contacts-placeholder" id="empty-contacts-placeholder">
+                    <!-- Пустое состояние -->
+                    <div class="text-center py-5 empty-contacts-placeholder" id="empty-contacts-placeholder">
                         <i class="bi bi-person-plus display-1 text-muted mb-3"></i>
                         <h5 class="text-muted">Noch keine zusätzlichen Kontakte hinzugefügt</h5>
                         <p class="text-muted mb-4">Zusätzliche Kontakte sind optional und können übersprungen werden.<br>
                            Sie verbessern jedoch die Kommunikationsmöglichkeiten erheblich.</p>
-                        <button type="button" class="btn btn-primary company-btn" onclick="document.getElementById('add-contact-btn').click()">
+                        <button type="button" class="btn company-btn company-btn-primary" onclick="document.getElementById('add-contact-btn').click()">
                             <i class="bi bi-plus me-1"></i>Ersten Kontakt hinzufügen
                         </button>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary company-btn" data-bs-dismiss="modal">
+                    <button type="button" class="btn company-btn company-btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x me-1"></i>Schließen
                     </button>
                 </div>
@@ -423,7 +65,7 @@
         </div>
     </div>
 
-    <!-- Add/Edit Contact Modal -->
+    <!-- Модальное окно добавления/редактирования контакта -->
     <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -456,7 +98,7 @@
                             <label for="contactValue" class="form-label">
                                 <i class="bi bi-info-circle"></i>Kontaktdaten *
                             </label>
-                            <input type="text" class="form-control" id="contactValue" name="contactValue" 
+                            <input type="text" class="form-control" id="contactValue" name="contactValue"
                                    placeholder="Kontaktdaten eingeben..." required>
                             <div class="invalid-feedback"></div>
                             <div class="form-text" id="contactHint">
@@ -468,7 +110,7 @@
                             <label for="contactLabel" class="form-label">
                                 <i class="bi bi-card-text"></i>Beschreibung
                             </label>
-                            <input type="text" class="form-control" id="contactLabel" name="contactLabel" 
+                            <input type="text" class="form-control" id="contactLabel" name="contactLabel"
                                    placeholder="z.B. Marketing, Vertrieb...">
                             <div class="form-text">Optionale Beschreibung für diesen Kontakt</div>
                         </div>
@@ -483,10 +125,10 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary company-btn" data-bs-dismiss="modal">
+                    <button type="button" class="btn company-btn company-btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x me-1"></i>Abbrechen
                     </button>
-                    <button type="button" class="btn btn-primary company-btn" id="saveContactBtn">
+                    <button type="button" class="btn company-btn company-btn-primary" id="saveContactBtn">
                         <i class="bi bi-check me-1"></i>Speichern
                     </button>
                 </div>
@@ -494,7 +136,7 @@
         </div>
     </div>
 
-    <!-- Delete Contact Modal -->
+    <!-- Модальное окно подтверждения удаления контакта -->
     <div class="modal fade" id="deleteContactModal" tabindex="-1" aria-labelledby="deleteContactModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -514,10 +156,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary company-btn" data-bs-dismiss="modal">
+                    <button type="button" class="btn company-btn company-btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x me-1"></i>Abbrechen
                     </button>
-                    <button type="button" class="btn btn-danger company-btn" id="confirmDeleteBtn">
+                    <button type="button" class="btn company-btn-danger" id="confirmDeleteBtn">
                         <i class="bi bi-trash me-1"></i>Löschen
                     </button>
                 </div>
@@ -525,12 +167,539 @@
         </div>
     </div>
 
-
     <!-- Полупрозрачный фон -->
     <div class="modal-backdrop fade show"></div>
 
-    {# Подключаем JS файл #}
-    {% load static %}
+    <!-- Подключение JavaScript -->
     <script src="{% static 'js/register_company.js' %}"></script>
 
 {% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* Дополнительные стили для кнопок с градиентом */
+        .company-btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+            color: white;
+            border: none;
+        }
+
+        .company-btn-danger:hover {
+            background: linear-gradient(135deg, #b02a37 0%, #8b1e2b 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+        }
+
+        /* Стили для активных табов */
+        .nav-tabs .nav-link.completed {
+            background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+            color: white;
+        }
+
+        .nav-tabs .nav-link.current {
+            background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+            color: white;
+        }
+
+        /* Улучшенные стили для карточек */
+        .company-section-card {
+            transition: all 0.3s ease;
+        }
+
+        .company-section-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Стили для прогресс-бара */
+        .company-progress .progress-bar {
+            background: linear-gradient(90deg, #0d6efd 0%, #0056b3 50%, #198754 100%);
+        }
+
+        /* Анимация для появления элементов */
+        .company-tab-pane {
+            animation: slideInFromRight 0.4s ease-out;
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Улучшенные стили для полей формы */
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* Стили для обязательных полей */
+        .form-label .text-danger {
+            font-size: 1.1em;
+            margin-left: 3px;
+        }
+
+        /* Стили для бейджей */
+        .company-contact-badge {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+    </style>
+{% endblock %} class="modal-header bg-primary text-white">
+                    <h4 class="modal-title mb-0">
+                        <i class="bi bi-building-add me-2"></i>
+                        {% if is_editing %}
+                            Firma bearbeiten: {{ company_name|default:"" }}
+                        {% else %}
+                            Firma registrieren
+                        {% endif %}
+                    </h4>
+                    <div class="ms-auto">
+                        <span class="badge bg-light text-primary fs-6">
+                            Schritt <span id="current-step">1</span> von 4
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Тело модального окна -->
+                <div class="modal-body">
+                    <!-- Индикатор прогресса -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="progress company-progress mb-2">
+                                <div class="progress-bar" id="progress-bar" role="progressbar" style="width: 25%"></div>
+                            </div>
+                            <div class="company-progress-labels">
+                                <span>Grunddaten</span>
+                                <span>Registrierung</span>
+                                <span>Adresse</span>
+                                <span>Kontakte & Details</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Навигация по табам -->
+                    <ul class="nav nav-tabs company-tabs" id="companyTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic"
+                                    type="button" role="tab" aria-controls="basic" aria-selected="true">
+                                <i class="bi bi-building me-1"></i>Grunddaten
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="registration-tab" data-bs-toggle="tab" data-bs-target="#registration"
+                                    type="button" role="tab" aria-controls="registration" aria-selected="false">
+                                <i class="bi bi-file-text me-1"></i>Registrierung
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="address-tab" data-bs-toggle="tab" data-bs-target="#address"
+                                    type="button" role="tab" aria-controls="address" aria-selected="false">
+                                <i class="bi bi-geo-alt me-1"></i>Adresse
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details"
+                                    type="button" role="tab" aria-controls="details" aria-selected="false">
+                                <i class="bi bi-person-vcard me-1"></i>Kontakte & Details
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Содержимое табов -->
+                    <div class="tab-content" id="companyTabContent">
+                        <!-- Форма -->
+                        <form id="company-form" method="post" class="company-form">
+                            {% csrf_token %}
+
+                            <!-- Таб 1: Grunddaten -->
+                            <div class="tab-pane fade show active company-tab-pane" id="basic" role="tabpanel" aria-labelledby="basic-tab">
+                                <div class="card company-section-card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-building me-2"></i>Firmengrundlagen
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.company_name.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-building"></i>{{ form.company_name.label }}
+                                                        {% if form.company_name.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {{ form.company_name }}
+                                                    {% if form.company_name.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.company_name.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.legal_form.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-shield-check"></i>{{ form.legal_form.label }}
+                                                        {% if form.legal_form.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {{ form.legal_form }}
+                                                    {% if form.legal_form.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.legal_form.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.industry.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-briefcase"></i>{{ form.industry.label }}
+                                                    </label>
+                                                    {{ form.industry }}
+                                                    {% if form.industry.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.industry.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.country.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-globe"></i>{{ form.country.label }}
+                                                        {% if form.country.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {{ form.country }}
+                                                    {% if form.country.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.country.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                                <i class="bi bi-card-text"></i>{{ form.description.label }}
+                                            </label>
+                                            {{ form.description }}
+                                            {% if form.description.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Таб 2: Registrierung -->
+                            <div class="tab-pane fade company-tab-pane" id="registration" role="tabpanel" aria-labelledby="registration-tab">
+                                <div class="card company-section-card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-file-text me-2"></i>Registrierungsdaten
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-info" role="alert">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            Alle Registrierungsdaten sind optional und können später ergänzt werden.
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.commercial_register.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-file-earmark-text"></i>{{ form.commercial_register.label }}
+                                                    </label>
+                                                    {{ form.commercial_register }}
+                                                    <div class="form-text">
+                                                        <i class="bi bi-info-circle me-1"></i>Format: HRA12345 oder HRB12345
+                                                    </div>
+                                                    {% if form.commercial_register.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.commercial_register.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.tax_number.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-calculator"></i>{{ form.tax_number.label }}
+                                                    </label>
+                                                    {{ form.tax_number }}
+                                                    {% if form.tax_number.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.tax_number.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-0">
+                                                    <label for="{{ form.vat_id.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-receipt"></i>{{ form.vat_id.label }}
+                                                    </label>
+                                                    {{ form.vat_id }}
+                                                    <div class="form-text">
+                                                        <i class="bi bi-info-circle me-1"></i>Format: DE123456789
+                                                    </div>
+                                                    {% if form.vat_id.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.vat_id.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Таб 3: Adresse -->
+                            <div class="tab-pane fade company-tab-pane" id="address" role="tabpanel" aria-labelledby="address-tab">
+                                <div class="card company-section-card">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-geo-alt me-2"></i>Firmenadresse
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.street.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-geo-alt"></i>{{ form.street.label }}
+                                                        {% if form.street.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {{ form.street }}
+                                                    {% if form.street.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.street.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.postal_code.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-mailbox"></i>{{ form.postal_code.label }}
+                                                        {% if form.postal_code.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {{ form.postal_code }}
+                                                    {% if form.postal_code.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.postal_code.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <label for="{{ form.city.id_for_label }}" class="form-label">
+                                                <i class="bi bi-buildings"></i>{{ form.city.label }}
+                                                {% if form.city.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ form.city }}
+                                            {% if form.city.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.city.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Таб 4: Kontakte & Details -->
+                            <div class="tab-pane fade company-tab-pane" id="details" role="tabpanel" aria-labelledby="details-tab">
+                                <!-- Основные контакты -->
+                                <div class="company-section-card mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-telephone me-2"></i>Hauptkontakte
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-envelope"></i>{{ form.email.label }}
+                                                        {% if form.email.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {{ form.email }}
+                                                    {% if form.email.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-telephone"></i>{{ form.phone.label }}
+                                                        {% if form.phone.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {{ form.phone }}
+                                                    {% if form.phone.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.fax.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-printer"></i>{{ form.fax.label }}
+                                                    </label>
+                                                    {{ form.fax }}
+                                                    {% if form.fax.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.fax.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-0">
+                                                    <label for="{{ form.website.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-globe"></i>{{ form.website.label }}
+                                                    </label>
+                                                    {{ form.website }}
+                                                    {% if form.website.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.website.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Дополнительные контакты -->
+                                <div class="company-section-card mb-4">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-person-lines-fill me-2"></i>Zusätzliche Kontakte
+                                            <span class="company-contact-badge" id="additional-contacts-count">0</span>
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="company-contact-management">
+                                            <div class="text-center py-4">
+                                                <i class="bi bi-person-plus display-4 text-muted mb-3"></i>
+                                                <p class="mb-2"><strong>Zusätzliche Kontakte hinzufügen</strong></p>
+                                                <p class="text-muted small mb-3">Optional: Weitere Kontaktmöglichkeiten für bessere Kommunikation</p>
+                                                <button type="button" class="btn company-btn company-btn-outline-primary" id="manage-additional-contacts">
+                                                    <i class="bi bi-plus-circle me-1"></i>Kontakte verwalten
+                                                </button>
+                                            </div>
+
+                                            <!-- Zusammenfassung -->
+                                            <div class="company-contact-summary d-none" id="contacts-summary">
+                                                <p class="mb-0" id="contacts-summary-text">Keine zusätzlichen Kontakte hinzugefügt</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Personen -->
+                                <div class="company-section-card mb-4">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-people me-2"></i>Verantwortliche Personen
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="{{ form.ceo_name.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-person-badge"></i>{{ form.ceo_name.label }}
+                                                    </label>
+                                                    {{ form.ceo_name }}
+                                                    {% if form.ceo_name.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.ceo_name.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-0">
+                                                    <label for="{{ form.contact_person.id_for_label }}" class="form-label">
+                                                        <i class="bi bi-person-lines-fill"></i>{{ form.contact_person.label }}
+                                                    </label>
+                                                    {{ form.contact_person }}
+                                                    {% if form.contact_person.errors %}
+                                                        <div class="invalid-feedback d-block">{{ form.contact_person.errors.0 }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Системные настройки -->
+                                <div class="company-section-card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-gear me-2"></i>Systemeinstellungen
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            {{ form.is_primary }}
+                                            <label class="form-check-label" for="{{ form.is_primary.id_for_label }}">
+                                                <i class="bi bi-star me-1"></i>{{ form.is_primary.label }}
+                                            </label>
+                                            {% if form.is_primary.help_text %}
+                                                <div class="form-text">{{ form.is_primary.help_text }}</div>
+                                            {% endif %}
+                                            {% if form.is_primary.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.is_primary.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Скрытое поле для данных дополнительных контактов -->
+                            <input type="hidden" id="additionalContactsDataInput" name="additional_contacts_data" value="[]">
+                        </form>
+                    </div>
+
+                    <!-- Кнопки навигации -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn company-btn company-btn-outline-secondary" id="prev-tab-btn" style="display: none;">
+                                    <i class="bi bi-arrow-left me-1"></i>Zurück
+                                </button>
+
+                                <div class="ms-auto">
+                                    <button type="button" class="btn company-btn company-btn-primary" id="next-tab-btn">
+                                        <span id="next-btn-text">
+                                            <i class="bi bi-arrow-right me-1"></i>Weiter
+                                        </span>
+                                    </button>
+
+                                    <button type="submit" class="btn company-btn company-btn-success" id="submit-btn" style="display: none;">
+                                        <i class="bi bi-building-add me-1"></i>
+                                        {% if is_editing %}Firma aktualisieren{% else %}Firma registrieren{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно управления дополнительными контактами -->
+    <div class="modal fade company-additional-contacts-modal" id="additionalContactsModal" tabindex="-1" aria-labelledby="additionalContactsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div
