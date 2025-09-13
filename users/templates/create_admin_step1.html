@@ -4,7 +4,7 @@
 
     {# Подключаем CSS файл #}
     {% load static %}
-    <link rel="stylesheet" href="{% static 'my/css/users/create_admin_step1-3.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/users/../static/css/create_admin_step1-3.css' %}">
 
     <div class="modal fade show" id="adminModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
         <div class="modal-dialog modal-dialog-centered">
@@ -91,6 +91,6 @@
 
     {# Подключаем JS файл #}
     {% load static %}
-    <script src="{% static 'my/js/users/create_admin_step1.js' %}"></script>
+    <script src="{% static 'my/js/users/../static/js/create_admin_step1.js' %}"></script>
 
 {% endblock %}

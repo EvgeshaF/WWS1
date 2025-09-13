@@ -225,7 +225,7 @@ def register_company(request):
     }
 
     # Добавляем CSS класс к body через context processor или middleware
-    response = render(request, 'company/register_company.html', context)
+    response = render(request, 'company/templates/register_company.html', context)
 
     return response
 

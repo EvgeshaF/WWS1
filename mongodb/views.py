@@ -147,7 +147,7 @@ def create_database_step1(request):
         messages.info(request, "Standardwerte: localhost:27017. Stellen Sie sicher, dass MongoDB läuft.")
 
     context = {'form': form, 'text': language.text_server_conf, 'step': 1}
-    return render(request, 'mongodb/create_dbconfig_step1.html', context)
+    return render(request, 'mongodb/templates/create_dbconfig_step1.html', context)
 
 
 @ratelimit(key='ip', rate='5/m', method='POST')
@@ -210,7 +210,7 @@ def create_database_step2(request):
 
     form = MongoLoginForm(initial=initial_data)
     context = {'form': form, 'text': language.text_login_form, 'step': 2}
-    return render(request, 'mongodb/create_dbconfig_step2.html', context)
+    return render(request, 'mongodb/templates/create_dbconfig_step2.html', context)
 
 
 @ratelimit(key='ip', rate='3/m', method='POST')  # Уменьшено с 3 до 1!
@@ -328,4 +328,4 @@ def create_database_step3(request):
 
     form = CreateDatabaseForm()
     context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
-    return render(request, 'mongodb/create_dbconfig_step3.html', context)
+    return render(request, 'mongodb/templates/create_dbconfig_step3.html', context)

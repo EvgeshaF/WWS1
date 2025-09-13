@@ -202,7 +202,7 @@ def create_admin_step1(request):
         # GET request
         form = CreateAdminUserForm()
         context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
-        return render(request, 'users/create_admin_step1.html', context)
+        return render(request, 'users/templates/create_admin_step1.html', context)
 
     except Exception as e:
         logger.error(f"Error in create_admin_step1: {e}")
@@ -329,7 +329,7 @@ def create_admin_step2(request):
             'username': admin_creation['username'],
             'existing_additional_contacts': json.dumps(existing_additional_contacts) if existing_additional_contacts else '[]'
         }
-        return render(request, 'users/create_admin_step2.html', context)
+        return render(request, 'users/templates/create_admin_step2.html', context)
 
     except Exception as e:
         logger.exception(f"КРИТИЧЕСКАЯ ОШИБКА в create_admin_step2: {e}")
@@ -497,7 +497,7 @@ def create_admin_step3(request):
             'contact_count': total_contacts,
             'primary_email': admin_creation.get('email', '')
         }
-        return render(request, 'users/create_admin_step3.html', context)
+        return render(request, 'users/templates/create_admin_step3.html', context)
 
     except Exception as e:
         logger.error(f"Error in create_admin_step3: {e}")

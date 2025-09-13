@@ -17,13 +17,12 @@
     <link rel="stylesheet" href="{% static 'select2/dist/css/select2.min.css' %}">
     <link rel="stylesheet" href="{% static 'select2-bootstrap-5-theme/select2-bootstrap-5-theme.min.css' %}">
 
-    <link rel="stylesheet" href="{% static 'my/css/layout-heights.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/main_styles.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/sidebar.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/mongodb_forms.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/components.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/toasts.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/company/register_company.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/layout-heights.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/main_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/../mongodb/static/css/mongodb_forms.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/toasts.css' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
@@ -72,7 +71,7 @@
     {% endfor %}
 </div>
 
-<script src="{% static 'my/js/toasts.js' %}"></script>
+<script src="{% static 'my/js/../home/static/js/toasts.js' %}"></script>
 
 <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <!-- jQuery (требуется для Select2) -->
@@ -82,7 +81,7 @@
 <script src="{% static 'select2/dist/js/i18n/de.js' %}"></script>
 
 <script src="{% static 'htmx/js/htmx.min.js' %}"></script>
-<script src="{% static 'my/js/sidebar.js' %}"></script>
+<script src="{% static 'my/js/../home/static/js/sidebar.js' %}"></script>
 
 {% block extra_js %}{% endblock %}
 </body>

@@ -43,7 +43,7 @@ def home(request):
         else:
             logger.error(f"❌ MongoDB: неизвестный статус конфигурации: {config_status}")
             messages.error(request, "Unbekannter MongoDB-Konfigurationsstatus")
-            return render(request, 'home/home.html', {
+            return render(request, 'home/templates/home.html', {
                 'setup_complete': False,
                 'error': 'Unbekannte MongoDB-Konfiguration'
             })
@@ -121,7 +121,7 @@ def home(request):
         }
 
         logger.info(f"📊 Контекст для шаблона: {context}")
-        return render(request, 'home/home.html', context)
+        return render(request, 'home/templates/home.html', context)
 
     except Exception as e:
         # Критическая ошибка - логируем и показываем страницу с ошибкой
@@ -138,4 +138,4 @@ def home(request):
             'company_name': 'Fehler'
         }
 
-        return render(request, 'home/home.html', error_context)
+        return render(request, 'home/templates/home.html', error_context)

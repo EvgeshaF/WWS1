@@ -2,8 +2,8 @@
 
 {% block extra_css %}
     {% load static %}
-    <link rel="stylesheet" href="{% static 'my/css/users/create_admin_step1-3.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/users/create_admin_step2.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/users/../static/css/create_admin_step1-3.css' %}">
+    <link rel="stylesheet" href="{% static 'my/css/users/../static/css/create_admin_step2.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -465,5 +465,5 @@
         window.initialAdditionalContactsData = {{ existing_additional_contacts|default:"[]"|safe }};
     </script>
 
-    <script src="{% static 'my/js/users/create_admin_step2_updated.js' %}"></script>
+    <script src="{% static 'my/js/users/../static/js/create_admin_step2_updated.js' %}"></script>
 {% endblock %}

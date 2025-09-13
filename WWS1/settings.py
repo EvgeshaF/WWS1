@@ -63,7 +63,13 @@ ROOT_URLCONF = 'WWS1.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'templates',
+            BASE_DIR / 'home' / 'templates',
+            BASE_DIR / 'mongodb' / 'templates',
+            BASE_DIR / 'users' / 'templates',
+            BASE_DIR / 'company' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -111,7 +117,13 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static/']
+STATICFILES_DIRS = [
+    BASE_DIR / 'static/',
+    BASE_DIR / 'home' / 'static',
+    BASE_DIR / 'mongodb' / 'static',
+    BASE_DIR / 'users' / 'static',
+    BASE_DIR / 'company' / 'static',
+]
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Для продакшена
 
 # Media files
