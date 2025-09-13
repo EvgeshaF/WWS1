@@ -4,7 +4,6 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 from loguru import logger
 import datetime
@@ -13,7 +12,6 @@ import re
 
 from .forms import CreateAdminUserForm, AdminProfileForm, AdminPermissionsForm
 from mongodb.mongodb_config import MongoConfig
-from mongodb.mongodb_utils import MongoConnection
 from .user_utils import UserManager
 from . import language
 from django_ratelimit.decorators import ratelimit
@@ -172,7 +170,7 @@ def create_admin_step1(request):
                     logger.warning(f"User {username} already exists")
                     messages.error(request, f"Benutzer '{username}' existiert bereits")
                     context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
-                    return render_with_messages(request, 'users/create_admin_step1.html', context)
+                    return render_with_messages(request, 'create_admin_step1.html', context)
                 else:
                     # Save data in session for next steps
                     request.session['admin_creation'] = {
@@ -197,12 +195,12 @@ def create_admin_step1(request):
 
             # Render form with errors
             context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
-            return render_with_messages(request, 'users/create_admin_step1.html', context)
+            return render_with_messages(request, 'create_admin_step1.html', context)
 
         # GET request
         form = CreateAdminUserForm()
         context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
-        return render(request, 'users/templates/create_admin_step1.html', context)
+        return render(request, 'create_admin_step1.html', context)
 
     except Exception as e:
         logger.error(f"Error in create_admin_step1: {e}")
@@ -243,7 +241,7 @@ def create_admin_step2(request):
                     'step': 2, 'username': admin_creation['username'],
                     'existing_additional_contacts': additional_contacts_data_raw
                 }
-                return render_with_messages(request, 'users/create_admin_step2.html', context)
+                return render_with_messages(request, 'create_admin_step2.html', context)
 
             if form.is_valid():
                 logger.info(f"Форма валидна, данные: {form.cleaned_data}")
@@ -316,7 +314,7 @@ def create_admin_step2(request):
                 'step': 2, 'username': admin_creation['username'],
                 'existing_additional_contacts': additional_contacts_data_raw
             }
-            return render_with_messages(request, 'users/create_admin_step2.html', context)
+            return render_with_messages(request, 'create_admin_step2.html', context)
 
         # GET request
         form = AdminProfileForm()
@@ -329,7 +327,7 @@ def create_admin_step2(request):
             'username': admin_creation['username'],
             'existing_additional_contacts': json.dumps(existing_additional_contacts) if existing_additional_contacts else '[]'
         }
-        return render(request, 'users/templates/create_admin_step2.html', context)
+        return render(request, 'create_admin_step2.html', context)
 
     except Exception as e:
         logger.exception(f"КРИТИЧЕСКАЯ ОШИБКА в create_admin_step2: {e}")
@@ -483,7 +481,7 @@ def create_admin_step3(request):
                 'contact_count': total_contacts,
                 'primary_email': admin_creation.get('email', '')
             }
-            return render_with_messages(request, 'users/create_admin_step3.html', context)
+            return render_with_messages(request, 'create_admin_step3.html', context)
 
         # GET request
         form = AdminPermissionsForm()
@@ -497,7 +495,7 @@ def create_admin_step3(request):
             'contact_count': total_contacts,
             'primary_email': admin_creation.get('email', '')
         }
-        return render(request, 'users/templates/create_admin_step3.html', context)
+        return render(request, 'create_admin_step3.html', context)
 
     except Exception as e:
         logger.error(f"Error in create_admin_step3: {e}")
