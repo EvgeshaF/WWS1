@@ -17,23 +17,22 @@
     <link rel="stylesheet" href="{% static 'select2/dist/css/select2.min.css' %}">
     <link rel="stylesheet" href="{% static 'select2-bootstrap-5-theme/select2-bootstrap-5-theme.min.css' %}">
 
-    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/layout-heights.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/main_styles.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/sidebar.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/../mongodb/static/css/mongodb_forms.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/components.css' %}">
-    <link rel="stylesheet" href="{% static 'my/css/../home/static/css/toasts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout-heights.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main_styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/toasts.css' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
 <body class="modern-body">
 <!-- Верхняя навигация -->
-{% block navbar %}{% include 'includes/navbar.html' %}{% endblock %}
+{% block navbar %}{% include 'navbar.html' %}{% endblock %}
 
 <!-- Основной контейнер с боковой панелью и контентом -->
 <div class="main-container d-flex">
     <!-- Боковая панель -->
-    {% block navmenu %}{% include 'includes/sidebar.html' %}{% endblock %}
+    {% block navmenu %}{% include 'sidebar.html' %}{% endblock %}
 
     <!-- Основной контент -->
     <div class="main-content flex-grow-1">
@@ -71,7 +70,7 @@
     {% endfor %}
 </div>
 
-<script src="{% static 'my/js/../home/static/js/toasts.js' %}"></script>
+<script src="{% static 'js/toasts.js' %}"></script>
 
 <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <!-- jQuery (требуется для Select2) -->
@@ -81,7 +80,7 @@
 <script src="{% static 'select2/dist/js/i18n/de.js' %}"></script>
 
 <script src="{% static 'htmx/js/htmx.min.js' %}"></script>
-<script src="{% static 'my/js/../home/static/js/sidebar.js' %}"></script>
+<script src="{% static 'js/sidebar.js' %}"></script>
 
 {% block extra_js %}{% endblock %}
 </body>

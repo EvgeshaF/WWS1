@@ -1,19 +1,11 @@
-<!-- templates/company/register_company.html - ОБНОВЛЕННАЯ МОДАЛЬНАЯ ВЕРСИЯ -->
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Firma registrieren{% endblock %}</title>
+{% extends 'base.html' %}
     
     <!-- CSS -->
     {% load static %}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
     <!-- Модальные стили для компании -->
-    <link rel="stylesheet" href="{% static 'my/css/company/company.css' %}">
-</head>
+    <link rel="stylesheet" href="{% static 'css/company.css' %}">
+
 <body class="modal-page">
     <!-- Toast Container -->
     <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>

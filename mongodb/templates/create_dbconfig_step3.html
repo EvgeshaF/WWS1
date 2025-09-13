@@ -1,13 +1,10 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ text.title }}{% endblock %}
-{% block header %}{{ text.header }}{% endblock %}
+{# Подключаем CSS файл #}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/mongodb_forms.css' %}">
 
 {% block content %}
-
-    {# Подключаем CSS файл #}
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'my/css/users/../../users/static/css/create_admin_step1-3.css' %}">
 
     <!-- Модальное окно открыто сразу -->
     <div class="modal fade show" id="mongoModal" tabindex="-1" aria-labelledby="mongoModalLabel" aria-modal="true" role="dialog" style="display: block;">
@@ -94,7 +91,6 @@
     <div class="modal-backdrop fade show"></div>
 
     {# Подключаем JS файл #}
-    {% load static %}
-    <script src="{% static 'my/js/mongodb/../../mongodb/static/js/create_dbconfig_step3.js' %}"></script>
+    <script src="{% static 'js/create_dbconfig_step3.js' %}"></script>
 
 {% endblock %}

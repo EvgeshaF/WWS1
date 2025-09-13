@@ -17,4 +17,3 @@ loguru>=0.7.2
 # Environment management
 python-dotenv>=1.0.0
 
-#redis>=4.5.0

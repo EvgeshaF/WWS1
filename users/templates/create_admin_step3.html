@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 
-{% block content %}
+{# Подключаем CSS файл #}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/create_admin_step1-3.css' %}">
 
-    {# Подключаем CSS файл #}
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'my/css/users/../static/css/create_admin_step1-3.css' %}">
+{% block content %}
 
     <!-- Модальное окно -->
     <div class="modal fade show" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-modal="true" role="dialog" style="display: block;">
@@ -185,7 +185,6 @@
     <div class="modal-backdrop fade show"></div>
 
     {# Подключаем JS файл #}
-    {% load static %}
-    <script src="{% static 'my/js/users/../static/js/create_admin_step3.js' %}"></script>
+    <script src="{% static 'js/create_admin_step3.js' %}"></script>
 
 {% endblock %}

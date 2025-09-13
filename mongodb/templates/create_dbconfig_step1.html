@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{# Подключаем CSS файл #}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/mongodb_forms.css' %}">
+
 {% block content %}
     <!-- Модальное окно открыто сразу -->
     <div class="modal fade show" id="mongoModal" tabindex="-1" aria-labelledby="mongoModalLabel" aria-modal="true" role="dialog" style="display: block;">
@@ -91,6 +95,6 @@
 
     {# Подключаем JS файл #}
     {% load static %}
-    <script src="{% static 'my/js/mongodb/../../mongodb/static/js/create_dbconfig_step1.js' %}"></script>
+    <script src="{% static 'js/create_dbconfig_step1.js' %}"></script>
 
 {% endblock %}

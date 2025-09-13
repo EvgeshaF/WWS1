@@ -94,7 +94,7 @@ def create_database_step1(request):
             except (ValueError, TypeError):
                 messages.error(request, language.mess_form_invalid)
                 context = {'form': form, 'text': language.text_server_conf, 'step': 1}
-                return render_with_messages(request, 'mongodb/create_dbconfig_step1.html', context)
+                return render_with_messages(request, 'create_dbconfig_step1.html', context)
 
             # Проверяем соединение с сервером
             logger.info(f"Тестируем подключение к {host}:{port}")
@@ -109,7 +109,7 @@ def create_database_step1(request):
                 # Корректный редирект для HTMX и обычных запросов
                 return render_with_messages(
                     request,
-                    'mongodb/create_dbconfig_step1.html',
+                    'create_dbconfig_step1.html',
                     {'form': form, 'text': language.text_server_conf, 'step': 1},
                     reverse('create_database_step2')
                 )
@@ -127,7 +127,7 @@ def create_database_step1(request):
 
         # Рендерим форму с ошибками
         context = {'form': form, 'text': language.text_server_conf, 'step': 1}
-        return render_with_messages(request, 'mongodb/create_dbconfig_step1.html', context)
+        return render_with_messages(request, 'create_dbconfig_step1.html', context)
 
     # GET-запрос
     config = MongoConfig.read_config() or {}
@@ -147,7 +147,7 @@ def create_database_step1(request):
         messages.info(request, "Standardwerte: localhost:27017. Stellen Sie sicher, dass MongoDB läuft.")
 
     context = {'form': form, 'text': language.text_server_conf, 'step': 1}
-    return render(request, 'mongodb/templates/create_dbconfig_step1.html', context)
+    return render(request, 'create_dbconfig_step1.html', context)
 
 
 @ratelimit(key='ip', rate='5/m', method='POST')
@@ -188,7 +188,7 @@ def create_database_step2(request):
                 # Корректный редирект
                 return render_with_messages(
                     request,
-                    'mongodb/create_dbconfig_step2.html',
+                    'create_dbconfig_step2.html',
                     {'form': form, 'text': language.text_login_form, 'step': 2},
                     reverse('create_database_step3')
                 )
@@ -199,7 +199,7 @@ def create_database_step2(request):
 
         # Рендерим форму с ошибками
         context = {'form': form, 'text': language.text_login_form, 'step': 2}
-        return render_with_messages(request, 'mongodb/create_dbconfig_step2.html', context)
+        return render_with_messages(request, 'create_dbconfig_step2.html', context)
 
     # GET-запрос - предварительно заполняем форму из конфигурации
     initial_data = {}
@@ -210,7 +210,7 @@ def create_database_step2(request):
 
     form = MongoLoginForm(initial=initial_data)
     context = {'form': form, 'text': language.text_login_form, 'step': 2}
-    return render(request, 'mongodb/templates/create_dbconfig_step2.html', context)
+    return render(request, 'create_dbconfig_step2.html', context)
 
 
 @ratelimit(key='ip', rate='3/m', method='POST')  # Уменьшено с 3 до 1!
@@ -259,7 +259,7 @@ def create_database_step3(request):
                     request.session.modified = True
 
                     context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
-                    return render_with_messages(request, 'mongodb/create_dbconfig_step3.html', context)
+                    return render_with_messages(request, 'create_dbconfig_step3.html', context)
                 else:
                     logger.warning(f"✅ База данных '{db_name}' не существует, создаем...")
 
@@ -286,7 +286,7 @@ def create_database_step3(request):
                         # Корректный редирект на главную страницу
                         return render_with_messages(
                             request,
-                            'mongodb/create_dbconfig_step3.html',
+                            'create_dbconfig_step3.html',
                             {'form': form, 'text': language.text_create_db_form, 'step': 3},
                             reverse('home')
                         )
@@ -314,7 +314,7 @@ def create_database_step3(request):
 
         # Рендерим форму с ошибками
         context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
-        return render_with_messages(request, 'mongodb/create_dbconfig_step3.html', context)
+        return render_with_messages(request, 'create_dbconfig_step3.html', context)
 
     # GET-запрос
     logger.info("📤 GET запрос для формы создания БД")
@@ -328,4 +328,4 @@ def create_database_step3(request):
 
     form = CreateDatabaseForm()
     context = {'form': form, 'text': language.text_create_db_form, 'step': 3}
-    return render(request, 'mongodb/templates/create_dbconfig_step3.html', context)
+    return render(request, 'create_dbconfig_step3.html', context)
