@@ -387,6 +387,7 @@ def company_stats_json(request):
     return JsonResponse(stats)
 
 
+@require_http_methods(["GET"])
 def company_status(request):
     """Проверяет статус компании (есть ли зарегистрированная компания)"""
     if not check_mongodb_availability():
@@ -408,6 +409,7 @@ def company_status(request):
     })
 
 
+@require_http_methods(["GET"])
 def debug_company_data(request):
     """Debug endpoint для просмотра данных компании (только в DEBUG режиме)"""
     from django.conf import settings
@@ -453,3 +455,182 @@ def debug_company_data(request):
             'collection_exists': company_manager.get_collection() is not None
         }
     }, indent=2)
+
+
+@require_http_methods(["POST"])
+def set_primary_company(request):
+    """Устанавливает компанию как главную (для совместимости со старым API)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return JsonResponse({'error': 'MongoDB not available'}, status=500)
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        return JsonResponse({'error': 'No company found'}, status=404)
+
+    # В новой системе единственная компания всегда является главной
+    try:
+        collection = company_manager.get_collection()
+        if collection:
+            collection.update_one(
+                {'type': 'company_info'},
+                {'$set': {'is_primary': True, 'modified_at': datetime.datetime.now()}}
+            )
+            messages.success(request, f"Firma '{company.get('company_name')}' wurde als Hauptfirma festgelegt")
+            return JsonResponse({'success': True, 'message': 'Hauptfirma festgelegt'})
+    except Exception as e:
+        logger.error(f"Ошибка установки главной компании: {e}")
+        return JsonResponse({'error': 'Failed to set primary company'}, status=500)
+
+    return JsonResponse({'error': 'Operation failed'}, status=500)
+
+
+@require_http_methods(["GET"])
+def export_company_data(request):
+    """Экспорт данных компании в JSON формате"""
+    if not check_mongodb_availability():
+        return JsonResponse({'error': 'MongoDB not available'}, status=500)
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        return JsonResponse({'error': 'No company found'}, status=404)
+
+    try:
+        # Подготавливаем данные для экспорта
+        export_data = {}
+        for key, value in company.items():
+            if key == '_id':
+                export_data[key] = str(value)
+            elif isinstance(value, datetime.datetime):
+                export_data[key] = value.isoformat()
+            else:
+                export_data[key] = value
+
+        # Добавляем метаданные экспорта
+        export_data['export_metadata'] = {
+            'export_date': datetime.datetime.now().isoformat(),
+            'export_version': '1.0',
+            'system_info': 'Company Registration System'
+        }
+
+        response = JsonResponse(export_data, json_dumps_params={'indent': 2})
+        response['Content-Disposition'] = f'attachment; filename="company_data_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.json"'
+
+        logger.info(f"Экспорт данных компании '{company.get('company_name', 'Unknown')}'")
+        return response
+
+    except Exception as e:
+        logger.error(f"Ошибка экспорта данных компании: {e}")
+        return JsonResponse({'error': 'Export failed'}, status=500)
+
+
+@require_http_methods(["POST"])
+def import_company_data(request):
+    """Импорт данных компании из JSON (для восстановления/миграции)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return JsonResponse({'error': 'MongoDB not available'}, status=500)
+
+    try:
+        # Получаем JSON данные из запроса
+        if request.content_type == 'application/json':
+            import_data = json.loads(request.body)
+        else:
+            # Попытка получить из form data
+            json_data = request.POST.get('company_data')
+            if not json_data:
+                return JsonResponse({'error': 'No data provided'}, status=400)
+            import_data = json.loads(json_data)
+
+        # Валидируем обязательные поля
+        required_fields = ['company_name', 'legal_form']
+        for field in required_fields:
+            if field not in import_data:
+                return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
+
+        # Очищаем служебные поля импорта
+        excluded_fields = {'_id', 'export_metadata', 'created_at', 'modified_at'}
+        clean_data = {k: v for k, v in import_data.items() if k not in excluded_fields}
+
+        # Создаем/обновляем компанию
+        company_manager = CompanyManager()
+        if company_manager.create_or_update_company(clean_data):
+            logger.success(f"Импорт данных компании '{clean_data['company_name']}' успешен")
+            messages.success(request, f"Daten für Firma '{clean_data['company_name']}' erfolgreich importiert")
+            return JsonResponse({'success': True, 'message': 'Import successful'})
+        else:
+            return JsonResponse({'error': 'Failed to save imported data'}, status=500)
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Ошибка парсинга JSON при импорте: {e}")
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Ошибка импорта данных компании: {e}")
+        return JsonResponse({'error': 'Import failed'}, status=500)
+
+
+@require_http_methods(["GET"])
+def company_validation_check(request):
+    """Проверка валидности данных компании"""
+    if not check_mongodb_availability():
+        return JsonResponse({'error': 'MongoDB not available'}, status=500)
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        return JsonResponse({'error': 'No company found'}, status=404)
+
+    # Валидируем данные компании
+    validation_results = {
+        'is_valid': True,
+        'errors': [],
+        'warnings': [],
+        'completeness': 0
+    }
+
+    # Проверяем обязательные поля
+    required_fields = {
+        'company_name': 'Firmenname',
+        'legal_form': 'Rechtsform',
+        'street': 'Straße',
+        'postal_code': 'PLZ',
+        'city': 'Stadt',
+        'country': 'Land',
+        'email': 'E-Mail',
+        'phone': 'Telefon'
+    }
+
+    filled_count = 0
+    total_count = len(required_fields)
+
+    for field, label in required_fields.items():
+        if not company.get(field) or not str(company.get(field)).strip():
+            validation_results['errors'].append(f'{label} fehlt')
+            validation_results['is_valid'] = False
+        else:
+            filled_count += 1
+
+    # Подсчитываем полноту заполнения
+    validation_results['completeness'] = round((filled_count / total_count) * 100, 1)
+
+    # Проверяем формат специфических полей
+    if company.get('email'):
+        import re
+        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        if not re.match(email_pattern, company.get('email', '')):
+            validation_results['warnings'].append('E-Mail-Format möglicherweise ungültig')
+
+    if company.get('postal_code'):
+        if not re.match(r'^[0-9]{5}$', company.get('postal_code', '')):
+            validation_results['warnings'].append('PLZ-Format möglicherweise ungültig')
+
+    if company.get('vat_id'):
+        if not re.match(r'^DE[0-9]{9}$', company.get('vat_id', '')):
+            validation_results['warnings'].append('USt-IdNr.-Format möglicherweise ungültig')
+
+    return JsonResponse(validation_results)

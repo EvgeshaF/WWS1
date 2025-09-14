@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{# Подключаем CSS файлы #}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/create_admin_step1-3.css' %}">
+
+{% block content %}
+
+    <div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-building me-2"></i>
+                        {{ text.title }}
+                    </h5>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 6</span>
+                </div>
+
+                <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {{ text.desc }}
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="progress mb-4" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 16.67%" aria-valuenow="16.67" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <form method="post" id="company-step1-form" action="{% url 'company:register_company_step1' %}">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.company_name.id_for_label }}" class="form-label">
+                                        <i class="bi bi-building me-1"></i>
+                                        {{ text.company_name }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.company_name }}
+                                    {% if form.company_name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.company_name.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Vollständiger Name Ihrer Firma
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.legal_form.id_for_label }}" class="form-label">
+                                        <i class="bi bi-shield-check me-1"></i>
+                                        {{ text.legal_form }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="{{ form.legal_form.name }}"
+                                            id="{{ form.legal_form.id_for_label }}"
+                                            class="form-select select2-basic"
+                                            data-placeholder="Rechtsform auswählen..."
+                                            required>
+                                        <option></option>
+                                        {% for value, text in form.legal_form.field.choices %}
+                                            {% if value %}
+                                                <option value="{{ value }}"
+                                                        {% if form.legal_form.value == value %}selected{% endif %}>
+                                                    {{ text }}
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.legal_form.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.legal_form.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Rechtsform Ihres Unternehmens
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.industry.id_for_label }}" class="form-label">
+                                        <i class="bi bi-diagram-3 me-1"></i>
+                                        {{ text.industry }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="{{ form.industry.name }}"
+                                            id="{{ form.industry.id_for_label }}"
+                                            class="form-select select2-search"
+                                            data-placeholder="Branche suchen oder auswählen..."
+                                            data-allow-clear="false"
+                                            required>
+                                        <option></option>
+                                        {% for value, text in form.industry.field.choices %}
+                                            {% if value %}
+                                                <option value="{{ value }}"
+                                                        {% if form.industry.value == value %}selected{% endif %}>
+                                                    {{ text }}
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.industry.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.industry.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-briefcase me-1"></i>
+                                        Hauptgeschäftsfeld Ihrer Firma
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">
+                                        <i class="bi bi-card-text me-1"></i>
+                                        {{ text.description }}
+                                        <small class="text-muted">(Optional)</small>
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Kurze Beschreibung der Geschäftstätigkeit
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="submit" class="btn btn-success" id="submit-btn">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                {{ text.btn }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <small class="text-muted">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        {{ text.notification }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        $(document).ready(function() {
+            console.log('Инициализируем Select2 для шага 1');
+
+            // Настройки локализации
+            $.fn.select2.defaults.set('language', 'de');
+
+            // Инициализация для Rechtsform (простой выбор)
+            $('#{{ form.legal_form.id_for_label }}').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Rechtsform auswählen...',
+                allowClear: false,
+                minimumResultsForSearch: Infinity,
+                width: '100%'
+            });
+
+            // Инициализация для Branche (с поиском)
+            $('#{{ form.industry.id_for_label }}').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Branche suchen oder auswählen...',
+                allowClear: false,
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return 'Keine Ergebnisse gefunden';
+                    },
+                    searching: function() {
+                        return 'Suche läuft...';
+                    },
+                    inputTooShort: function() {
+                        return 'Bitte geben Sie mindestens 1 Zeichen ein';
+                    }
+                },
+                matcher: function(params, data) {
+                    if ($.trim(params.term) === '') {
+                        return data;
+                    }
+
+                    if (typeof data.text === 'undefined') {
+                        return null;
+                    }
+
+                    var term = params.term.toLowerCase();
+                    if (data.text.toLowerCase().indexOf(term) > -1 ||
+                        data.id.toLowerCase().indexOf(term) > -1) {
+                        return data;
+                    }
+
+                    return null;
+                }
+            });
+
+            // Обработчики событий
+            $('#{{ form.legal_form.id_for_label }}').on('select2:select', function (e) {
+                console.log('Выбрана rechtsform:', e.params.data.id, '-', e.params.data.text);
+                $(this).closest('.mb-3').find('.invalid-feedback').hide();
+            });
+
+            $('#{{ form.industry.id_for_label }}').on('select2:select', function (e) {
+                console.log('Выбрана branche:', e.params.data.id, '-', e.params.data.text);
+                $(this).closest('.mb-3').find('.invalid-feedback').hide();
+            });
+
+            console.log('Select2 для шага 1 успешно инициализирован');
+        });
+
+        // Form submission handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('company-step1-form');
+            if (!form) return;
+
+            const submitBtn = document.getElementById('submit-btn');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Показываем прогресс
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird validiert...';
+                }
+
+                // Создаем FormData для отправки
+                const formData = new FormData(form);
+
+                fetch('{% url "company:register_company_step1" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'HX-Request': 'true'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Скрываем прогресс
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                    }
+
+                    // Обрабатываем сообщения
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(message => {
+                            showToast(message.text, message.tags, message.delay);
+                        });
+
+                        // Если есть успешное сообщение, перенаправляем через короткое время
+                        const hasSuccess = data.messages.some(msg => msg.tags === 'success');
+                        if (hasSuccess) {
+                            setTimeout(() => {
+                                window.location.href = '{% url "company:register_company_step2" %}';
+                            }, 1500);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка отправки формы:', error);
+
+                    // Скрываем прогресс
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                    }
+
+                    showToast('Fehler beim Senden des Formulars', 'error');
+                });
+            });
+        });
+
+        // Глобальная функция для показа тостов (если не определена)
+        if (typeof window.showToast === 'undefined') {
+            window.showToast = function(message, type = 'info', delay = 5000) {
+                const toast = document.createElement('div');
+                toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+                toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                toast.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, delay);
+            };
+        }
+    </script>
+{% endblock %}
