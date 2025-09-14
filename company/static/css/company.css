@@ -138,10 +138,10 @@
     padding: 1.25rem 2rem;
 }
 
-/* ==================== ТАБЫ НАВИГАЦИИ ==================== */
+/* ==================== ТАБЫ НАВИГАЦИИ (СОКРАЩЕННЫЕ ОТСТУПЫ) ==================== */
 .company-tabs {
     border-bottom: 2px solid #e9ecef;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 10px 10px 0 0;
     padding: 0.5rem 0.5rem 0 0.5rem;
@@ -269,14 +269,14 @@
     font-size: 0.9rem;
 }
 
-/* ==================== КАРТОЧКИ СЕКЦИЙ ==================== */
+/* ==================== КАРТОЧКИ СЕКЦИЙ (СОКРАЩЕННЫЕ ОТСТУПЫ) ==================== */
 .company-section-card {
     background: var(--surface-color);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .company-section-card:hover {
@@ -937,7 +937,7 @@ button, .btn {
     border-color: var(--primary-color) !important;
 }
 
-/* ==================== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ МОДАЛЬНОГО КОНТЕНТА ==================== */
+/* ==================== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ================== */
 .modal-xl {
     max-width: 1200px;
 }
@@ -1278,6 +1278,5 @@ button, .btn {
 .mt-4 {
     margin-top: 1.5rem !important;
 }
-
 
 /* ==================== КОНЕЦ ФАЙЛА ==================== */
