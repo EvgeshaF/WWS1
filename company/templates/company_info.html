@@ -1,0 +1,653 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Firmendaten{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/create_admin_step1-3.css' %}">
+<style>
+.company-info-card {
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 15px;
+}
+
+.company-header {
+    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    padding: 2rem;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.contact-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    margin: 0.2rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.contact-badge.important {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: white;
+}
+
+.contact-badge.public {
+    background: linear-gradient(135deg, #198754, #20c997);
+    color: white;
+}
+
+.contact-badge.standard {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.completion-bar {
+    height: 20px;
+    border-radius: 10px;
+    background: #e9ecef;
+    overflow: hidden;
+    position: relative;
+}
+
+.completion-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #198754, #20c997);
+    transition: width 0.8s ease-in-out;
+    border-radius: 10px;
+}
+
+.completion-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.section-card {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.5rem;
+    border-radius: 10px 10px 0 0;
+}
+
+.field-row {
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.field-row:last-child {
+    border-bottom: none;
+}
+
+.field-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+.field-value {
+    color: #212529;
+}
+
+.field-empty {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.action-buttons {
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+}
+
+.floating-actions {
+    background: white;
+    border-radius: 50px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Header с основной информацией -->
+    <div class="company-info-card card mb-4">
+        <div class="company-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="bi bi-building me-3"></i>
+                        {{ company.company_name|default:"Firmenname nicht verfügbar" }}
+                    </h1>
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        {% if company.legal_form %}
+                            <span class="badge bg-light text-dark fs-6">{{ company.legal_form }}</span>
+                        {% endif %}
+                        {% if company.industry %}
+                            <span class="badge bg-light text-dark fs-6">{{ company.industry }}</span>
+                        {% endif %}
+                        {% if company.is_primary %}
+                            <span class="badge bg-warning text-dark fs-6">
+                                <i class="bi bi-star-fill me-1"></i>
+                                Hauptfirma
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% if company.description %}
+                        <p class="mt-3 mb-0 opacity-90">{{ company.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    {% if stats %}
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="stat-card">
+                                    <div class="h4 mb-1">{{ stats.filled_fields }}/{{ stats.total_fields }}</div>
+                                    <small>Felder ausgefüllt</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-card">
+                                    <div class="h4 mb-1">{{ stats.additional_contacts_count }}</div>
+                                    <small>Zusätzliche Kontakte</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="completion-bar mt-3">
+                            <div class="completion-fill" style="width: {{ stats.completion_percentage }}%"></div>
+                            <div class="completion-text">{{ stats.completion_percentage }}% vollständig</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Grunddaten -->
+        <div class="col-lg-6">
+            <div class="section-card">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Grunddaten
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="field-row">
+                        <div class="field-label">Firmenname</div>
+                        <div class="field-value">{{ company.company_name|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">Rechtsform</div>
+                        <div class="field-value">{{ company.legal_form|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">Branche</div>
+                        <div class="field-value">{{ company.industry|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    {% if company.description %}
+                        <div class="field-row">
+                            <div class="field-label">Beschreibung</div>
+                            <div class="field-value">{{ company.description }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Registrierungsdaten -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        Registrierungsdaten
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="field-row">
+                        <div class="field-label">Handelsregister</div>
+                        <div class="field-value">{{ company.commercial_register|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">Steuernummer</div>
+                        <div class="field-value">{{ company.tax_number|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">USt-IdNr.</div>
+                        <div class="field-value">{{ company.vat_id|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">Steuer-ID</div>
+                        <div class="field-value">{{ company.tax_id|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adresse und Kontakt -->
+        <div class="col-lg-6">
+            <div class="section-card">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        Geschäftsadresse
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="field-row">
+                        <div class="field-label">Straße</div>
+                        <div class="field-value">{{ company.street|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">PLZ / Stadt</div>
+                        <div class="field-value">
+                            {% if company.postal_code and company.city %}
+                                {{ company.postal_code }} {{ company.city }}
+                            {% else %}
+                                <span class="field-empty">Nicht vollständig angegeben</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">Land</div>
+                        <div class="field-value">{{ company.country|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                    </div>
+                    {% if company.address_addition %}
+                        <div class="field-row">
+                            <div class="field-label">Adresszusatz</div>
+                            <div class="field-value">{{ company.address_addition }}</div>
+                        </div>
+                    {% endif %}
+                    {% if company.po_box %}
+                        <div class="field-row">
+                            <div class="field-label">Postfach</div>
+                            <div class="field-value">{{ company.po_box }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Hauptkontakte -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-telephone me-2"></i>
+                        Hauptkontakte
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="field-row">
+                        <div class="field-label">E-Mail</div>
+                        <div class="field-value">
+                            {% if company.email %}
+                                <a href="mailto:{{ company.email }}">{{ company.email }}</a>
+                            {% else %}
+                                <span class="field-empty">Nicht angegeben</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">Telefon</div>
+                        <div class="field-value">
+                            {% if company.phone %}
+                                <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
+                            {% else %}
+                                <span class="field-empty">Nicht angegeben</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if company.fax %}
+                        <div class="field-row">
+                            <div class="field-label">Fax</div>
+                            <div class="field-value">{{ company.fax }}</div>
+                        </div>
+                    {% endif %}
+                    {% if company.website %}
+                        <div class="field-row">
+                            <div class="field-label">Website</div>
+                            <div class="field-value">
+                                <a href="{{ company.website }}" target="_blank" rel="noopener">
+                                    {{ company.website }}
+                                    <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zusätzliche Kontakte -->
+    {% if additional_contacts %}
+    <div class="section-card">
+        <div class="section-header">
+            <h5 class="mb-0">
+                <i class="bi bi-person-lines-fill me-2"></i>
+                Zusätzliche Kontakte
+                <span class="badge bg-primary ms-2">{{ additional_contacts|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for contact in additional_contacts %}
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            {% if contact.type == 'email' %}
+                                <i class="bi bi-envelope-fill text-primary fs-4"></i>
+                            {% elif contact.type == 'phone' %}
+                                <i class="bi bi-telephone-fill text-success fs-4"></i>
+                            {% elif contact.type == 'mobile' %}
+                                <i class="bi bi-phone-fill text-info fs-4"></i>
+                            {% elif contact.type == 'fax' %}
+                                <i class="bi bi-printer-fill text-secondary fs-4"></i>
+                            {% elif contact.type == 'website' %}
+                                <i class="bi bi-globe text-primary fs-4"></i>
+                            {% elif contact.type == 'linkedin' %}
+                                <i class="bi bi-linkedin text-primary fs-4"></i>
+                            {% elif contact.type == 'xing' %}
+                                <i class="bi bi-person-badge text-warning fs-4"></i>
+                            {% elif contact.type == 'emergency' %}
+                                <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+                            {% else %}
+                                <i class="bi bi-question-circle text-muted fs-4"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <strong>{{ contact.type|capfirst }}</strong>
+                                {% if contact.important %}
+                                    <span class="contact-badge important">
+                                        <i class="bi bi-star-fill me-1"></i>Wichtig
+                                    </span>
+                                {% endif %}
+                                {% if contact.public %}
+                                    <span class="contact-badge public">
+                                        <i class="bi bi-eye-fill me-1"></i>Öffentlich
+                                    </span>
+                                {% else %}
+                                    <span class="contact-badge standard">Intern</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small">{{ contact.value }}</div>
+                            {% if contact.label %}
+                                <div class="text-muted small">
+                                    <i class="bi bi-building me-1"></i>{{ contact.label }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Management -->
+    {% if company.ceo_first_name or company.ceo_last_name or company.contact_person_first_name or company.contact_person_last_name %}
+    <div class="section-card">
+        <div class="section-header">
+            <h5 class="mb-0">
+                <i class="bi bi-people me-2"></i>
+                Management & Ansprechpartner
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% if company.ceo_first_name or company.ceo_last_name %}
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-2">Geschäftsführer</h6>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-badge-fill text-primary fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold">
+                                {% if company.ceo_salutation %}{{ company.ceo_salutation|title }} {% endif %}
+                                {% if company.ceo_title %}{{ company.ceo_title }} {% endif %}
+                                {{ company.ceo_first_name|default:"" }} {{ company.ceo_last_name|default:"" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if company.contact_person_first_name or company.contact_person_last_name %}
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-2">Ansprechpartner</h6>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-lines-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold">
+                                {% if company.contact_person_salutation %}{{ company.contact_person_salutation|title }} {% endif %}
+                                {% if company.contact_person_title %}{{ company.contact_person_title }} {% endif %}
+                                {{ company.contact_person_first_name|default:"" }} {{ company.contact_person_last_name|default:"" }}
+                            </div>
+                            {% if company.contact_person_position %}
+                                <div class="text-muted small">{{ company.contact_person_position }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if company.employee_count %}
+            <div class="mt-3 pt-3 border-top">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-people-fill text-info fs-4 me-3"></i>
+                    <div>
+                        <div class="fw-bold">Mitarbeiteranzahl</div>
+                        <div class="text-muted">{{ company.employee_count }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metadaten -->
+    {% if stats %}
+    <div class="section-card">
+        <div class="section-header">
+            <h5 class="mb-0">
+                <i class="bi bi-info-square me-2"></i>
+                Systemdaten
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if stats.created_at %}
+            <div class="field-row">
+                <div class="field-label">Erstellt am</div>
+                <div class="field-value">{{ stats.created_at|date:"d.m.Y H:i" }} Uhr</div>
+            </div>
+            {% endif %}
+            {% if stats.modified_at %}
+            <div class="field-row">
+                <div class="field-label">Zuletzt geändert</div>
+                <div class="field-value">{{ stats.modified_at|date:"d.m.Y H:i" }} Uhr</div>
+            </div>
+            {% endif %}
+            <div class="field-row">
+                <div class="field-label">Datenvollständigkeit</div>
+                <div class="field-value">
+                    <div class="completion-bar" style="height: 15px;">
+                        <div class="completion-fill" style="width: {{ stats.completion_percentage }}%"></div>
+                        <div class="completion-text" style="font-size: 0.7rem;">{{ stats.completion_percentage }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Floating Action Buttons -->
+    <div class="action-buttons">
+        <div class="container-fluid">
+            <div class="row justify-content-end">
+                <div class="col-auto">
+                    <div class="floating-actions">
+                        <a href="{% url 'company:edit_company' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>
+                            Bearbeiten
+                        </a>
+                        <a href="{% url 'company:export_company_data' %}" class="btn btn-info btn-sm">
+                            <i class="bi bi-download me-1"></i>
+                            Exportieren
+                        </a>
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteCompanyModal">
+                            <i class="bi bi-trash me-1"></i>
+                            Löschen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal für Löschen bestätigen -->
+<div class="modal fade" id="deleteCompanyModal" tabindex="-1" aria-labelledby="deleteCompanyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteCompanyModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Firma löschen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-building-slash display-4 text-danger mb-3"></i>
+                    <h6>Möchten Sie wirklich alle Firmendaten löschen?</h6>
+                </div>
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Achtung:</strong> Alle Daten für "{{ company.company_name }}" werden unwiderruflich gelöscht.
+                </div>
+                <div class="row g-2 text-center small">
+                    <div class="col-4">
+                        <div class="border rounded p-2">
+                            <i class="bi bi-building d-block text-muted"></i>
+                            Grunddaten
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2">
+                            <i class="bi bi-telephone d-block text-muted"></i>
+                            Kontakte
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2">
+                            <i class="bi bi-geo-alt d-block text-muted"></i>
+                            Adresse
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Abbrechen
+                </button>
+                <form method="post" action="{% url 'company:delete_company' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>
+                        Endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Анимация прогресс-бара
+    const progressBars = document.querySelectorAll('.completion-fill');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 500);
+    });
+
+    // Добавляем подтверждение удаления
+    const deleteForm = document.querySelector('#deleteCompanyModal form');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            const companyName = "{{ company.company_name|escapejs }}";
+            if (!confirm(`Sind Sie sicher, dass Sie "${companyName}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Клик по контактам для копирования
+    document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const text = this.textContent.trim();
+                navigator.clipboard.writeText(text).then(() => {
+                    // Показываем уведомление о копировании
+                    showToast(`"${text}" in die Zwischenablage kopiert`, 'success', 2000);
+                });
+            }
+        });
+    });
+});
+
+// Функция для показа уведомлений
+function showToast(message, type = 'info', delay = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, delay);
+}
+</script>
+{% endblock %}

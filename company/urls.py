@@ -4,13 +4,21 @@ from . import views
 app_name = 'company'
 
 urlpatterns = [
-    # Основные URL для управления компанией
+    # Многошаговая регистрация компании
     path('register/', views.register_company, name='register_company'),
+    path('register/step1/', views.register_company_step1, name='register_company_step1'),
+    path('register/step2/', views.register_company_step2, name='register_company_step2'),
+    path('register/step3/', views.register_company_step3, name='register_company_step3'),
+    path('register/step4/', views.register_company_step4, name='register_company_step4'),
+    path('register/step5/', views.register_company_step5, name='register_company_step5'),
+    path('register/step6/', views.register_company_step6, name='register_company_step6'),
+
+    # Управление компанией
     path('info/', views.company_info, name='company_info'),
     path('edit/', views.edit_company, name='edit_company'),
     path('delete/', views.delete_company, name='delete_company'),
 
-    # API endpoints для работы с данными компании
+    # API endpoints
     path('stats/', views.company_stats_json, name='company_stats_json'),
     path('status/', views.company_status, name='company_status'),
     path('export/', views.export_company_data, name='export_company_data'),
@@ -18,9 +26,6 @@ urlpatterns = [
     path('validate/', views.company_validation_check, name='company_validation_check'),
     path('set-primary/', views.set_primary_company, name='set_primary_company'),
 
-    # Debug endpoint (только в DEBUG режиме)
+    # Debug endpoint
     path('debug/', views.debug_company_data, name='debug_company_data'),
-
-    # Алиасы для совместимости со старыми URL
-    path('list/', views.company_info, name='company_list'),  # Перенаправляем на info
 ]

@@ -8,9 +8,72 @@ from loguru import logger
 import datetime
 import json
 
-from .forms import CompanyRegistrationForm
+# Импортируем все формы для многошагового процесса
+from .forms import (
+    CompanyBasicDataForm,
+    CompanyRegistrationForm as CompanyRegistrationFormStep2,
+    CompanyAddressForm,
+    CompanyContactForm,
+    CompanyManagementForm,
+    CompanyOptionsForm,
+    CompanyRegistrationFormLegacy  # Для обратной совместимости
+)
+from .language import (
+    text_company_step1,
+    text_company_step2,
+    text_company_step3,
+    text_company_step4,
+    text_company_step5,
+    text_company_step6,
+    company_success_messages,
+    company_error_messages
+)
 from mongodb.mongodb_config import MongoConfig
 from mongodb.mongodb_utils import MongoConnection
+
+
+class CompanySessionManager:
+    """Менеджер для управления данными многошагового процесса регистрации"""
+
+    SESSION_KEY = 'company_registration_data'
+
+    @staticmethod
+    def get_session_data(request):
+        """Получает данные из сессии"""
+        return request.session.get(CompanySessionManager.SESSION_KEY, {})
+
+    @staticmethod
+    def set_session_data(request, data):
+        """Сохраняет данные в сессию"""
+        request.session[CompanySessionManager.SESSION_KEY] = data
+        request.session.modified = True
+
+    @staticmethod
+    def update_session_data(request, step_data):
+        """Обновляет данные конкретного шага"""
+        session_data = CompanySessionManager.get_session_data(request)
+        session_data.update(step_data)
+        CompanySessionManager.set_session_data(request, session_data)
+
+    @staticmethod
+    def clear_session_data(request):
+        """Очищает данные сессии"""
+        if CompanySessionManager.SESSION_KEY in request.session:
+            del request.session[CompanySessionManager.SESSION_KEY]
+            request.session.modified = True
+
+    @staticmethod
+    def get_completion_status(request):
+        """Возвращает статус завершения шагов"""
+        session_data = CompanySessionManager.get_session_data(request)
+        return {
+            'step1_complete': 'company_name' in session_data and 'legal_form' in session_data,
+            'step2_complete': 'registration_data_processed' in session_data,
+            'step3_complete': 'street' in session_data and 'city' in session_data,
+            'step4_complete': 'email' in session_data and 'phone' in session_data,
+            'step5_complete': 'management_data_processed' in session_data,
+            'step6_complete': 'data_protection_consent' in session_data
+        }
 
 
 class CompanyManager:
@@ -223,81 +286,361 @@ def check_mongodb_availability():
     return config_status == 'complete'
 
 
+# =============================================================================
+# МНОГОШАГОВАЯ РЕГИСТРАЦИЯ КОМПАНИИ
+# =============================================================================
+
 def register_company(request):
-    """Регистрация компании (создание или редактирование единственной) - MODAL VERSION"""
-    # Проверяем конфигурацию MongoDB
+    """Стартовая страница регистрации - перенаправляет на шаг 1"""
+    # Очищаем предыдущие данные сессии
+    CompanySessionManager.clear_session_data(request)
+    logger.info("Начало процесса регистрации компании")
+    return redirect('company:register_company_step1')
+
+
+def register_company_step1(request):
+    """Шаг 1: Основные данные компании"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
 
-    company_manager = CompanyManager()
-    from_admin = request.GET.get('from_admin') == 'true'
-
-    # Получаем существующие данные компании для предзаполнения формы
-    existing_company = company_manager.get_company()
-    is_editing = existing_company is not None
+    # Получаем данные из сессии для предзаполнения
+    session_data = CompanySessionManager.get_session_data(request)
 
     if request.method == 'POST':
-        form = CompanyRegistrationForm(request.POST)
+        form = CompanyBasicDataForm(request.POST)
         if form.is_valid():
-            # Подготавливаем данные компании
-            company_data = form.cleaned_data.copy()
+            # Сохраняем данные шага в сессию
+            step_data = form.cleaned_data.copy()
+            CompanySessionManager.update_session_data(request, step_data)
+
+            company_name = step_data.get('company_name', '')
+            messages.success(
+                request,
+                company_success_messages['step1_completed'].format(company_name=company_name)
+            )
+
+            return render_with_messages(
+                request,
+                'register_company_step1.html',
+                {'form': form, 'step': 1, 'text': text_company_step1},
+                reverse('company:register_company_step2')
+            )
+        else:
+            messages.error(request, company_error_messages['form_submission_error'])
+    else:
+        # GET запрос - предзаполняем форму данными из сессии
+        form = CompanyBasicDataForm(initial=session_data)
+
+    context = {
+        'form': form,
+        'step': 1,
+        'text': text_company_step1
+    }
+    return render(request, 'register_company_step1.html', context)
+
+
+def register_company_step2(request):
+    """Шаг 2: Регистрационные данные"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    # Проверяем, завершен ли предыдущий шаг
+    completion = CompanySessionManager.get_completion_status(request)
+    if not completion['step1_complete']:
+        messages.warning(request, "Bitte vollenden Sie zuerst Schritt 1")
+        return redirect('company:register_company_step1')
+
+    session_data = CompanySessionManager.get_session_data(request)
+    company_name = session_data.get('company_name', '')
+
+    if request.method == 'POST':
+        form = CompanyRegistrationFormStep2(request.POST)
+        if form.is_valid():
+            # Сохраняем данные шага в сессию
+            step_data = form.cleaned_data.copy()
+            step_data['registration_data_processed'] = True
+            CompanySessionManager.update_session_data(request, step_data)
+
+            messages.success(request, company_success_messages['step2_completed'])
+
+            return render_with_messages(
+                request,
+                'register_company_step2.html',
+                {'form': form, 'step': 2, 'text': text_company_step2, 'company_name': company_name},
+                reverse('company:register_company_step3')
+            )
+        else:
+            messages.error(request, company_error_messages['form_submission_error'])
+    else:
+        form = CompanyRegistrationForm(initial=session_data)
+
+    context = {
+        'form': form,
+        'step': 2,
+        'text': text_company_step2,
+        'company_name': company_name
+    }
+    return render(request, 'register_company_step2.html', context)
+
+
+def register_company_step3(request):
+    """Шаг 3: Адресные данные"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    # Проверяем предыдущие шаги
+    completion = CompanySessionManager.get_completion_status(request)
+    if not completion['step1_complete']:
+        messages.warning(request, "Bitte vollenden Sie zuerst Schritt 1")
+        return redirect('company:register_company_step1')
+
+    session_data = CompanySessionManager.get_session_data(request)
+    company_name = session_data.get('company_name', '')
+
+    if request.method == 'POST':
+        form = CompanyAddressForm(request.POST)
+        if form.is_valid():
+            step_data = form.cleaned_data.copy()
+            CompanySessionManager.update_session_data(request, step_data)
+
+            messages.success(request, company_success_messages['step3_completed'])
+
+            return render_with_messages(
+                request,
+                'register_company_step3.html',
+                {'form': form, 'step': 3, 'text': text_company_step3, 'company_name': company_name},
+                reverse('company:register_company_step4')
+            )
+        else:
+            messages.error(request, company_error_messages['form_submission_error'])
+    else:
+        form = CompanyAddressForm(initial=session_data)
+
+    context = {
+        'form': form,
+        'step': 3,
+        'text': text_company_step3,
+        'company_name': company_name
+    }
+    return render(request, 'register_company_step3.html', context)
+
+
+def register_company_step4(request):
+    """Шаг 4: Контактные данные"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    # Проверяем предыдущие шаги
+    completion = CompanySessionManager.get_completion_status(request)
+    if not completion['step1_complete'] or not completion['step3_complete']:
+        messages.warning(request, "Bitte vollenden Sie die vorherigen Schritte")
+        return redirect('company:register_company_step1')
+
+    session_data = CompanySessionManager.get_session_data(request)
+    company_name = session_data.get('company_name', '')
+
+    # Получаем существующие дополнительные контакты из сессии
+    existing_additional_contacts = session_data.get('additional_contacts_data', '[]')
+    if isinstance(existing_additional_contacts, str):
+        try:
+            existing_additional_contacts = json.loads(existing_additional_contacts)
+        except:
+            existing_additional_contacts = []
+
+    if request.method == 'POST':
+        form = CompanyContactForm(request.POST)
+        if form.is_valid():
+            step_data = form.cleaned_data.copy()
 
             # Обрабатываем дополнительные контакты
             additional_contacts_data = request.POST.get('additional_contacts_data', '[]')
             try:
-                # Проверяем и парсим JSON
                 contacts = json.loads(additional_contacts_data) if additional_contacts_data else []
                 if isinstance(contacts, list):
-                    company_data['additional_contacts_data'] = additional_contacts_data
+                    step_data['additional_contacts_data'] = additional_contacts_data
                     logger.info(f"Обработано {len(contacts)} дополнительных контактов")
                 else:
-                    company_data['additional_contacts_data'] = '[]'
+                    step_data['additional_contacts_data'] = '[]'
             except json.JSONDecodeError:
                 logger.warning("Некорректные данные дополнительных контактов")
-                company_data['additional_contacts_data'] = '[]'
+                step_data['additional_contacts_data'] = '[]'
 
-            # Сохраняем данные
-            if company_manager.create_or_update_company(company_data):
-                action = "aktualisiert" if is_editing else "registriert"
-                messages.success(request, f"Firma '{company_data['company_name']}' erfolgreich {action}!")
+            CompanySessionManager.update_session_data(request, step_data)
 
-                return render_with_messages(
-                    request,
-                    'register_company.html',
-                    {'form': form, 'from_admin': from_admin, 'is_editing': is_editing},
-                    reverse('home')
-                )
+            # Формируем информацию о контактах для сообщения
+            main_contacts = f"{step_data.get('email', '')}, {step_data.get('phone', '')}"
+            additional_count = len(contacts) if contacts else 0
+
+            if additional_count > 0:
+                contact_info = f"{main_contacts} + {additional_count} zusätzliche"
             else:
-                action = "Aktualisieren" if is_editing else "Registrieren"
-                messages.error(request, f"Fehler beim {action} der Firma")
+                contact_info = main_contacts
+
+            messages.success(
+                request,
+                company_success_messages['step4_completed'].format(contact_info=contact_info)
+            )
+
+            return render_with_messages(
+                request,
+                'register_company_step4.html',
+                {
+                    'form': form,
+                    'step': 4,
+                    'text': text_company_step4,
+                    'company_name': company_name,
+                    'existing_additional_contacts': json.dumps(contacts) if contacts else '[]'
+                },
+                reverse('company:register_company_step5')
+            )
         else:
-            messages.error(request, "Bitte korrigieren Sie die Fehler im Formular")
-            logger.warning(f"Ошибки формы: {form.errors}")
-
-        context = {'form': form, 'from_admin': from_admin, 'is_editing': is_editing}
-        return render_with_messages(request, 'register_company.html', context)
-
-    # GET request - предзаполняем форму существующими данными
-    initial_data = {}
-    if existing_company:
-        # Копируем все поля кроме служебных
-        excluded_fields = {'_id', 'type', 'created_at', 'modified_at'}
-        initial_data = {k: v for k, v in existing_company.items() if k not in excluded_fields}
-        logger.info(f"Предзаполнение формы данными компании: {existing_company.get('company_name', 'N/A')}")
-
-    form = CompanyRegistrationForm(initial=initial_data)
+            messages.error(request, company_error_messages['form_submission_error'])
+    else:
+        form = CompanyContactForm(initial=session_data)
 
     context = {
         'form': form,
-        'from_admin': from_admin,
-        'is_editing': is_editing,
-        'company_name': existing_company.get('company_name', '') if existing_company else '',
-        'modal_page': True  # Флаг для модальной страницы
+        'step': 4,
+        'text': text_company_step4,
+        'company_name': company_name,
+        'existing_additional_contacts': json.dumps(existing_additional_contacts)
     }
+    return render(request, 'register_company_step4.html', context)
 
-    return render(request, 'register_company.html', context)
 
+def register_company_step5(request):
+    """Шаг 5: Управление и персонал"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    # Проверяем предыдущие шаги
+    completion = CompanySessionManager.get_completion_status(request)
+    if not completion['step4_complete']:
+        messages.warning(request, "Bitte vollenden Sie die vorherigen Schritte")
+        return redirect('company:register_company_step4')
+
+    session_data = CompanySessionManager.get_session_data(request)
+    company_name = session_data.get('company_name', '')
+
+    if request.method == 'POST':
+        form = CompanyManagementForm(request.POST)
+        if form.is_valid():
+            step_data = form.cleaned_data.copy()
+            step_data['management_data_processed'] = True
+            CompanySessionManager.update_session_data(request, step_data)
+
+            messages.success(request, company_success_messages['step5_completed'])
+
+            return render_with_messages(
+                request,
+                'register_company_step5.html',
+                {'form': form, 'step': 5, 'text': text_company_step5, 'company_name': company_name},
+                reverse('company:register_company_step6')
+            )
+        else:
+            messages.error(request, company_error_messages['form_submission_error'])
+    else:
+        form = CompanyManagementForm(initial=session_data)
+
+    context = {
+        'form': form,
+        'step': 5,
+        'text': text_company_step5,
+        'company_name': company_name
+    }
+    return render(request, 'register_company_step5.html', context)
+
+
+def register_company_step6(request):
+    """Шаг 6: Финальные настройки и создание компании"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    # Проверяем предыдущие шаги
+    completion = CompanySessionManager.get_completion_status(request)
+    if not completion['step5_complete']:
+        messages.warning(request, "Bitte vollenden Sie die vorherigen Schritte")
+        return redirect('company:register_company_step5')
+
+    session_data = CompanySessionManager.get_session_data(request)
+    company_name = session_data.get('company_name', '')
+    primary_email = session_data.get('email', '')
+
+    # Подсчитываем контакты
+    additional_contacts = session_data.get('additional_contacts_data', '[]')
+    if isinstance(additional_contacts, str):
+        try:
+            additional_contacts = json.loads(additional_contacts)
+        except:
+            additional_contacts = []
+
+    contact_count = 2  # email + phone
+    if session_data.get('fax'):
+        contact_count += 1
+    if session_data.get('website'):
+        contact_count += 1
+    contact_count += len(additional_contacts)
+
+    if request.method == 'POST':
+        form = CompanyOptionsForm(request.POST)
+        if form.is_valid():
+            # Объединяем все данные из всех шагов
+            final_data = session_data.copy()
+            final_data.update(form.cleaned_data)
+
+            # Создаем компанию в базе данных
+            company_manager = CompanyManager()
+            if company_manager.create_or_update_company(final_data):
+                # Очищаем сессию после успешного создания
+                CompanySessionManager.clear_session_data(request)
+
+                total_contacts = f"{contact_count} Kontakte"
+                success_message = company_success_messages['company_created'].format(
+                    company_name=company_name,
+                    contact_info=total_contacts
+                )
+                messages.success(request, success_message)
+
+                return render_with_messages(
+                    request,
+                    'register_company_step6.html',
+                    {
+                        'form': form,
+                        'step': 6,
+                        'text': text_company_step6,
+                        'company_name': company_name,
+                        'primary_email': primary_email,
+                        'contact_count': contact_count
+                    },
+                    reverse('home')
+                )
+            else:
+                messages.error(request, company_error_messages['company_creation_error'])
+        else:
+            messages.error(request, company_error_messages['validation_failed'])
+    else:
+        form = CompanyOptionsForm(initial=session_data)
+
+    context = {
+        'form': form,
+        'step': 6,
+        'text': text_company_step6,
+        'company_name': company_name,
+        'primary_email': primary_email,
+        'contact_count': contact_count
+    }
+    return render(request, 'register_company_step6.html', context)
+
+
+# =============================================================================
+# ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений)
+# =============================================================================
 
 def company_info(request):
     """Показывает информацию о компании"""
@@ -310,7 +653,7 @@ def company_info(request):
 
     if not company:
         messages.warning(request, "Noch keine Firma registriert")
-        return redirect('company:register_company')
+        return redirect('company:register_company_step1')
 
     # Получаем статистику
     stats = company_manager.get_company_stats()
@@ -335,9 +678,18 @@ def company_info(request):
 
 
 def edit_company(request):
-    """Редактирование компании (алиас для register_company)"""
-    logger.info("Перенаправление на редактирование компании")
-    return register_company(request)
+    """Редактирование компании - перенаправляет на шаг 1 с предзаполнением"""
+    company_manager = CompanyManager()
+    existing_company = company_manager.get_company()
+
+    if existing_company:
+        # Загружаем существующие данные в сессию
+        excluded_fields = {'_id', 'type', 'created_at', 'modified_at'}
+        session_data = {k: v for k, v in existing_company.items() if k not in excluded_fields}
+        CompanySessionManager.set_session_data(request, session_data)
+        logger.info(f"Загружены данные для редактирования компании: {existing_company.get('company_name', 'N/A')}")
+
+    return redirect('company:register_company_step1')
 
 
 @require_http_methods(["POST"])
@@ -619,8 +971,9 @@ def company_validation_check(request):
     validation_results['completeness'] = round((filled_count / total_count) * 100, 1)
 
     # Проверяем формат специфических полей
+    import re
+
     if company.get('email'):
-        import re
         email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
         if not re.match(email_pattern, company.get('email', '')):
             validation_results['warnings'].append('E-Mail-Format möglicherweise ungültig')
