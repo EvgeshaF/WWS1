@@ -138,4 +138,4 @@ def home(request):
             'company_name': 'Fehler'
         }
 
-        return render(request, 'home/templates/home.html', error_context)
+        return render(request, 'home.html', error_context)

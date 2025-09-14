@@ -16,7 +16,7 @@ from .forms import (
     CompanyContactForm,
     CompanyManagementForm,
     CompanyOptionsForm,
-    CompanyRegistrationFormLegacy  # Для обратной совместимости
+    CompanyRegistrationFormLegacy, CompanyRegistrationForm  # Для обратной совместимости
 )
 from .language import (
     text_company_step1,
