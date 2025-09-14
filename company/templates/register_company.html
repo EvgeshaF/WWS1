@@ -2,40 +2,48 @@
 
 {% load static %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/company.css' %}">
 <link rel="stylesheet" href="{% static 'css/create_company_step1-3.css' %}">
+<link rel="stylesheet" href="{% static 'css/company.css' %}">
 {% endblock %}
 
 {% block content %}
 
-    <!-- Главное модальное окно регистрации компании -->
-    <div class="modal fade show company-modal" id="companyRegistrationModal" tabindex="-1" style="display: block;">
-        <div class="modal-dialog modal-xl">
+    <!-- Главное модальное окно регистрации компании в стиле администратора -->
+    <div class="modal fade show" id="companyRegistrationModal" tabindex="-1" aria-labelledby="companyRegistrationModalLabel" aria-modal="true" role="dialog" style="display: block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
-                <!-- Заголовок модального окна -->
+                <!-- Заголовок модального окна как у администратора -->
                 <div class="modal-header bg-primary text-white">
-                    <h4 class="modal-title mb-0">
+                    <h5 class="modal-title" id="companyRegistrationModalLabel">
                         <i class="bi bi-building-add me-2"></i>
                         {% if is_editing %}
                             Firma bearbeiten: {{ company_name|default:"" }}
                         {% else %}
                             Firma registrieren
                         {% endif %}
-                    </h4>
-                    <div class="ms-auto">
-                        <span class="badge bg-light text-primary fs-6">
-                            Schritt <span id="current-step">1</span> von 4
-                        </span>
-                    </div>
+                    </h5>
+                    <span class="badge bg-light text-primary ms-auto">
+                        Schritt <span id="current-step">1</span> von 4
+                    </span>
                 </div>
 
                 <!-- Тело модального окна -->
                 <div class="modal-body">
-                    <!-- Индикатор прогресса -->
+
+                    <!-- Алерт как у администратора -->
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Erfassen Sie hier die Grunddaten Ihrer Firma. Alle mit * markierten Felder sind Pflichtfelder.
+                        {% if from_admin %}
+                            <br><small class="text-muted mt-1">Wird nach der Administrator-Erstellung ausgeführt</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Индикатор прогресса как у администратора -->
                     <div class="row mb-4">
                         <div class="col-12">
-                            <div class="progress company-progress mb-2">
-                                <div class="progress-bar" id="progress-bar" role="progressbar" style="width: 25%"></div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <div class="company-progress-labels">
                                 <span>Grunddaten</span>
@@ -46,8 +54,8 @@
                         </div>
                     </div>
 
-                    <!-- Навигация по табам -->
-                    <ul class="nav nav-tabs company-tabs" id="companyTabs" role="tablist">
+                    <!-- Навигация по табам как у администратора -->
+                    <ul class="nav nav-tabs" id="companyTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic"
                                     type="button" role="tab" aria-controls="basic" aria-selected="true">
@@ -81,8 +89,8 @@
                             {% csrf_token %}
 
                             <!-- Таб 1: Grunddaten -->
-                            <div class="tab-pane fade show active company-tab-pane" id="basic" role="tabpanel" aria-labelledby="basic-tab">
-                                <div class="card company-section-card">
+                            <div class="tab-pane fade show active" id="basic" role="tabpanel" aria-labelledby="basic-tab">
+                                <div class="card">
                                     <div class="card-header bg-primary text-white">
                                         <h6 class="card-title mb-0">
                                             <i class="bi bi-building me-2"></i>Firmengrundlagen
@@ -150,14 +158,18 @@
                                             {% if form.description.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
                                             {% endif %}
+                                            <div class="form-text">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Kurze Beschreibung der Geschäftstätigkeit (optional)
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Таб 2: Registrierung -->
-                            <div class="tab-pane fade company-tab-pane" id="registration" role="tabpanel" aria-labelledby="registration-tab">
-                                <div class="card company-section-card">
+                            <div class="tab-pane fade" id="registration" role="tabpanel" aria-labelledby="registration-tab">
+                                <div class="card">
                                     <div class="card-header bg-info text-white">
                                         <h6 class="card-title mb-0">
                                             <i class="bi bi-file-text me-2"></i>Registrierungsdaten
@@ -218,8 +230,8 @@
                             </div>
 
                             <!-- Таб 3: Adresse -->
-                            <div class="tab-pane fade company-tab-pane" id="address" role="tabpanel" aria-labelledby="address-tab">
-                                <div class="card company-section-card">
+                            <div class="tab-pane fade" id="address" role="tabpanel" aria-labelledby="address-tab">
+                                <div class="card">
                                     <div class="card-header bg-success text-white">
                                         <h6 class="card-title mb-0">
                                             <i class="bi bi-geo-alt me-2"></i>Firmenadresse
@@ -268,9 +280,9 @@
                             </div>
 
                             <!-- Таб 4: Kontakte & Details -->
-                            <div class="tab-pane fade company-tab-pane" id="details" role="tabpanel" aria-labelledby="details-tab">
+                            <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
                                 <!-- Основные контакты -->
-                                <div class="company-section-card mb-4">
+                                <div class="card mb-4">
                                     <div class="card-header bg-primary text-white">
                                         <h6 class="card-title mb-0">
                                             <i class="bi bi-telephone me-2"></i>Hauptkontakte
@@ -288,6 +300,10 @@
                                                     {% if form.email.errors %}
                                                         <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
                                                     {% endif %}
+                                                    <div class="form-text">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Haupt-E-Mail-Adresse für wichtige Mitteilungen
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
@@ -300,6 +316,10 @@
                                                     {% if form.phone.errors %}
                                                         <div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>
                                                     {% endif %}
+                                                    <div class="form-text">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Haupttelefonnummer für Geschäftskontakte
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -325,14 +345,18 @@
                                                     {% if form.website.errors %}
                                                         <div class="invalid-feedback d-block">{{ form.website.errors.0 }}</div>
                                                     {% endif %}
+                                                    <div class="form-text">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        z.B. https://www.firma.de
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Дополнительные контакты -->
-                                <div class="company-section-card mb-4">
+                                <!-- Дополнительные контакты как у администратора -->
+                                <div class="card mb-4">
                                     <div class="card-header bg-info text-white">
                                         <h6 class="card-title mb-0">
                                             <i class="bi bi-person-lines-fill me-2"></i>Zusätzliche Kontakte
@@ -345,7 +369,7 @@
                                                 <i class="bi bi-person-plus display-4 text-muted mb-3"></i>
                                                 <p class="mb-2"><strong>Zusätzliche Kontakte hinzufügen</strong></p>
                                                 <p class="text-muted small mb-3">Optional: Weitere Kontaktmöglichkeiten für bessere Kommunikation</p>
-                                                <button type="button" class="btn company-btn company-btn-outline-primary" id="manage-additional-contacts">
+                                                <button type="button" class="btn btn-outline-primary" id="manage-additional-contacts">
                                                     <i class="bi bi-plus-circle me-1"></i>Kontakte verwalten
                                                 </button>
                                             </div>
@@ -359,7 +383,7 @@
                                 </div>
 
                                 <!-- Personen -->
-                                <div class="company-section-card mb-4">
+                                <div class="card mb-4">
                                     <div class="card-header bg-success text-white">
                                         <h6 class="card-title mb-0">
                                             <i class="bi bi-people me-2"></i>Verantwortliche Personen
@@ -394,7 +418,7 @@
                                 </div>
 
                                 <!-- Системные настройки -->
-                                <div class="company-section-card">
+                                <div class="card">
                                     <div class="card-header bg-warning text-dark">
                                         <h6 class="card-title mb-0">
                                             <i class="bi bi-gear me-2"></i>Systemeinstellungen
@@ -407,7 +431,10 @@
                                                 <i class="bi bi-star me-1"></i>{{ form.is_primary.label }}
                                             </label>
                                             {% if form.is_primary.help_text %}
-                                                <div class="form-text">{{ form.is_primary.help_text }}</div>
+                                                <div class="form-text">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    {{ form.is_primary.help_text }}
+                                                </div>
                                             {% endif %}
                                             {% if form.is_primary.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.is_primary.errors.0 }}</div>
@@ -422,22 +449,22 @@
                         </form>
                     </div>
 
-                    <!-- Кнопки навигации -->
+                    <!-- Кнопки навигации как у администратора -->
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="d-flex justify-content-between">
-                                <button type="button" class="btn company-btn company-btn-outline-secondary" id="prev-tab-btn" style="display: none;">
+                                <button type="button" class="btn btn-outline-secondary" id="prev-tab-btn" style="display: none;">
                                     <i class="bi bi-arrow-left me-1"></i>Zurück
                                 </button>
 
                                 <div class="ms-auto">
-                                    <button type="button" class="btn company-btn company-btn-primary" id="next-tab-btn">
+                                    <button type="button" class="btn btn-primary" id="next-tab-btn">
                                         <span id="next-btn-text">
                                             <i class="bi bi-arrow-right me-1"></i>Weiter
                                         </span>
                                     </button>
 
-                                    <button type="submit" class="btn company-btn company-btn-success" id="submit-btn" style="display: none;">
+                                    <button type="submit" class="btn btn-success" id="submit-btn" style="display: none;">
                                         <i class="bi bi-building-add me-1"></i>
                                         {% if is_editing %}Firma aktualisieren{% else %}Firma registrieren{% endif %}
                                     </button>
@@ -450,23 +477,29 @@
         </div>
     </div>
 
-    <!-- Модальное окно управления дополнительными контактами -->
-    <div class="modal fade company-additional-contacts-modal" id="additionalContactsModal" tabindex="-1" aria-labelledby="additionalContactsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <!-- Модальное окно управления дополнительными контактами как у администратора -->
+    <div class="modal fade" id="additionalContactsModal" tabindex="-1" aria-labelledby="additionalContactsModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title" id="additionalContactsModalLabel">
                         <i class="bi bi-person-lines-fill me-2"></i>Zusätzliche Kontakte verwalten
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <span class="badge bg-light text-dark ms-auto">Optional</span>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Hier können Sie zusätzliche Kontaktmöglichkeiten hinzufügen (optional).
+                        <br><small class="text-muted">Beispiel: Weitere E-Mails, Mobile, Fax, Website, LinkedIn, XING, etc.</small>
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="mb-0">
                             <i class="bi bi-list-ul me-1"></i>Kontaktliste
                             <span class="badge bg-primary ms-2" id="modal-contacts-count">0</span>
                         </h6>
-                        <button type="button" class="btn btn-primary btn-sm company-btn" id="add-contact-btn">
+                        <button type="button" class="btn btn-primary btn-sm" id="add-contact-btn">
                             <i class="bi bi-plus me-1"></i>Neuen Kontakt hinzufügen
                         </button>
                     </div>
@@ -494,13 +527,13 @@
                         <h5 class="text-muted">Noch keine zusätzlichen Kontakte hinzugefügt</h5>
                         <p class="text-muted mb-4">Zusätzliche Kontakte sind optional und können übersprungen werden.<br>
                            Sie verbessern jedoch die Kommunikationsmöglichkeiten erheblich.</p>
-                        <button type="button" class="btn company-btn company-btn-primary" onclick="document.getElementById('add-contact-btn').click()">
+                        <button type="button" class="btn btn-primary" onclick="document.getElementById('add-contact-btn').click()">
                             <i class="bi bi-plus me-1"></i>Ersten Kontakt hinzufügen
                         </button>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn company-btn company-btn-outline-secondary" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x me-1"></i>Schließen
                     </button>
                 </div>
@@ -508,9 +541,9 @@
         </div>
     </div>
 
-    <!-- Модальное окно добавления/редактирования контакта -->
+    <!-- Модальные окна добавления/редактирования и удаления контактов точно как у администратора -->
     <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="contactModalLabel">
@@ -568,10 +601,10 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn company-btn company-btn-outline-secondary" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x me-1"></i>Abbrechen
                     </button>
-                    <button type="button" class="btn company-btn company-btn-primary" id="saveContactBtn">
+                    <button type="button" class="btn btn-primary" id="saveContactBtn">
                         <i class="bi bi-check me-1"></i>Speichern
                     </button>
                 </div>
@@ -581,7 +614,7 @@
 
     <!-- Модальное окно подтверждения удаления контакта -->
     <div class="modal fade" id="deleteContactModal" tabindex="-1" aria-labelledby="deleteContactModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="deleteContactModalLabel">
@@ -599,10 +632,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn company-btn company-btn-outline-secondary" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x me-1"></i>Abbrechen
                     </button>
-                    <button type="button" class="btn company-btn-danger" id="confirmDeleteBtn">
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
                         <i class="bi bi-trash me-1"></i>Löschen
                     </button>
                 </div>
@@ -616,13 +649,13 @@
 {% endblock %}
 
 {% block extra_js %}
-    <!-- Инициализация данных для JavaScript -->
+    <!-- Инициализация данных для JavaScript как у администратора -->
     <script>
         // Передаем существующие дополнительные контакты в JavaScript
         window.initialAdditionalContactsData = {{ existing_additional_contacts|default:"[]"|safe }};
-        console.log('Loaded additional contacts data:', window.initialAdditionalContactsData);
+        console.log('Загружены данные дополнительных контактов компании:', window.initialAdditionalContactsData);
     </script>
 
-    <!-- Подключение JavaScript -->
+    <!-- Подключение обновленного JavaScript -->
     <script src="{% static 'js/register_company.js' %}"></script>
 {% endblock %}

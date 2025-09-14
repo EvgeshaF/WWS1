@@ -1,4 +1,4 @@
-// register_company.js - ИСПРАВЛЕННАЯ ВЕРСИЯ для работы с дополнительными контактами
+// register_company.js - ПОЛНАЯ ВЕРСИЯ В СТИЛЕ АДМИНИСТРАТОРА
 
 // ==================== КОНФИГУРАЦИЯ ====================
 const CONFIG = {
@@ -12,7 +12,6 @@ const CONFIG = {
         LINKEDIN: /(https?:\/\/)?(www\.)?linkedin\.com\/(company|in)\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$/,
         XING: /(https?:\/\/)?(www\.)?xing\.com\/(companies|profile)\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$/
     },
-
     MESSAGES: {
         de: {
             FIELD_REQUIRED: 'Dieses Feld ist erforderlich',
@@ -75,7 +74,6 @@ class FormValidator {
     validateField(field) {
         const value = field.value.trim();
         const fieldName = field.name;
-
         this.clearFieldValidation(field);
 
         if (field.hasAttribute('required') && !value) {
@@ -87,7 +85,6 @@ class FormValidator {
             return true;
         }
 
-        // Специфическая валидация
         const validationRules = {
             email: () => this.patterns.EMAIL.test(value) || this.messages.INVALID_EMAIL,
             phone: () => this.patterns.GERMAN_PHONE.test(value) || this.messages.INVALID_PHONE,
@@ -163,6 +160,7 @@ class CompanyAdditionalContactManager {
     constructor() {
         this.additionalContacts = [];
         this.editingIndex = -1;
+        this.deletingIndex = -1;
         this.validator = new FormValidator();
         this.elementCache = new Map();
 
@@ -195,17 +193,12 @@ class CompanyAdditionalContactManager {
     }
 
     bindEvents() {
-        // Основные кнопки управления
         this.addEventListenerSafe('manage-additional-contacts', 'click', () => this.openAdditionalContactsModal());
         this.addEventListenerSafe('add-contact-btn', 'click', () => this.openContactModal());
         this.addEventListenerSafe('saveContactBtn', 'click', () => this.saveContact());
         this.addEventListenerSafe('confirmDeleteBtn', 'click', () => this.deleteContact());
-
-        // Обработчики формы
         this.addEventListenerSafe('contactType', 'change', (e) => this.updateContactHints(e.target.value));
         this.addEventListenerSafe('contactValue', 'input', () => this.validateContactValue());
-
-        // Обработчики модальных окон
         this.addModalEventListener('contactModal', 'hidden.bs.modal', () => this.resetContactForm());
         this.addModalEventListener('deleteContactModal', 'hidden.bs.modal', () => {
             this.deletingIndex = -1;
@@ -227,7 +220,6 @@ class CompanyAdditionalContactManager {
     }
 
     loadExistingData() {
-        // Загружаем из глобальной переменной, установленной в шаблоне
         if (typeof window.initialAdditionalContactsData !== 'undefined') {
             try {
                 this.additionalContacts = window.initialAdditionalContactsData || [];
@@ -266,19 +258,15 @@ class CompanyAdditionalContactManager {
         const saveBtn = Utils.getCachedElement('saveContactBtn', this.elementCache);
 
         if (index >= 0) {
-            // Режим редактирования
             const contact = this.additionalContacts[index];
             this.setModalTitle(modalTitle, 'bi-pencil', 'Kontakt bearbeiten');
             this.setButtonContent(saveBtn, 'bi-check', 'Aktualisieren');
-
             this.setFieldValue('contactType', contact.type);
             this.setFieldValue('contactValue', contact.value);
             this.setFieldValue('contactLabel', contact.label || '');
             this.setCheckboxValue('contactImportant', contact.important || false);
-
             this.updateContactHints(contact.type);
         } else {
-            // Режим добавления
             this.setModalTitle(modalTitle, 'bi-person-plus', 'Kontakt hinzufügen');
             this.setButtonContent(saveBtn, 'bi-check', 'Speichern');
             this.resetContactForm();
@@ -415,7 +403,6 @@ class CompanyAdditionalContactManager {
         const label = labelField ? labelField.value.trim() : '';
         const important = importantField ? importantField.checked : false;
 
-        // Валидация
         if (!type) {
             this.showToast('Kontakttyp ist erforderlich', 'error');
             return;
@@ -502,7 +489,6 @@ class CompanyAdditionalContactManager {
     createContactRow(contact, index) {
         const row = Utils.createElement('tr');
 
-        // Колонка типа
         const typeCell = Utils.createElement('td');
         const typeIcon = Utils.createElement('i', {
             className: `bi ${this.contactTypeIcons[contact.type] || 'bi-question-circle'} me-2 text-primary`
@@ -517,14 +503,12 @@ class CompanyAdditionalContactManager {
             typeCell.appendChild(badge);
         }
 
-        // Колонка значения
         const valueCell = Utils.createElement('td');
         const valueCode = Utils.createElement('code', {
-            className: 'company-contact-value'
+            className: 'contact-value'
         }, contact.value);
         valueCell.appendChild(valueCode);
 
-        // Колонка описания
         const labelCell = Utils.createElement('td');
         if (contact.label) {
             labelCell.textContent = contact.label;
@@ -535,9 +519,7 @@ class CompanyAdditionalContactManager {
             labelCell.appendChild(emptyLabel);
         }
 
-        // Колонка действий
         const actionsCell = Utils.createElement('td', { className: 'text-center' });
-
         const editBtn = this.createActionButton('bi-pencil', 'Bearbeiten', 'btn-outline-primary', () => this.openContactModal(index));
         const deleteBtn = this.createActionButton('bi-trash', 'Löschen', 'btn-outline-danger', () => this.confirmDeleteContact(index));
 
@@ -677,12 +659,10 @@ class CompanyFormManager {
     }
 
     bindEvents() {
-        // Кнопки навигации
         this.nextTabBtn.addEventListener('click', () => this.nextTab());
         this.prevTabBtn.addEventListener('click', () => this.prevTab());
         this.submitBtn.addEventListener('click', () => this.submitForm());
 
-        // Обработчики табов
         const tabButtons = document.querySelectorAll('#companyTabs button[data-bs-toggle="tab"]');
         tabButtons.forEach((button, index) => {
             button.addEventListener('click', (e) => {
@@ -762,10 +742,8 @@ class CompanyFormManager {
     }
 
     updateNavigationButtons() {
-        // Обновляем кнопку "Назад"
         this.prevTabBtn.style.display = this.currentTabIndex === 0 ? 'none' : 'inline-flex';
 
-        // Обновляем кнопку "Далее/Отправить"
         if (this.currentTabIndex === this.tabs.length - 1) {
             this.nextTabBtn.style.display = 'none';
             this.submitBtn.style.display = 'inline-flex';
@@ -829,16 +807,13 @@ class CompanyFormManager {
 
         this.setSubmitButtonLoading(true);
 
-        // Подготавливаем данные формы
         const formData = new FormData(this.form);
 
-        // Добавляем данные дополнительных контактов
         if (window.companyContactManager) {
             const contactsData = JSON.stringify(window.companyContactManager.getAdditionalContactsData());
             formData.append('additional_contacts_data', contactsData);
         }
 
-        // Отправляем форму
         this.sendFormData(formData)
             .then(this.handleSubmitSuccess.bind(this))
             .catch(this.handleSubmitError.bind(this));
@@ -864,13 +839,11 @@ class CompanyFormManager {
     handleSubmitSuccess(data) {
         this.setSubmitButtonLoading(false);
 
-        // Обрабатываем сообщения
         if (data.messages && data.messages.length > 0) {
             data.messages.forEach(message => {
                 this.showToast(message.text, message.tags);
             });
 
-            // Если успех, перенаправляем на главную
             const hasSuccess = data.messages.some(msg => msg.tags === 'success');
             if (hasSuccess) {
                 setTimeout(() => {
@@ -937,23 +910,514 @@ class CompanyFormManager {
     }
 }
 
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Инициализация регистрации компании...');
+// ==================== ДОПОЛНИТЕЛЬНЫЕ УТИЛИТЫ ====================
+
+function calculateFormCompleteness() {
+    const form = document.getElementById('company-form');
+    if (!form) return 0;
+
+    const allFields = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], select, textarea');
+    const filledFields = Array.from(allFields).filter(field => {
+        const value = field.value ? field.value.trim() : '';
+        return value.length > 0;
+    });
+
+    const completeness = Math.round((filledFields.length / allFields.length) * 100);
+    console.log(`Форма заполнена на ${completeness}% (${filledFields.length}/${allFields.length})`);
+
+    return completeness;
+}
+
+function initializeSelect2() {
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        console.log('Инициализация Select2 в стиле администратора...');
+
+        $.fn.select2.defaults.set('language', 'de');
+
+        const defaultSelect2Config = {
+            theme: 'bootstrap-5',
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return 'Keine Ergebnisse gefunden';
+                },
+                searching: function() {
+                    return 'Suche läuft...';
+                },
+                inputTooShort: function() {
+                    return 'Bitte geben Sie mindestens 1 Zeichen ein';
+                },
+                removeAllItems: function() {
+                    return 'Alle Elemente entfernen';
+                }
+            }
+        };
+
+        $('.form-select:not(.select2-hidden-accessible)').each(function() {
+            const $this = $(this);
+            const config = Object.assign({}, defaultSelect2Config);
+
+            if ($this.data('placeholder')) {
+                config.placeholder = $this.data('placeholder');
+                config.allowClear = true;
+            }
+
+            if ($this.data('allow-clear')) {
+                config.allowClear = true;
+            }
+
+            if ($this.data('search') === false) {
+                config.minimumResultsForSearch = Infinity;
+            }
+
+            if ($this.attr('name') === 'legal_form') {
+                config.placeholder = 'Rechtsform auswählen...';
+                config.minimumResultsForSearch = Infinity;
+            } else if ($this.attr('name') === 'country') {
+                config.placeholder = 'Land auswählen...';
+                config.minimumResultsForSearch = Infinity;
+            }
+
+            $this.select2(config);
+        });
+
+        $('.form-select').on('select2:select', function (e) {
+            const $this = $(this);
+            console.log('Select2 выбор:', e.params.data.id, '-', e.params.data.text);
+
+            $this.closest('.mb-3').find('.invalid-feedback').hide();
+            $this.removeClass('is-invalid').addClass('is-valid');
+        });
+
+        $('.form-select').on('select2:clear', function (e) {
+            const $this = $(this);
+            console.log('Select2 очистка для:', $this.attr('name'));
+            $this.removeClass('is-valid is-invalid');
+        });
+
+        console.log('Select2 успешно инициализирован в стиле администратора');
+    } else {
+        console.warn('jQuery или Select2 не загружены');
+    }
+}
+
+function initializeInteractiveElements() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+
+    console.log('Интерактивные элементы инициализированы');
+}
+
+function animateElementsIn() {
+    const animatedElements = document.querySelectorAll('.card, .alert, .tab-pane.active');
+
+    animatedElements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            element.style.transition = 'all 0.4s ease';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+}
+
+function enhanceUserExperience() {
+    const activePane = document.querySelector('.tab-pane.active');
+    if (activePane) {
+        const firstInput = activePane.querySelector('input[type="text"]:not([readonly]), select:not([disabled])');
+        if (firstInput && !firstInput.value) {
+            setTimeout(() => {
+                firstInput.focus();
+            }, 300);
+        }
+    }
+
+    const firstError = document.querySelector('.is-invalid');
+    if (firstError) {
+        firstError.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
+
+    document.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+
+        field.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+    });
+}
+
+function enableAutosave() {
+    const form = document.getElementById('company-form');
+    if (!form) return;
+
+    let autosaveTimeout;
+    const AUTOSAVE_DELAY = 30000; // 30 секунд
+
+    function saveFormDraft() {
+        const formData = new FormData(form);
+        const draftData = {};
+
+        for (let [key, value] of formData.entries()) {
+            draftData[key] = value;
+        }
+
+        try {
+            localStorage.setItem('company_form_draft', JSON.stringify({
+                data: draftData,
+                timestamp: new Date().toISOString(),
+                completeness: calculateFormCompleteness()
+            }));
+            console.log('Черновик формы сохранен');
+        } catch (e) {
+            console.warn('Не удалось сохранить черновик:', e);
+        }
+    }
+
+    function scheduleAutosave() {
+        clearTimeout(autosaveTimeout);
+        autosaveTimeout = setTimeout(saveFormDraft, AUTOSAVE_DELAY);
+    }
+
+    form.addEventListener('input', scheduleAutosave);
+    form.addEventListener('change', scheduleAutosave);
+
+    console.log('Автосохранение активировано (каждые 30 секунд)');
+}
+
+function loadFormDraft() {
+    try {
+        const draftJson = localStorage.getItem('company_form_draft');
+        if (!draftJson) return false;
+
+        const draft = JSON.parse(draftJson);
+        const draftAge = Date.now() - new Date(draft.timestamp).getTime();
+        const MAX_DRAFT_AGE = 24 * 60 * 60 * 1000; // 24 часа
+
+        if (draftAge > MAX_DRAFT_AGE) {
+            localStorage.removeItem('company_form_draft');
+            return false;
+        }
+
+        const restore = confirm(`Найден сохраненный черновик от ${new Date(draft.timestamp).toLocaleString()}.\nВосстановить данные?`);
+
+        if (restore && draft.data) {
+            Object.entries(draft.data).forEach(([key, value]) => {
+                const field = document.querySelector(`[name="${key}"]`);
+                if (field && !field.value) {
+                    field.value = value;
+
+                    if ($(field).hasClass('select2-hidden-accessible')) {
+                        $(field).val(value).trigger('change');
+                    }
+                }
+            });
+
+            console.log('Черновик восстановлен');
+            window.showToast('Черновик формы восстановлен', 'info');
+            return true;
+        }
+    } catch (e) {
+        console.warn('Ошибка при загрузке черновика:', e);
+    }
+
+    return false;
+}
+
+// ==================== ГЛОБАЛЬНЫЕ ФУНКЦИИ ====================
+
+window.exportFormData = function() {
+    const form = document.getElementById('company-form');
+    if (!form) return null;
+
+    const formData = new FormData(form);
+    const exportData = {
+        metadata: {
+            exportDate: new Date().toISOString(),
+            formVersion: '2.0',
+            completeness: calculateFormCompleteness()
+        },
+        basicData: {},
+        registrationData: {},
+        addressData: {},
+        contactsData: {},
+        additionalContacts: window.companyContactManager ?
+                          window.companyContactManager.getAdditionalContactsData() : []
+    };
+
+    for (let [key, value] of formData.entries()) {
+        if (['company_name', 'legal_form', 'industry', 'description'].includes(key)) {
+            exportData.basicData[key] = value;
+        } else if (['commercial_register', 'tax_number', 'vat_id'].includes(key)) {
+            exportData.registrationData[key] = value;
+        } else if (['street', 'postal_code', 'city', 'country'].includes(key)) {
+            exportData.addressData[key] = value;
+        } else if (['email', 'phone', 'fax', 'website', 'ceo_name', 'contact_person'].includes(key)) {
+            exportData.contactsData[key] = value;
+        }
+    }
+
+    return exportData;
+};
+
+window.importFormData = function(jsonData) {
+    if (!jsonData || typeof jsonData !== 'object') return false;
 
     try {
-        // Инициализируем менеджер дополнительных контактов
+        const form = document.getElementById('company-form');
+        if (!form) return false;
+
+        Object.entries({
+            ...jsonData.basicData,
+            ...jsonData.registrationData,
+            ...jsonData.addressData,
+            ...jsonData.contactsData
+        }).forEach(([key, value]) => {
+            const field = form.querySelector(`[name="${key}"]`);
+            if (field && value) {
+                field.value = value;
+
+                if ($(field).hasClass('select2-hidden-accessible')) {
+                    $(field).val(value).trigger('change');
+                }
+
+                if (window.companyFormManager) {
+                    window.companyFormManager.validateField(field);
+                }
+            }
+        });
+
+        if (jsonData.additionalContacts && window.companyContactManager) {
+            window.companyContactManager.loadAdditionalContacts(jsonData.additionalContacts);
+        }
+
+        console.log('Данные формы успешно импортированы');
+        window.showToast('Данные импортированы', 'success');
+        return true;
+
+    } catch (e) {
+        console.error('Ошибка импорта данных:', e);
+        window.showToast('Ошибка импорта данных', 'error');
+        return false;
+    }
+};
+
+window.resetCompanyForm = function() {
+    const completeness = calculateFormCompleteness();
+
+    if (completeness > 10) {
+        const confirm = window.confirm('Вы уверены, что хотите очистить все данные формы? Это действие нельзя отменить.');
+        if (!confirm) return false;
+    }
+
+    const form = document.getElementById('company-form');
+    if (form) {
+        form.reset();
+
+        $('.select2-hidden-accessible').val(null).trigger('change');
+
+        form.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+            el.classList.remove('is-valid', 'is-invalid');
+        });
+        form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+        if (window.companyContactManager) {
+            window.companyContactManager.additionalContacts = [];
+            window.companyContactManager.updateDisplay();
+        }
+
+        try {
+            localStorage.removeItem('company_form_draft');
+        } catch (e) {
+            console.warn('Не удалось очистить черновик:', e);
+        }
+
+        if (window.companyFormManager) {
+            window.companyFormManager.currentTabIndex = 0;
+            window.companyFormManager.switchToTab(0);
+            window.companyFormManager.updateProgress();
+            window.companyFormManager.updateNavigationButtons();
+        }
+
+        console.log('Форма полностью сброшена');
+        window.showToast('Форма очищена', 'info');
+        return true;
+    }
+
+    return false;
+};
+
+window.getFormStatistics = function() {
+    const form = document.getElementById('company-form');
+    if (!form) return null;
+
+    const allFields = form.querySelectorAll('input, select, textarea');
+    const requiredFields = form.querySelectorAll('[required]');
+    const filledFields = Array.from(allFields).filter(f => f.value && f.value.trim());
+    const validFields = form.querySelectorAll('.is-valid');
+    const invalidFields = form.querySelectorAll('.is-invalid');
+
+    const additionalContacts = window.companyContactManager ?
+                              window.companyContactManager.getAdditionalContactsData() : [];
+
+    return {
+        totalFields: allFields.length,
+        requiredFields: requiredFields.length,
+        filledFields: filledFields.length,
+        validFields: validFields.length,
+        invalidFields: invalidFields.length,
+        completeness: calculateFormCompleteness(),
+        additionalContactsCount: additionalContacts.length,
+        currentTab: window.companyFormManager ? window.companyFormManager.currentTabIndex + 1 : 1,
+        lastModified: document.lastModified
+    };
+};
+
+// ==================== ГЛОБАЛЬНАЯ ФУНКЦИЯ TOAST ====================
+if (typeof window.showToast === 'undefined') {
+    window.showToast = function(message, type = 'info', delay = 5000) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, delay);
+    };
+}
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Инициализация регистрации компании в стиле администратора...');
+
+    try {
         window.companyContactManager = new CompanyAdditionalContactManager();
         companyContactManager.init();
 
-        // Инициализируем менеджер формы
         window.companyFormManager = new CompanyFormManager();
         companyFormManager.init();
 
-        console.log('✅ Регистрация компании полностью инициализирована');
-
+        console.log('✅ Базовая инициализация завершена');
     } catch (error) {
-        console.error('❌ Критическая ошибка инициализации:', error);
+        console.error('❌ Ошибка базовой инициализации:', error);
+    }
+
+    setTimeout(() => {
+        try {
+            initializeSelect2();
+            initializeInteractiveElements();
+            animateElementsIn();
+            enhanceUserExperience();
+            enableAutosave();
+            loadFormDraft();
+
+            console.log('✅ Расширенная инициализация завершена успешно');
+        } catch (error) {
+            console.error('❌ Ошибка расширенной инициализации:', error);
+        }
+    }, 500);
+
+    window.addEventListener('beforeunload', function(e) {
+        const completeness = calculateFormCompleteness();
+        if (completeness > 20 && completeness < 100) {
+            e.preventDefault();
+            e.returnValue = 'У вас есть несохраненные изменения. Действительно покинуть страницу?';
+            return e.returnValue;
+        }
+    });
+
+    document.getElementById('company-form').addEventListener('submit', function() {
+        setTimeout(() => {
+            try {
+                localStorage.removeItem('company_form_draft');
+                console.log('Черновик очищен после отправки');
+            } catch (e) {
+                console.warn('Не удалось очистить черновик:', e);
+            }
+        }, 1000);
+    });
+});
+
+// ==================== КЛАВИАТУРНЫЕ СОКРАЩЕНИЯ ====================
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (window.companyFormManager) {
+            const completeness = calculateFormCompleteness();
+            if (completeness > 0) {
+                const form = document.getElementById('company-form');
+                if (form) {
+                    const formData = new FormData(form);
+                    const draftData = {};
+
+                    for (let [key, value] of formData.entries()) {
+                        draftData[key] = value;
+                    }
+
+                    try {
+                        localStorage.setItem('company_form_draft', JSON.stringify({
+                            data: draftData,
+                            timestamp: new Date().toISOString(),
+                            completeness: completeness
+                        }));
+                        window.showToast('Черновик сохранен (Ctrl+S)', 'success', 2000);
+                        console.log('Черновик сохранен по Ctrl+S');
+                    } catch (err) {
+                        console.warn('Ошибка сохранения черновика:', err);
+                    }
+                }
+            }
+        }
+    }
+
+    if (e.key === 'Escape') {
+        const openModals = document.querySelectorAll('.modal.show');
+        openModals.forEach(modal => {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+    }
+
+    if (e.ctrlKey && ['1', '2', '3', '4'].includes(e.key)) {
+        e.preventDefault();
+        const tabIndex = parseInt(e.key) - 1;
+        if (window.companyFormManager && tabIndex < window.companyFormManager.tabs.length) {
+            const canSwitch = tabIndex <= window.companyFormManager.currentTabIndex ||
+                             window.companyFormManager.validateTabsUpTo(tabIndex - 1);
+
+            if (canSwitch) {
+                window.companyFormManager.currentTabIndex = tabIndex;
+                window.companyFormManager.switchToTab(tabIndex);
+                window.companyFormManager.updateProgress();
+                window.companyFormManager.updateNavigationButtons();
+                console.log(`Переключение на таб ${tabIndex + 1} по клавиатуре`);
+            } else {
+                window.showToast('Заполните предыдущие разделы', 'warning', 2000);
+            }
+        }
     }
 });
 
@@ -969,3 +1433,20 @@ window.confirmDeleteContact = (index) => {
         window.companyContactManager.confirmDeleteContact(index);
     }
 };
+
+// Экспорт утилит
+window.CompanyFormUtils = {
+    calculateFormCompleteness,
+    initializeSelect2,
+    enhanceUserExperience
+};
+
+window.CompanyFormAdvanced = {
+    exportFormData: window.exportFormData,
+    importFormData: window.importFormData,
+    resetForm: window.resetCompanyForm,
+    getStatistics: window.getFormStatistics
+};
+
+console.log('🎯 JavaScript для формы компании полностью готов!');
+console.log('🚀 Форма компании стилизована под администратора!');
