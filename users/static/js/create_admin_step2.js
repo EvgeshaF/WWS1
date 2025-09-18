@@ -199,31 +199,29 @@ class PrimaryContactManager {
 }
 
 // ==================== ДОПОЛНИТЕЛЬНЫЕ КОНТАКТЫ МЕНЕДЖЕР - ENHANCED VERSION ====================
+// static/js/create_admin_step2_mongodb.js - Обновленная версия с поддержкой MongoDB коммуникаций
+
+// ==================== ДОПОЛНИТЕЛЬНЫЕ КОНТАКТЫ МЕНЕДЖЕР - MongoDB VERSION ====================
 class AdditionalContactManager {
     constructor() {
         this.additionalContacts = [];
         this.editingIndex = -1;
         this.deletingIndex = -1;
 
-        this.contactTypeLabels = {
-            'email': 'E-Mail',
-            'mobile': 'Mobil',
-            'fax': 'Fax',
-            'website': 'Website',
-            'linkedin': 'LinkedIn',
-            'xing': 'XING',
-            'other': 'Sonstige'
-        };
+        // Получаем данные типов коммуникаций из глобальной переменной (переданной из Django)
+        this.communicationData = window.communicationTypesData || {};
 
-        this.contactTypeIcons = {
-            'email': 'bi-envelope',
-            'mobile': 'bi-phone',
-            'fax': 'bi-printer',
-            'website': 'bi-globe',
-            'linkedin': 'bi-linkedin',
-            'xing': 'bi-person-badge',
-            'other': 'bi-question-circle'
-        };
+        // Создаем mapping для иконок и labels из MongoDB данных
+        this.contactTypeLabels = {};
+        this.contactTypeIcons = {};
+
+        // Заполняем mapping из данных MongoDB
+        for (const [code, data] of Object.entries(this.communicationData)) {
+            this.contactTypeLabels[code] = data.name || code;
+            this.contactTypeIcons[code] = data.icon || '📞';
+        }
+
+        console.log('AdditionalContactManager инициализирован с MongoDB данными:', this.communicationData);
     }
 
     init() {
@@ -262,12 +260,11 @@ class AdditionalContactManager {
             });
         }
 
-        const typeSelect = document.getElementById('contactType');
-        if (typeSelect) {
-            typeSelect.addEventListener('change', (e) => {
-                this.updateContactHints(e.target.value);
-            });
-        }
+        // ОБНОВЛЕНО: привязываемся к Select2 событию для типа контакта
+        $('#contactType').on('select2:select', (e) => {
+            this.updateContactHints(e.params.data.id);
+            this.validateContactValue();
+        });
 
         const valueInput = document.getElementById('contactValue');
         if (valueInput) {
@@ -308,10 +305,10 @@ class AdditionalContactManager {
             modalTitle.innerHTML = '<i class="bi bi-pencil me-2"></i>Kontakt bearbeiten';
             saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Aktualisieren';
 
-            this.setFieldValue('contactType', contact.type);
+            // ОБНОВЛЕНО: используем Select2 для установки значения
+            $('#contactType').val(contact.type).trigger('change');
             this.setFieldValue('contactValue', contact.value);
             this.setFieldValue('contactLabel', contact.label || '');
-            this.setCheckboxValue('contactPrimary', contact.primary || false);
 
             this.updateContactHints(contact.type);
         } else {
@@ -330,16 +327,12 @@ class AdditionalContactManager {
         }
     }
 
-    setCheckboxValue(fieldId, checked) {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.checked = checked;
-        }
-    }
-
     resetContactForm() {
         const form = document.getElementById('contactForm');
         if (!form) return;
+
+        // ОБНОВЛЕНО: очищаем Select2 поле
+        $('#contactType').val(null).trigger('change');
 
         form.reset();
 
@@ -356,29 +349,15 @@ class AdditionalContactManager {
 
         if (!valueInput || !hintElement) return;
 
-        const hints = {
-            'email': 'Geben Sie eine zusätzliche E-Mail-Adresse ein (z.B. privat@example.com)',
-            'mobile': 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)',
-            'fax': 'Geben Sie eine Faxnummer ein (z.B. +49 123 456789)',
-            'website': 'Geben Sie eine Website-URL ein (z.B. https://www.example.com)',
-            'linkedin': 'Geben Sie Ihr LinkedIn-Profil ein (z.B. linkedin.com/in/username)',
-            'xing': 'Geben Sie Ihr XING-Profil ein (z.B. xing.com/profile/username)',
-            'other': 'Geben Sie die entsprechenden Kontaktdaten ein'
-        };
+        // ОБНОВЛЕНО: используем данные из MongoDB
+        const typeConfig = this.communicationData[type];
 
-        const placeholders = {
-            'email': 'privat@domain.com',
-            'mobile': '+49 170 1234567',
-            'fax': '+49 123 456789',
-            'website': 'https://www.example.com',
-            'linkedin': 'linkedin.com/in/username',
-            'xing': 'xing.com/profile/username',
-            'other': 'Kontaktdaten eingeben...'
-        };
+        if (type && typeConfig) {
+            const hintText = typeConfig.hint_text || `Geben Sie ${typeConfig.name.toLowerCase()} ein`;
+            const placeholderText = typeConfig.placeholder_text || `${typeConfig.name} eingeben...`;
 
-        if (type && hints[type]) {
-            hintElement.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${hints[type]}`;
-            valueInput.placeholder = placeholders[type];
+            hintElement.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${hintText}`;
+            valueInput.placeholder = placeholderText;
         } else {
             hintElement.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Geben Sie die entsprechenden Kontaktdaten ein';
             valueInput.placeholder = 'Kontaktdaten eingeben...';
@@ -396,21 +375,22 @@ class AdditionalContactManager {
 
         if (!value) return false;
 
-        switch (type) {
-            case 'email':
-                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-            case 'mobile':
-            case 'fax':
-                return /^[\+]?[0-9\s\-\(\)]{7,20}$/.test(value);
-            case 'website':
-                return /^https?:\/\/.+\..+$/.test(value) || /^www\..+\..+$/.test(value);
-            case 'linkedin':
-                return value.includes('linkedin.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
-            case 'xing':
-                return value.includes('xing.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
-            default:
-                return value.length >= 3;
+        // OBНОВЛЕНО: используем паттерн валидации из MongoDB
+        const typeConfig = this.communicationData[type];
+        if (!typeConfig) return true;
+
+        const validationPattern = typeConfig.validation_pattern;
+        if (validationPattern) {
+            try {
+                const regex = new RegExp(validationPattern);
+                return regex.test(value);
+            } catch (e) {
+                console.error(`Ошибка в regex паттерне для ${type}:`, e);
+                return true; // Если паттерн невалидный, пропускаем валидацию
+            }
         }
+
+        return true;
     }
 
     saveContact() {
@@ -420,7 +400,6 @@ class AdditionalContactManager {
         const typeField = document.getElementById('contactType');
         const valueField = document.getElementById('contactValue');
         const labelField = document.getElementById('contactLabel');
-        const primaryField = document.getElementById('contactPrimary');
 
         const isTypeValid = this.validateField(typeField);
         const isValueValid = this.validateField(valueField);
@@ -433,13 +412,8 @@ class AdditionalContactManager {
         const contactData = {
             type: typeField.value,
             value: valueField.value.trim(),
-            label: labelField ? labelField.value.trim() : '',
-            primary: primaryField ? primaryField.checked : false
+            label: labelField ? labelField.value.trim() : ''
         };
-
-        if (contactData.primary) {
-            this.additionalContacts.forEach(contact => contact.primary = false);
-        }
 
         if (this.editingIndex >= 0) {
             this.additionalContacts[this.editingIndex] = contactData;
@@ -500,18 +474,13 @@ class AdditionalContactManager {
         if (!typeField) return 'Ungültiges Format';
 
         const type = typeField.value;
+        const typeConfig = this.communicationData[type];
 
-        const errors = {
-            'email': 'Ungültiges E-Mail-Format',
-            'mobile': 'Ungültiges Mobilnummer-Format',
-            'fax': 'Ungültiges Faxnummer-Format',
-            'website': 'Ungültiges Website-Format (muss mit http:// oder https:// beginnen)',
-            'linkedin': 'Ungültiges LinkedIn-Profil-Format',
-            'xing': 'Ungültiges XING-Profil-Format',
-            'other': 'Kontaktdaten müssen mindestens 3 Zeichen lang sein'
-        };
+        if (typeConfig && typeConfig.name) {
+            return `Ungültiges Format für ${typeConfig.name}`;
+        }
 
-        return errors[type] || 'Ungültiges Format';
+        return 'Ungültiges Format';
     }
 
     setFieldValidation(field, isValid, errorMessage = '') {
@@ -587,7 +556,6 @@ class AdditionalContactManager {
         }
     }
 
-    // НОВАЯ ФУНКЦИЯ: Обновление summary на главной странице
     updateSummary() {
         const counter = document.getElementById('additionalContactsCount');
         const summaryText = document.getElementById('contactsSummaryText');
@@ -609,26 +577,28 @@ class AdditionalContactManager {
     }
 
     createContactRow(contact, index) {
-        const typeIcon = this.contactTypeIcons[contact.type] || 'bi-question-circle';
-        const typeLabel = this.contactTypeLabels[contact.type] || contact.type;
-        const primaryStar = contact.primary ? '<i class="bi bi-star-fill primary-contact-star me-1" title="Wichtig"></i>' : '';
-        const labelText = contact.label ? `<div class="contact-label small text-muted">${this.escapeHtml(contact.label)}</div>` : '';
+        // ОБНОВЛЕНО: используем данные из MongoDB для иконок и названий
+        const typeConfig = this.communicationData[contact.type];
+        const typeIcon = typeConfig?.icon || '📞';
+        const typeLabel = typeConfig?.name || contact.type;
+
+        const labelText = contact.label ?
+            `<div class="contact-label small text-muted">${this.escapeHtml(contact.label)}</div>` : '';
 
         return `
             <tr>
                 <td>
-                    <span class="contact-type-badge contact-type-${contact.type}">
-                        <i class="bi ${typeIcon} me-1"></i>
+                    <span class="contact-type-badge contact-type-${contact.type.replace('_', '-')}">
+                        <i class="me-1">${typeIcon}</i>
                         ${typeLabel}
                     </span>
                     ${labelText}
                 </td>
                 <td>
-                    ${primaryStar}
                     <code class="contact-value">${this.escapeHtml(contact.value)}</code>
                 </td>
                 <td>
-                    ${contact.primary ? '<span class="badge bg-warning text-dark">Wichtig</span>' : '<span class="badge bg-secondary">Standard</span>'}
+                    ${contact.label ? this.escapeHtml(contact.label) : '<em class="text-muted">Keine Bezeichnung</em>'}
                 </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
@@ -696,15 +666,11 @@ class AdditionalContactManager {
             const emailInput = form.querySelector('input[name="email"]');
             const phoneInput = form.querySelector('input[name="phone"]');
 
-            const primaryContactTypeSelect = form.querySelector('select[name="primary_contact_type"]');
-            const primaryContactValueInput = form.querySelector('input[name="primary_contact_value"]');
-
             const isValid = this.validateRequired(firstNameInput, 'Vorname ist erforderlich') &&
                             this.validateRequired(lastNameInput, 'Nachname ist erforderlich') &&
                             this.validateSalutation(salutationSelect) &&
                             this.validateEmail(emailInput) &&
-                            this.validatePhone(phoneInput) &&
-                            this.validatePrimaryContact(primaryContactTypeSelect, primaryContactValueInput);
+                            this.validatePhone(phoneInput);
 
             if (!isValid) {
                 this.showAlert('Bitte korrigieren Sie die Fehler im Formular', 'error');
@@ -721,14 +687,6 @@ class AdditionalContactManager {
 
             const additionalContactsData = this.getAdditionalContactsData();
             formData.append('additional_contacts_data', JSON.stringify(additionalContactsData));
-
-            const primaryContactData = {
-                type: primaryContactTypeSelect.value,
-                value: primaryContactValueInput.value.trim(),
-                label: 'Hauptkontakt',
-                primary: true
-            };
-            formData.append('primary_contact_data', JSON.stringify(primaryContactData));
 
             fetch('/users/create-admin/step2/', {
                 method: 'POST',
@@ -795,6 +753,7 @@ class AdditionalContactManager {
         });
     }
 
+    // Методы валидации основных полей
     validateRequired(field, errorMessage) {
         if (!field) return false;
 
@@ -833,16 +792,16 @@ class AdditionalContactManager {
     validateEmail(emailInput) {
         if (!emailInput) return false;
 
-        const email = emailInput.value.trim();
+        const value = emailInput.value.trim();
         this.clearFieldError(emailInput);
 
-        if (!email) {
-            this.setFieldError(emailInput, 'System E-Mail ist erforderlich');
+        if (!value) {
+            this.setFieldError(emailInput, 'E-Mail ist erforderlich');
             return false;
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(value)) {
             this.setFieldError(emailInput, 'Ungültiges E-Mail-Format');
             return false;
         }
@@ -854,49 +813,21 @@ class AdditionalContactManager {
     validatePhone(phoneInput) {
         if (!phoneInput) return false;
 
-        const phone = phoneInput.value.trim();
+        const value = phoneInput.value.trim();
         this.clearFieldError(phoneInput);
 
-        if (!phone) {
+        if (!value) {
             this.setFieldError(phoneInput, 'Telefon ist erforderlich');
             return false;
         }
 
-        const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,20}$/;
-        if (!phoneRegex.test(phone)) {
+        const phonePattern = /^[\+]?[0-9\s\-\(\)]{7,20}$/;
+        if (!phonePattern.test(value)) {
             this.setFieldError(phoneInput, 'Ungültiges Telefonformat');
             return false;
         }
 
         this.setFieldSuccess(phoneInput);
-        return true;
-    }
-
-    validatePrimaryContact(typeSelect, valueInput) {
-        if (!typeSelect || !valueInput) return false;
-
-        const type = typeSelect.value;
-        const value = valueInput.value.trim();
-
-        this.clearFieldError(typeSelect);
-        this.clearFieldError(valueInput);
-
-        if (!type) {
-            this.setFieldError(typeSelect, 'Hauptkontakt Typ ist erforderlich');
-            return false;
-        }
-
-        if (!value) {
-            this.setFieldError(valueInput, 'Hauptkontakt ist erforderlich');
-            return false;
-        }
-
-        if (window.primaryContactManager && !window.primaryContactManager.isValid()) {
-            return false;
-        }
-
-        this.setFieldSuccess(typeSelect);
-        this.setFieldSuccess(valueInput);
         return true;
     }
 
@@ -936,13 +867,67 @@ class AdditionalContactManager {
 }
 
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+// Исправленный JavaScript файл для create_admin_step2_mongodb.js
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('admin-step2-form');
     if (!form) return;
 
-    // Инициализируем менеджер главного контакта
-    window.primaryContactManager = new PrimaryContactManager();
-    primaryContactManager.init();
+    // Проверяем, что данные коммуникаций загружены
+    if (!window.communicationTypesData) {
+        console.warn('Communication types data not loaded, using fallback');
+        window.communicationTypesData = {
+            'e_mail': {
+                'name': 'E-Mail',
+                'icon': '📧',
+                'validation_pattern': '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
+                'placeholder_text': 'beispiel@domain.com',
+                'hint_text': 'Geben Sie eine gültige E-Mail-Adresse ein'
+            },
+            'mobile': {
+                'name': 'Mobile',
+                'icon': '📱',
+                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
+                'placeholder_text': '+49 170 1234567',
+                'hint_text': 'Geben Sie eine Mobilnummer ein'
+            },
+            'fax': {
+                'name': 'Fax',
+                'icon': '📠',
+                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
+                'placeholder_text': '+49 123 456789',
+                'hint_text': 'Geben Sie eine Faxnummer ein'
+            },
+            'website': {
+                'name': 'Website',
+                'icon': '🌐',
+                'validation_pattern': '^https?:\\/\\/.+\\..+$|^www\\..+\\..+$',
+                'placeholder_text': 'https://www.example.com',
+                'hint_text': 'Geben Sie eine Website-URL ein'
+            },
+            'linkedin': {
+                'name': 'LinkedIn',
+                'icon': '💼',
+                'validation_pattern': '^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
+                'placeholder_text': 'linkedin.com/in/username',
+                'hint_text': 'Geben Sie Ihr LinkedIn-Profil ein'
+            },
+            'xing': {
+                'name': 'XING',
+                'icon': '🔗',
+                'validation_pattern': '^(https?:\\/\\/)?(www\\.)?xing\\.com\\/profile\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
+                'placeholder_text': 'xing.com/profile/username',
+                'hint_text': 'Geben Sie Ihr XING-Profil ein'
+            },
+            'sonstige': {
+                'name': 'Sonstige',
+                'icon': '📝',
+                'validation_pattern': '.{3,}',
+                'placeholder_text': 'Kontaktdaten eingeben...',
+                'hint_text': 'Geben Sie die entsprechenden Kontaktdaten ein'
+            }
+        };
+    }
 
     // Инициализируем менеджер дополнительных контактов
     window.additionalContactManager = new AdditionalContactManager();
@@ -954,8 +939,29 @@ document.addEventListener('DOMContentLoaded', function() {
         additionalContactManager.loadAdditionalContacts(existingAdditionalContacts);
     }
 
-    console.log('Create Admin Step 2 (Enhanced Modal Version) полностью инициализирован');
-    console.log('- PrimaryContactManager: готов');
+    // Глобальная функция для показа тостов (если не определена)
+    if (typeof window.showToast === 'undefined') {
+        window.showToast = function(message, type = 'info', delay = 5000) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, delay);
+        };
+    }
+
+    console.log('Create Admin Step 2 (MongoDB Version) полностью инициализирован');
     console.log('- AdditionalContactManager: готов');
+    console.log('- Communication types loaded:', Object.keys(window.communicationTypesData).length);
     console.log('- Загружено дополнительных контактов:', existingAdditionalContacts.length);
 });
