@@ -71,188 +71,6 @@ def get_default_title_choices():
     ]
 
 
-def get_communication_types_from_mongodb():
-    """Загружает типы коммуникаций из MongoDB коллекции _basic_communications"""
-    try:
-        logger.info("Загружаем типы коммуникаций из MongoDB")
-        db = MongoConnection.get_database()
-        if db is None:
-            logger.error("База данных недоступна")
-            return get_default_communication_choices()
-
-        config = MongoConfig.read_config()
-        db_name = config.get('db_name')
-        if not db_name:
-            logger.error("Имя базы данных не найдено в конфигурации")
-            return get_default_communication_choices()
-
-        communications_collection_name = f"{db_name}_basic_communications"
-        collections = db.list_collection_names()
-        if communications_collection_name not in collections:
-            logger.warning(f"Коллекция '{communications_collection_name}' не найдена")
-            return get_default_communication_choices()
-
-        communications_collection = db[communications_collection_name]
-        communications_cursor = communications_collection.find(
-            {
-                'deleted': {'$ne': True},
-                'active': {'$ne': False}
-            },
-            {
-                'type': 1,
-                'icon': 1,
-                'required_format': 1,
-                'validation_pattern': 1,
-                'placeholder': 1,
-                'hint_de': 1,
-                'display_order': 1
-            }
-        ).sort('display_order', 1)
-
-        choices = [('', '-- Kontakttyp auswählen --')]
-        communication_data = {}
-        count = 0
-
-        for comm_doc in communications_cursor:
-            type_name = comm_doc.get('type', '').strip()
-            icon_name = comm_doc.get('icon', 'envelope')
-
-            # Преобразуем Bootstrap Icons в эмодзи или оставляем как есть
-            icon_mapping = {
-                'envelope': '📧',
-                'envelope-plus': '📧',
-                'phone': '📱',
-                'telephone': '📞',
-                'printer': '📠',
-                'globe': '🌐',
-                'globe2': '🌐',
-                'linkedin': '💼',
-                'person-badge': '🔗',
-                'person-vcard': '🔗',
-                'chat': '💬',
-                'chat-dots': '💬',
-                'whatsapp': '📲',
-                'camera-video': '🎥',
-                'camera-video-fill': '🎥',
-                'skype': '🎥',
-                'pencil': '📝',
-                'pencil-square': '📝',
-                'telegram': '💬',
-                'instagram': '📸',
-                'facebook': '📘',
-                'twitter': '🐦',
-                'youtube': '📹',
-                'tiktok': '🎵',
-                'discord': '🎮',
-                'snapchat': '👻',
-                'pinterest': '📌',
-                'reddit': '🔴',
-                'tumblr': '📝',
-                'medium': '📝',
-                'behance': '🎨',
-                'dribbble': '🏀',
-                'github': '💻',
-                'stack-overflow': '📚',
-                'twitch': '🎮',
-                'steam': '🎮'
-            }
-
-            display_icon = icon_mapping.get(icon_name, '📞')
-
-            if type_name:
-                # Создаем код из типа (приводим к нижнему регистру и заменяем пробелы)
-                code = type_name.lower().replace(' ', '_').replace('-', '_')
-
-                # Создаем выбор с иконкой
-                display_text = f"{display_icon} {type_name}"
-                choices.append((code, display_text))
-
-                # Сохраняем дополнительные данные для JavaScript
-                communication_data[code] = {
-                    'name': type_name,
-                    'icon': display_icon,
-                    'validation_pattern': comm_doc.get('validation_pattern', ''),
-                    'placeholder_text': comm_doc.get('placeholder', f'{type_name} eingeben...'),
-                    'hint_text': comm_doc.get('hint_de', f'Geben Sie {type_name.lower()} ein')
-                }
-                count += 1
-
-        logger.success(f"Успешно загружено {count} типов коммуникаций из коллекции")
-        return choices, communication_data
-
-    except Exception as e:
-        logger.error(f"Ошибка загрузки типов коммуникаций из MongoDB: {e}")
-        return get_default_communication_choices()
-
-
-def get_default_communication_choices():
-    """Возвращает статичный список типов коммуникаций как fallback"""
-    choices = [
-        ('', '-- Kontakttyp auswählen --'),
-        ('e_mail', '📧 E-Mail'),
-        ('mobile', '📱 Mobile'),
-        ('fax', '📠 Fax'),
-        ('website', '🌐 Website'),
-        ('linkedin', '💼 LinkedIn'),
-        ('xing', '🔗 XING'),
-        ('sonstige', '📝 Sonstige')
-    ]
-
-    communication_data = {
-        'e_mail': {
-            'name': 'E-Mail',
-            'icon': '📧',
-            'validation_pattern': r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-            'placeholder_text': 'beispiel@domain.com',
-            'hint_text': 'Geben Sie eine gültige E-Mail-Adresse ein'
-        },
-        'mobile': {
-            'name': 'Mobile',
-            'icon': '📱',
-            'validation_pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder_text': '+49 170 1234567',
-            'hint_text': 'Geben Sie eine Mobilnummer ein'
-        },
-        'fax': {
-            'name': 'Fax',
-            'icon': '📠',
-            'validation_pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder_text': '+49 123 456789',
-            'hint_text': 'Geben Sie eine Faxnummer ein'
-        },
-        'website': {
-            'name': 'Website',
-            'icon': '🌐',
-            'validation_pattern': r'^https?:\/\/.+\..+$|^www\..+\..+$',
-            'placeholder_text': 'https://www.example.com',
-            'hint_text': 'Geben Sie eine Website-URL ein'
-        },
-        'linkedin': {
-            'name': 'LinkedIn',
-            'icon': '💼',
-            'validation_pattern': r'^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$',
-            'placeholder_text': 'linkedin.com/in/username',
-            'hint_text': 'Geben Sie Ihr LinkedIn-Profil ein'
-        },
-        'xing': {
-            'name': 'XING',
-            'icon': '🔗',
-            'validation_pattern': r'^(https?:\/\/)?(www\.)?xing\.com\/profile\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$',
-            'placeholder_text': 'xing.com/profile/username',
-            'hint_text': 'Geben Sie Ihr XING-Profil ein'
-        },
-        'sonstige': {
-            'name': 'Sonstige',
-            'icon': '📝',
-            'validation_pattern': r'.{3,}',
-            'placeholder_text': 'Kontaktdaten eingeben...',
-            'hint_text': 'Geben Sie die entsprechenden Kontaktdaten ein'
-        }
-    }
-
-    return choices, communication_data
-
-
 class CreateAdminUserForm(forms.Form):
     """Шаг 1: Основные учетные данные администратора"""
 
@@ -295,9 +113,6 @@ class CreateAdminUserForm(forms.Form):
 
     def clean_password(self):
         password = self.cleaned_data.get('password')
-
-        if not password:
-            raise forms.ValidationError("Passwort ist erforderlich")
 
         if len(password) < 8:
             raise forms.ValidationError("Passwort muss mindestens 8 Zeichen lang sein")
@@ -355,7 +170,6 @@ class AdminProfileForm(forms.Form):
     first_name = forms.CharField(
         label="Vorname",
         max_length=50,
-        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Vorname eingeben'
@@ -365,13 +179,13 @@ class AdminProfileForm(forms.Form):
     last_name = forms.CharField(
         label="Nachname",
         max_length=50,
-        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Nachname eingeben'
         })
     )
 
+    # ДОБАВЛЕНЫ обязательные поля email и phone
     email = forms.EmailField(
         label="E-Mail",
         max_length=100,
@@ -402,13 +216,8 @@ class AdminProfileForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         # Динамически загружаем titles из MongoDB
-        try:
-            title_choices = get_titles_from_mongodb()
-            self.fields['title'].choices = title_choices
-        except Exception as e:
-            logger.error(f"Ошибка загрузки titles в AdminProfileForm: {e}")
-            # Используем fallback choices
-            self.fields['title'].choices = get_default_title_choices()
+        title_choices = get_titles_from_mongodb()
+        self.fields['title'].choices = title_choices
 
 
 class AdminPermissionsForm(forms.Form):

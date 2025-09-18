@@ -1,4 +1,3 @@
-// static/my/js/users/create_admin_step3.js - FIXED URLs
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('admin-step3-form');
     if (!form) return;

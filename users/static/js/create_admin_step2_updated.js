@@ -1,6 +1,3 @@
-// Обновленный файл create_admin_step2_updated.js с разделением на основные и дополнительные контакты
-
-// Управление дополнительными контактами
 class AdditionalContactManager {
     constructor() {
         this.additionalContacts = [];
