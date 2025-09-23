@@ -609,7 +609,7 @@ def register_company_step6(request):
 
                 return render_with_messages(
                     request,
-                    'register_company_step6.html',
+                    'register_company_step5.html',
                     {
                         'form': form,
                         'step': 6,
@@ -635,7 +635,7 @@ def register_company_step6(request):
         'primary_email': primary_email,
         'contact_count': contact_count
     }
-    return render(request, 'register_company_step6.html', context)
+    return render(request, 'register_company_step5.html', context)
 
 
 # =============================================================================
