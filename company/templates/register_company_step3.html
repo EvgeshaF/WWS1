@@ -14,7 +14,7 @@
                         <i class="bi bi-geo-alt me-2"></i>
                         {{ text.title }}
                     </h5>
-                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 6</span>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
                 </div>
 
                 <div class="modal-body">
@@ -22,11 +22,6 @@
                         <i class="bi bi-info-circle me-2"></i>
                         {{ text.desc }}
                         <br><small class="text-muted mt-1"><strong>{{ company_name }}</strong></small>
-                    </div>
-
-                    <!-- Progress bar -->
-                    <div class="progress mb-4" style="height: 8px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
 
                     <form method="post" id="company-step3-form" action="{% url 'company:register_company_step3' %}">
@@ -177,7 +172,7 @@
 
 {% block extra_js %}
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             console.log('Инициализируем Select2 для шага 3');
 
             // Настройки локализации
@@ -190,17 +185,17 @@
                 allowClear: false,
                 width: '100%',
                 language: {
-                    noResults: function() {
+                    noResults: function () {
                         return 'Keine Ergebnisse gefunden';
                     },
-                    searching: function() {
+                    searching: function () {
                         return 'Suche läuft...';
                     },
-                    inputTooShort: function() {
+                    inputTooShort: function () {
                         return 'Bitte geben Sie mindestens 1 Zeichen ein';
                     }
                 },
-                matcher: function(params, data) {
+                matcher: function (params, data) {
                     if ($.trim(params.term) === '') {
                         return data;
                     }
@@ -229,13 +224,13 @@
         });
 
         // Form submission handling
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('company-step3-form');
             if (!form) return;
 
             const submitBtn = document.getElementById('submit-btn');
 
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 e.preventDefault();
 
                 // Показываем прогресс
@@ -255,51 +250,51 @@
                         'HX-Request': 'true'
                     }
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Скрываем прогресс
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                    }
-
-                    // Обрабатываем сообщения
-                    if (data.messages && data.messages.length > 0) {
-                        data.messages.forEach(message => {
-                            showToast(message.text, message.tags, message.delay);
-                        });
-
-                        // Если есть успешное сообщение, перенаправляем через короткое время
-                        const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                        if (hasSuccess) {
-                            setTimeout(() => {
-                                window.location.href = '{% url "company:register_company_step4" %}';
-                            }, 1500);
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка отправки формы:', error);
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Скрываем прогресс
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                        }
 
-                    // Скрываем прогресс
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                    }
+                        // Обрабатываем сообщения
+                        if (data.messages && data.messages.length > 0) {
+                            data.messages.forEach(message => {
+                                showToast(message.text, message.tags, message.delay);
+                            });
 
-                    showToast('Fehler beim Senden des Formulars', 'error');
-                });
+                            // Если есть успешное сообщение, перенаправляем через короткое время
+                            const hasSuccess = data.messages.some(msg => msg.tags === 'success');
+                            if (hasSuccess) {
+                                setTimeout(() => {
+                                    window.location.href = '{% url "company:register_company_step4" %}';
+                                }, 1500);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка отправки формы:', error);
+
+                        // Скрываем прогресс
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                        }
+
+                        showToast('Fehler beim Senden des Formulars', 'error');
+                    });
             });
         });
 
         // Глобальная функция для показа тостов (если не определена)
         if (typeof window.showToast === 'undefined') {
-            window.showToast = function(message, type = 'info', delay = 5000) {
+            window.showToast = function (message, type = 'info', delay = 5000) {
                 const toast = document.createElement('div');
                 toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
                 toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';

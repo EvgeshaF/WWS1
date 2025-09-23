@@ -7,14 +7,14 @@ from django.views.decorators.csrf import csrf_exempt
 from loguru import logger
 import datetime
 import json
+import re
 
-# Импортируем все формы для многошагового процесса
+# Импортируем все формы для многошагового процесса (теперь 5 шагов)
 from .forms import (
     CompanyBasicDataForm,
     CompanyRegistrationForm as CompanyRegistrationFormStep2,
     CompanyAddressForm,
     CompanyContactForm,
-    CompanyManagementForm,
     CompanyOptionsForm,
     CompanyRegistrationFormLegacy, CompanyRegistrationForm  # Для обратной совместимости
 )
@@ -23,8 +23,7 @@ from .language import (
     text_company_step2,
     text_company_step3,
     text_company_step4,
-    text_company_step5,
-    text_company_step6,
+    text_company_step5,  # Теперь это финальные настройки (бывший step6)
     company_success_messages,
     company_error_messages
 )
@@ -64,15 +63,14 @@ class CompanySessionManager:
 
     @staticmethod
     def get_completion_status(request):
-        """Возвращает статус завершения шагов"""
+        """Возвращает статус завершения шагов (теперь 5 шагов)"""
         session_data = CompanySessionManager.get_session_data(request)
         return {
             'step1_complete': 'company_name' in session_data and 'legal_form' in session_data,
             'step2_complete': 'registration_data_processed' in session_data,
             'step3_complete': 'street' in session_data and 'city' in session_data,
             'step4_complete': 'email' in session_data and 'phone' in session_data,
-            'step5_complete': 'management_data_processed' in session_data,
-            'step6_complete': 'data_protection_consent' in session_data
+            'step5_complete': 'data_protection_consent' in session_data  # Финальный шаг
         }
 
 
@@ -221,7 +219,7 @@ class CompanyManager:
             filled_fields = 0
             total_fields = 0
             required_fields = ['company_name', 'legal_form', 'street', 'postal_code', 'city', 'country', 'email', 'phone']
-            optional_fields = ['commercial_register', 'tax_number', 'vat_id', 'fax', 'website', 'ceo_name', 'contact_person', 'industry', 'description']
+            optional_fields = ['commercial_register', 'tax_number', 'vat_id', 'fax', 'website', 'ceo_first_name', 'ceo_last_name', 'contact_person_first_name', 'contact_person_last_name', 'industry', 'description']
 
             for field in required_fields + optional_fields:
                 total_fields += 1
@@ -287,7 +285,7 @@ def check_mongodb_availability():
 
 
 # =============================================================================
-# МНОГОШАГОВАЯ РЕГИСТРАЦИЯ КОМПАНИИ
+# МНОГОШАГОВАЯ РЕГИСТРАЦИЯ КОМПАНИИ (5 ШАГОВ)
 # =============================================================================
 
 def register_company(request):
@@ -356,7 +354,7 @@ def register_company_step2(request):
     company_name = session_data.get('company_name', '')
 
     if request.method == 'POST':
-        form = CompanyRegistrationFormStep2(request.POST)
+        form = CompanyRegistrationForm(request.POST)
         if form.is_valid():
             # Сохраняем данные шага в сессию
             step_data = form.cleaned_data.copy()
@@ -495,7 +493,7 @@ def register_company_step4(request):
                     'company_name': company_name,
                     'existing_additional_contacts': json.dumps(contacts) if contacts else '[]'
                 },
-                reverse('company:register_company_step5')
+                reverse('company:register_company_step5')  # Теперь идем на шаг 5
             )
         else:
             messages.error(request, company_error_messages['form_submission_error'])
@@ -513,7 +511,7 @@ def register_company_step4(request):
 
 
 def register_company_step5(request):
-    """Шаг 5: Управление и персонал"""
+    """Шаг 5: Финальные настройки и создание компании (бывший шаг 6)"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -523,50 +521,6 @@ def register_company_step5(request):
     if not completion['step4_complete']:
         messages.warning(request, "Bitte vollenden Sie die vorherigen Schritte")
         return redirect('company:register_company_step4')
-
-    session_data = CompanySessionManager.get_session_data(request)
-    company_name = session_data.get('company_name', '')
-
-    if request.method == 'POST':
-        form = CompanyManagementForm(request.POST)
-        if form.is_valid():
-            step_data = form.cleaned_data.copy()
-            step_data['management_data_processed'] = True
-            CompanySessionManager.update_session_data(request, step_data)
-
-            messages.success(request, company_success_messages['step5_completed'])
-
-            return render_with_messages(
-                request,
-                'register_company_step5.html',
-                {'form': form, 'step': 5, 'text': text_company_step5, 'company_name': company_name},
-                reverse('company:register_company_step6')
-            )
-        else:
-            messages.error(request, company_error_messages['form_submission_error'])
-    else:
-        form = CompanyManagementForm(initial=session_data)
-
-    context = {
-        'form': form,
-        'step': 5,
-        'text': text_company_step5,
-        'company_name': company_name
-    }
-    return render(request, 'register_company_step5.html', context)
-
-
-def register_company_step6(request):
-    """Шаг 6: Финальные настройки и создание компании"""
-    if not check_mongodb_availability():
-        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
-        return redirect('home')
-
-    # Проверяем предыдущие шаги
-    completion = CompanySessionManager.get_completion_status(request)
-    if not completion['step5_complete']:
-        messages.warning(request, "Bitte vollenden Sie die vorherigen Schritte")
-        return redirect('company:register_company_step5')
 
     session_data = CompanySessionManager.get_session_data(request)
     company_name = session_data.get('company_name', '')
@@ -612,8 +566,8 @@ def register_company_step6(request):
                     'register_company_step5.html',
                     {
                         'form': form,
-                        'step': 6,
-                        'text': text_company_step6,
+                        'step': 5,
+                        'text': text_company_step5,
                         'company_name': company_name,
                         'primary_email': primary_email,
                         'contact_count': contact_count
@@ -629,8 +583,8 @@ def register_company_step6(request):
 
     context = {
         'form': form,
-        'step': 6,
-        'text': text_company_step6,
+        'step': 5,
+        'text': text_company_step5,
         'company_name': company_name,
         'primary_email': primary_email,
         'contact_count': contact_count

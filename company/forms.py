@@ -1,4 +1,4 @@
-# company/forms.py - Updated CompanyBasicDataForm with CEO fields
+# company/forms.py - Updated for 5-step process with CEO fields in step 1
 
 from django import forms
 from django.core.validators import RegexValidator
@@ -169,7 +169,7 @@ class CompanyBasicDataForm(forms.Form):
         ('sonstige', 'Sonstige'),
     ]
 
-    # Основные идентификационные данные
+    # Основные идентификационные данные (убрали industry и description)
     company_name = forms.CharField(
         label="Firmenname",
         max_length=100,
@@ -196,29 +196,9 @@ class CompanyBasicDataForm(forms.Form):
         })
     )
 
-    industry = forms.ChoiceField(
-        label="Branche",
-        choices=[],  # Заполняется динамически
-        required=True,
-        widget=forms.Select(attrs={
-            'class': 'form-control'
-        })
-    )
-
-    description = forms.CharField(
-        label="Geschäftsbeschreibung",
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 3,
-            'placeholder': 'Kurze Beschreibung der Geschäftstätigkeit (optional)'
-        })
-    )
-
-    # НОВОЕ: Поля Geschäftsführер
+    # БЛОК GESCHÄFTSFÜHRER - поля CEO
     ceo_salutation = forms.ChoiceField(
-        label="Anrede Geschäftsführer",
+        label="Anrede",
         choices=[
             ('', '-- Auswählen --'),
             ('herr', 'Herr'),
@@ -232,7 +212,7 @@ class CompanyBasicDataForm(forms.Form):
     )
 
     ceo_title = forms.CharField(
-        label="Titel Geschäftsführer",
+        label="Titel",
         max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
@@ -242,7 +222,7 @@ class CompanyBasicDataForm(forms.Form):
     )
 
     ceo_first_name = forms.CharField(
-        label="Vorname Geschäftsführer",
+        label="Vorname",
         max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
@@ -252,96 +232,263 @@ class CompanyBasicDataForm(forms.Form):
     )
 
     ceo_last_name = forms.CharField(
-        label="Nachname Geschäftsführer",
+        label="Nachname",
         max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Nachname eingeben'
+        })
+    )
+
+
+class CompanyRegistrationForm(forms.Form):
+    """Шаг 2: Регистрационные данные"""
+
+    commercial_register = forms.CharField(
+        label="Handelsregister",
+        max_length=50,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$',
+                message='Format: HRA12345 oder HRB12345'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. HRB12345'
+        })
+    )
+
+    tax_number = forms.CharField(
+        label="Steuernummer",
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Steuernummer eingeben'
+        })
+    )
+
+    vat_id = forms.CharField(
+        label="USt-IdNr.",
+        max_length=15,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^DE\d{9}$',
+                message='Format: DE123456789'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'DE123456789'
+        })
+    )
+
+    tax_id = forms.CharField(
+        label="Steuer-ID",
+        max_length=11,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{11}$',
+                message='11-stellige Steuer-ID'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '12345678901'
+        })
+    )
+
+
+class CompanyAddressForm(forms.Form):
+    """Шаг 3: Адресные данные"""
+
+    street = forms.CharField(
+        label="Straße und Hausnummer",
+        max_length=100,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-ZäöüÄÖÜß0-9\s\.\-,]+$',
+                message='Straße darf nur Buchstaben, Zahlen und gängige Zeichen enthalten'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Musterstraße 123'
+        })
+    )
+
+    postal_code = forms.CharField(
+        label="PLZ",
+        max_length=5,
+        min_length=5,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{5}$',
+                message='PLZ muss 5 Ziffern haben'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '12345'
+        })
+    )
+
+    city = forms.CharField(
+        label="Stadt",
+        max_length=100,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-ZäöüÄÖÜß\s\-]+$',
+                message='Stadt darf nur Buchstaben, Leerzeichen und Bindestriche enthalten'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Musterstadt'
+        })
+    )
+
+    country = forms.ChoiceField(
+        label="Land",
+        choices=[],  # Заполняется динамически
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        })
+    )
+
+    address_addition = forms.CharField(
+        label="Adresszusatz",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. 2. Stock, Gebäude A (optional)'
+        })
+    )
+
+    po_box = forms.CharField(
+        label="Postfach",
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. Postfach 123456 (optional)'
         })
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Динамически загружаем отрасли из MongoDB
-        industry_choices = get_industries_from_mongodb()
-        self.fields['industry'].choices = industry_choices
+        # Динамически загружаем страны из MongoDB
+        country_choices = get_countries_from_mongodb()
+        self.fields['country'].choices = country_choices
 
 
-# Обновляем CompanyManagementForm - убираем поля CEO, оставляем только контактное лицо
-class CompanyManagementForm(forms.Form):
-    """Шаг 5: Анспречпартнер и персонал (без CEO)"""
+class CompanyContactForm(forms.Form):
+    """Шаг 4: Контактные данные"""
 
-    contact_person_salutation = forms.ChoiceField(
-        label="Anrede Ansprechpartner",
-        choices=[
-            ('', '-- Auswählen --'),
-            ('herr', 'Herr'),
-            ('frau', 'Frau'),
-            ('divers', 'Divers'),
-        ],
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-control'
-        })
-    )
-
-    contact_person_title = forms.CharField(
-        label="Titel Ansprechpartner",
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'z.B. Dr., Prof. (optional)'
-        })
-    )
-
-    contact_person_first_name = forms.CharField(
-        label="Vorname Ansprechpartner",
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Vorname eingeben'
-        })
-    )
-
-    contact_person_last_name = forms.CharField(
-        label="Nachname Ansprechpartner",
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Nachname eingeben'
-        })
-    )
-
-    contact_person_position = forms.CharField(
-        label="Position Ansprechpartner",
+    email = forms.EmailField(
+        label="Haupt-E-Mail",
         max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
+        widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'z.B. Leiter Vertrieb, Sekretariat (optional)'
+            'placeholder': 'kontakt@firma.de'
         })
     )
 
-    employee_count = forms.ChoiceField(
-        label="Mitarbeiteranzahl",
-        choices=[
-            ('', '-- Auswählen --'),
-            ('1', '1 (Einzelunternehmer)'),
-            ('2-5', '2-5 Mitarbeiter'),
-            ('6-10', '6-10 Mitarbeiter'),
-            ('11-20', '11-20 Mitarbeiter'),
-            ('21-50', '21-50 Mitarbeiter'),
-            ('51-100', '51-100 Mitarbeiter'),
-            ('101-250', '101-250 Mitarbeiter'),
-            ('251-500', '251-500 Mitarbeiter'),
-            ('500+', 'Über 500 Mitarbeiter'),
+    phone = forms.CharField(
+        label="Haupttelefon",
+        max_length=20,
+        validators=[
+            RegexValidator(
+                regex=r'^[\+]?[0-9\s\-\(\)]{7,20}$',
+                message='Ungültiges Telefonformat'
+            )
         ],
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-control'
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+49 123 456789'
         })
     )
+
+    fax = forms.CharField(
+        label="Fax",
+        max_length=20,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[\+]?[0-9\s\-\(\)]{7,20}$',
+                message='Ungültiges Faxformat'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+49 123 456789'
+        })
+    )
+
+    website = forms.URLField(
+        label="Website",
+        max_length=200,
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://www.firma.de'
+        })
+    )
+
+
+class CompanyOptionsForm(forms.Form):
+    """Шаг 5: Финальные настройки (бывший шаг 6)"""
+
+    is_primary = forms.BooleanField(
+        label="Als Hauptfirma verwenden",
+        required=False,
+        initial=True,
+        help_text="Diese Firma wird als Standard-Firma im System verwendet",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+
+    enable_notifications = forms.BooleanField(
+        label="E-Mail-Benachrichtigungen aktivieren",
+        required=False,
+        initial=True,
+        help_text="Erhalten Sie wichtige Updates und Benachrichtigungen",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+
+    enable_marketing = forms.BooleanField(
+        label="Marketing-E-Mails erhalten",
+        required=False,
+        initial=False,
+        help_text="Optional: Newsletter und Produktupdates erhalten",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+
+    data_protection_consent = forms.BooleanField(
+        label="Datenschutzerklärung akzeptieren",
+        required=True,
+        help_text="Ich stimme der Verarbeitung meiner Daten gemäß DSGVO zu",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        error_messages={
+            'required': 'Die Datenschutzerklärung muss akzeptiert werden'
+        }
+    )
+
+# Для обратной совместимости (legacy forms)
+class CompanyRegistrationFormLegacy(forms.Form):
+    """Legacy форма для совместимости со старым кодом"""
+    pass

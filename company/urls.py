@@ -4,14 +4,13 @@ from . import views
 app_name = 'company'
 
 urlpatterns = [
-    # Многошаговая регистрация компании (теперь 5 шагов)
+    # Многошаговая регистрация компании (теперь 5 шагов вместо 6)
     path('register/', views.register_company, name='register_company'),
     path('register/step1/', views.register_company_step1, name='register_company_step1'),
     path('register/step2/', views.register_company_step2, name='register_company_step2'),
     path('register/step3/', views.register_company_step3, name='register_company_step3'),
     path('register/step4/', views.register_company_step4, name='register_company_step4'),
-    # Шаг 5 убран - step6 стал step5
-    path('register/step5/', views.register_company_step5, name='register_company_step5'),
+    path('register/step5/', views.register_company_step5, name='register_company_step5'),  # Финальный шаг (бывший step6)
 
     # Управление компанией
     path('info/', views.company_info, name='company_info'),

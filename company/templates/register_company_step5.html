@@ -15,23 +15,18 @@
                         <i class="bi bi-check-circle me-2"></i>
                         {{ text.title }}
                     </h5>
-                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 6</span>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
                 </div>
                 <div class="modal-body">
 
-                    <!-- Progress bar -->
-                    <div class="progress mb-3" style="height: 8px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-
                     <div class="alert alert-info" role="alert">
                         <i class="bi bi-info-circle me-2"></i>
-                        {{ text.desc }}
+                        Legen Sie die finalen Einstellungen für Ihre Firma fest und schließen Sie die Registrierung ab.
                         <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}</strong></small>
                         <br><small class="text-muted">Kontakte: <strong>{{ contact_count }}</strong> | E-Mail: <strong>{{ primary_email }}</strong></small>
                     </div>
 
-                    <form id="company-step6-form" method="post" action="{% url 'company:register_company_step6' %}">
+                    <form id="company-step5-form" method="post" action="{% url 'company:register_company_step5' %}">
                         {% csrf_token %}
 
                         <div class="row">
@@ -143,7 +138,7 @@
                         {% endif %}
 
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'company:register_company_step5' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'company:register_company_step4' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>
                                 {{ text.btn_back }}
                             </a>
@@ -172,7 +167,7 @@
 
 {% block extra_js %}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('company-step6-form');
             if (!form) return;
 
@@ -195,7 +190,7 @@
             let currentStepIndex = 0;
 
             // Обработчик отправки формы
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 e.preventDefault();
 
                 // Показываем прогресс и блокируем форму
@@ -212,40 +207,40 @@
                         'HX-Request': 'true'
                     }
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    hideProgress();
-
-                    // Обрабатываем сообщения
-                    if (data.messages && data.messages.length > 0) {
-                        data.messages.forEach(message => {
-                            showToast(message.text, message.tags, message.delay);
-                        });
-
-                        // Если есть успешное сообщение, перенаправляем на главную
-                        const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                        if (hasSuccess) {
-                            // Показываем финальный шаг
-                            if (currentStep) {
-                                currentStep.textContent = 'Firma erfolgreich registriert!';
-                            }
-
-                            setTimeout(() => {
-                                window.location.href = '/';
-                            }, 2000);
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка регистрации фирмы:', error);
-                    hideProgress();
-                    showToast('Kritischer Fehler beim Registrieren der Firma', 'error');
-                });
+                        return response.json();
+                    })
+                    .then(data => {
+                        hideProgress();
+
+                        // Обрабатываем сообщения
+                        if (data.messages && data.messages.length > 0) {
+                            data.messages.forEach(message => {
+                                showToast(message.text, message.tags, message.delay);
+                            });
+
+                            // Если есть успешное сообщение, перенаправляем на главную
+                            const hasSuccess = data.messages.some(msg => msg.tags === 'success');
+                            if (hasSuccess) {
+                                // Показываем финальный шаг
+                                if (currentStep) {
+                                    currentStep.textContent = 'Firma erfolgreich registriert!';
+                                }
+
+                                setTimeout(() => {
+                                    window.location.href = '/';
+                                }, 2000);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка регистрации фирмы:', error);
+                        hideProgress();
+                        showToast('Kritischer Fehler beim Registrieren der Firma', 'error');
+                    });
             });
 
             function showProgress() {
@@ -315,7 +310,7 @@
 
             // Глобальная функция для показа тостов (если не определена)
             if (typeof window.showToast === 'undefined') {
-                window.showToast = function(message, type = 'info', delay = 5000) {
+                window.showToast = function (message, type = 'info', delay = 5000) {
                     const toast = document.createElement('div');
                     toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
                     toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';

@@ -1,7 +1,7 @@
-# company/language.py - Enhanced Company Form Texts
+# company/language.py - Enhanced Company Form Texts for 5-step process
 
 # ========================================
-# Company Registration Step 1 (Grunddaten)
+# Company Registration Step 1 (Grunddaten + CEO)
 # ========================================
 text_company_step1 = {
     'title': "Firma registrieren",
@@ -9,8 +9,7 @@ text_company_step1 = {
     'desc': "Geben Sie die grundlegenden Informationen über Ihre Firma ein:",
     'company_name': "Firmenname:",
     'legal_form': "Rechtsform:",
-    'industry': "Branche:",
-    'description': "Geschäftsbeschreibung:",
+    'ceo_section': "Geschäftsführer:",
     'btn': "Weiter zu Schritt 2",
     'notification': "* Alle Angaben können später bearbeitet werden."
 }
@@ -69,31 +68,16 @@ text_company_step4 = {
 }
 
 # ========================================
-# Company Registration Step 5 (Management und Personal)
+# Company Registration Step 5 (Finale Einstellungen - bывший step6)
 # ========================================
 text_company_step5 = {
-    'title': "Management & Personal",
-    'header': "Geschäftsführung und Ansprechpartner",
-    'desc': "Geben Sie Informationen zur Geschäftsführung und zu Ansprechpartnern ein:",
-    'ceo_data': "Geschäftsführer:",
-    'contact_person_data': "Hauptansprechpartner:",
-    'employee_count': "Mitarbeiteranzahl:",
-    'btn': "Weiter zu Schritt 6",
-    'btn_back': "Zurück zu Schritt 4",
-    'notification': "* Diese Angaben sind optional, erleichtern aber die Kommunikation."
-}
-
-# ========================================
-# Company Registration Step 6 (Optionen und Einstellungen)
-# ========================================
-text_company_step6 = {
-    'title': "Einstellungen",
-    'header': "Finale Einstellungen und Bestätigung",
-    'desc': "Legen Sie die finalen Einstellungen für Ihre Firma fest:",
+    'title': "Einstellungen & Abschluss",
+    'header': "Finale Einstellungen und Registrierung",
+    'desc': "Legen Sie die finalen Einstellungen für Ihre Firma fest und schließen Sie die Registrierung ab:",
     'options_title': "Firmeneinstellungen:",
     'privacy_title': "Datenschutz und Benachrichtigungen:",
     'btn': "Firma registrieren",
-    'btn_back': "Zurück zu Schritt 5",
+    'btn_back': "Zurück zu Schritt 4",
     'notification': "* Die Datenschutzerklärung muss akzeptiert werden, um fortzufahren."
 }
 
@@ -288,14 +272,13 @@ company_contact_types = {
 }
 
 # ========================================
-# Enhanced Success Messages
+# Enhanced Success Messages (5 steps)
 # ========================================
 company_success_messages = {
     'step1_completed': "Grunddaten für '{company_name}' erfolgreich validiert",
     'step2_completed': "Registrierungsdaten erfolgreich erfasst",
     'step3_completed': "Adressdaten erfolgreich erfasst",
     'step4_completed': "Kontaktdaten erfolgreich erfasst ({contact_info})",
-    'step5_completed': "Management-Daten erfolgreich erfasst",
     'company_created': "Firma '{company_name}' wurde erfolgreich registriert! Kontakte: {contact_info}",
 
     # Contact summary formats
@@ -416,8 +399,6 @@ company_help_texts = {
     'main_phone': "Haupttelefonnummer für Kunden",
     'additional_contacts': "Weitere Kontaktmöglichkeiten zur Verbesserung der Erreichbarkeit",
     'ceo_data': "Informationen zum Geschäftsführer/Inhaber",
-    'contact_person': "Hauptansprechpartner für Anfragen",
-    'employee_count': "Ungefähre Anzahl der Mitarbeiter",
     'is_primary': "Diese Firma als Standardfirma im System verwenden",
     'data_protection': "Zustimmung zur Verarbeitung der Firmendaten gemäß DSGVO"
 }
