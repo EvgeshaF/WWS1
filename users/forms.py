@@ -71,6 +71,20 @@ def get_default_title_choices():
     ]
 
 
+def get_contact_type_choices():
+    """Возвращает список типов контактов"""
+    return [
+        ('', '-- Kontakttyp auswählen --'),
+        ('email', '📧 E-Mail (zusätzlich)'),
+        ('mobile', '📱 Mobil'),
+        ('fax', '📠 Fax'),
+        ('website', '🌐 Website'),
+        ('linkedin', '💼 LinkedIn'),
+        ('xing', '🔗 XING'),
+        ('other', '📝 Sonstige'),
+    ]
+
+
 class CreateAdminUserForm(forms.Form):
     """Шаг 1: Основные учетные данные администратора"""
 
@@ -218,6 +232,49 @@ class AdminProfileForm(forms.Form):
         # Динамически загружаем titles из MongoDB
         title_choices = get_titles_from_mongodb()
         self.fields['title'].choices = title_choices
+
+
+class AdditionalContactForm(forms.Form):
+    """Форма для дополнительных контактов (используется в модальном окне)"""
+
+    contact_type = forms.ChoiceField(
+        label="Kontakttyp",
+        choices=[],  # Заполняется динамически
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'contactType'
+        })
+    )
+
+    contact_value = forms.CharField(
+        label="Kontaktdaten",
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Kontaktdaten eingeben...',
+            'id': 'contactValue'
+        })
+    )
+
+    contact_label = forms.CharField(
+        label="Bezeichnung",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. Privat, Geschäftlich...',
+            'id': 'contactLabel'
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Динамически загружаем типы контактов
+        contact_type_choices = get_contact_type_choices()
+        self.fields['contact_type'].choices = contact_type_choices
 
 
 class AdminPermissionsForm(forms.Form):

@@ -298,17 +298,19 @@
                                 <i class="bi bi-tag me-1"></i>
                                 Kontakttyp *
                             </label>
-                            <select class="form-select select2-basic" id="contactType" required data-placeholder="Typ auswählen...">
-                                <option value="">Typ auswählen...</option>
-                                <option value="email">📧 E-Mail (zusätzlich)</option>
-                                <option value="mobile">📱 Mobil</option>
-                                <option value="fax">📠 Fax</option>
-                                <option value="website">🌐 Website</option>
-                                <option value="linkedin">💼 LinkedIn</option>
-                                <option value="xing">🔗 XING</option>
-                                <option value="other">📝 Sonstige</option>
+                            <!-- ИЗМЕНЕНО: теперь используется серверный рендеринг как для salutation -->
+                            <select name="contact_type"
+                                    id="contactType"
+                                    class="form-select select2-basic"
+                                    data-placeholder="Kontakttyp auswählen..."
+                                    required>
+                                <option></option>
+                                {% for value, text in contact_type_choices %}
+                                    {% if value %}
+                                        <option value="{{ value }}">{{ text }}</option>
+                                    {% endif %}
+                                {% endfor %}
                             </select>
-
                             <div class="invalid-feedback"></div>
                         </div>
 
@@ -449,7 +451,7 @@
 
             $('#contactType').select2({
                 theme: 'bootstrap-5',
-                placeholder: 'Typ auswählen...',
+                placeholder: 'Kontakttyp auswählen...',
                 allowClear: false,
                 width: '100%',
                 dropdownParent: $('#contactModal'),
@@ -480,6 +482,9 @@
 
     // ==================== Дополнительные контакты из backend ====================
     window.initialAdditionalContactsData = {{ existing_additional_contacts|default:"[]"|safe }};
+
+    // ==================== Типы контактов для JavaScript ====================
+    window.contactTypeChoices = {{ contact_type_choices_json|safe }};
 </script>
 
 {# Подключаем основной JS файл #}

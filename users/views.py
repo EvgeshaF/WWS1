@@ -10,7 +10,7 @@ import datetime
 import json
 import re
 
-from .forms import CreateAdminUserForm, AdminProfileForm, AdminPermissionsForm
+from .forms import CreateAdminUserForm, AdminProfileForm, AdminPermissionsForm, get_contact_type_choices
 from mongodb.mongodb_config import MongoConfig
 from .user_utils import UserManager
 from . import language
@@ -222,6 +222,10 @@ def create_admin_step2(request):
 
         admin_creation = request.session.get('admin_creation')
 
+        # Получаем типы контактов для передачи в шаблон
+        contact_type_choices = get_contact_type_choices()
+        contact_type_choices_json = json.dumps([{'value': value, 'text': text} for value, text in contact_type_choices])
+
         if request.method == 'POST':
             logger.info("Processing POST request for step 2")
 
@@ -239,7 +243,9 @@ def create_admin_step2(request):
                 context = {
                     'form': form, 'text': language.text_create_admin_step2,
                     'step': 2, 'username': admin_creation['username'],
-                    'existing_additional_contacts': additional_contacts_data_raw
+                    'existing_additional_contacts': additional_contacts_data_raw,
+                    'contact_type_choices': contact_type_choices,
+                    'contact_type_choices_json': contact_type_choices_json
                 }
                 return render_with_messages(request, 'create_admin_step2.html', context)
 
@@ -300,7 +306,9 @@ def create_admin_step2(request):
                     'users/create_admin_step2.html',
                     {
                         'form': form, 'text': language.text_create_admin_step2,
-                        'step': 2, 'username': admin_creation['username']
+                        'step': 2, 'username': admin_creation['username'],
+                        'contact_type_choices': contact_type_choices,
+                        'contact_type_choices_json': contact_type_choices_json
                     },
                     reverse('users:create_admin_step3')
                 )
@@ -312,7 +320,9 @@ def create_admin_step2(request):
             context = {
                 'form': form, 'text': language.text_create_admin_step2,
                 'step': 2, 'username': admin_creation['username'],
-                'existing_additional_contacts': additional_contacts_data_raw
+                'existing_additional_contacts': additional_contacts_data_raw,
+                'contact_type_choices': contact_type_choices,
+                'contact_type_choices_json': contact_type_choices_json
             }
             return render_with_messages(request, 'create_admin_step2.html', context)
 
@@ -325,7 +335,9 @@ def create_admin_step2(request):
             'text': language.text_create_admin_step2,
             'step': 2,
             'username': admin_creation['username'],
-            'existing_additional_contacts': json.dumps(existing_additional_contacts) if existing_additional_contacts else '[]'
+            'existing_additional_contacts': json.dumps(existing_additional_contacts) if existing_additional_contacts else '[]',
+            'contact_type_choices': contact_type_choices,
+            'contact_type_choices_json': contact_type_choices_json
         }
         return render(request, 'create_admin_step2.html', context)
 
@@ -420,9 +432,6 @@ def create_admin_step3(request):
                     logger.info(f"Is admin: {user_data['is_admin']}")
                     logger.info(f"Is active: {user_data['is_active']}")
                     logger.info(f"Total contacts count: {len(user_data['profile']['contacts'])}")
-
-                    # Use UserManager.create_user
-                    # В функции create_admin_step3, в части где создание администратора успешно:
 
                     # Use UserManager.create_user
                     if user_manager.create_user(user_data):

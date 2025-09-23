@@ -2,15 +2,12 @@ class AdditionalContactManager {
     constructor() {
         this.additionalContacts = [];
         this.editingIndex = -1;
-        this.contactTypeLabels = {
-            'email': 'E-Mail (zusätzlich)',
-            'mobile': 'Mobil',
-            'fax': 'Fax',
-            'website': 'Website',
-            'linkedin': 'LinkedIn',
-            'xing': 'XING',
-            'other': 'Sonstige'
-        };
+
+        // Используем типы контактов с сервера (если доступны) или fallback
+        this.contactTypeLabels = window.contactTypeChoices ?
+            this.buildContactTypeLabelsFromServer() :
+            this.getDefaultContactTypeLabels();
+
         this.contactTypeIcons = {
             'email': 'bi-envelope-plus',
             'mobile': 'bi-phone',
@@ -19,6 +16,70 @@ class AdditionalContactManager {
             'linkedin': 'bi-linkedin',
             'xing': 'bi-person-badge',
             'other': 'bi-question-circle'
+        };
+
+        this.contactHints = {
+            'email': {
+                placeholder: 'privat@domain.com',
+                hint: 'Geben Sie eine zusätzliche E-Mail-Adresse ein',
+                pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'
+            },
+            'mobile': {
+                placeholder: '+49 170 1234567',
+                hint: 'Geben Sie eine Mobilnummer ein',
+                pattern: '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$'
+            },
+            'fax': {
+                placeholder: '+49 123 456789',
+                hint: 'Geben Sie eine Faxnummer ein',
+                pattern: '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$'
+            },
+            'website': {
+                placeholder: 'https://www.example.com',
+                hint: 'Geben Sie eine Website-URL ein',
+                pattern: '^https?:\\/\\/.+\\..+$|^www\\..+\\..+$'
+            },
+            'linkedin': {
+                placeholder: 'linkedin.com/in/username',
+                hint: 'Geben Sie Ihr LinkedIn-Profil ein',
+                pattern: '^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$'
+            },
+            'xing': {
+                placeholder: 'xing.com/profile/username',
+                hint: 'Geben Sie Ihr XING-Profil ein',
+                pattern: '^(https?:\\/\\/)?(www\\.)?xing\\.com\\/profile\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$'
+            },
+            'other': {
+                placeholder: 'Kontaktdaten eingeben...',
+                hint: 'Geben Sie die entsprechenden Kontaktdaten ein',
+                pattern: '.{3,}'
+            }
+        };
+    }
+
+    buildContactTypeLabelsFromServer() {
+        const labels = {};
+        if (window.contactTypeChoices && Array.isArray(window.contactTypeChoices)) {
+            window.contactTypeChoices.forEach(choice => {
+                if (choice.value) {
+                    // Убираем эмодзи из текста для использования в качестве лейбла
+                    const cleanText = choice.text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+                    labels[choice.value] = cleanText;
+                }
+            });
+        }
+        return labels;
+    }
+
+    getDefaultContactTypeLabels() {
+        return {
+            'email': 'E-Mail (zusätzlich)',
+            'mobile': 'Mobil',
+            'fax': 'Fax',
+            'website': 'Website',
+            'linkedin': 'LinkedIn',
+            'xing': 'XING',
+            'other': 'Sonstige'
         };
     }
 
@@ -320,6 +381,10 @@ class AdditionalContactManager {
         const field = document.getElementById(fieldId);
         if (field) {
             field.value = value;
+            // Обновляем Select2 если это select элемент
+            if (field.tagName.toLowerCase() === 'select' && $(field).data('select2')) {
+                $(field).val(value).trigger('change');
+            }
         }
     }
 
@@ -334,6 +399,12 @@ class AdditionalContactManager {
             el.classList.remove('is-invalid', 'is-valid');
         });
 
+        // Сбрасываем Select2
+        const typeSelect = document.getElementById('contactType');
+        if (typeSelect && $(typeSelect).data('select2')) {
+            $(typeSelect).val('').trigger('change');
+        }
+
         this.updateContactHints('');
     }
 
@@ -343,29 +414,11 @@ class AdditionalContactManager {
 
         if (!valueInput || !hintElement) return;
 
-        const hints = {
-            'email': 'Geben Sie eine weitere E-Mail-Adresse ein (z.B. privat@example.com)',
-            'mobile': 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)',
-            'fax': 'Geben Sie eine Faxnummer ein (z.B. +49 123 456789)',
-            'website': 'Geben Sie eine Website-URL ein (z.B. https://www.example.com)',
-            'linkedin': 'Geben Sie Ihr LinkedIn-Profil ein (z.B. linkedin.com/in/username)',
-            'xing': 'Geben Sie Ihr XING-Profil ein (z.B. xing.com/profile/username)',
-            'other': 'Geben Sie die entsprechenden Kontaktdaten ein'
-        };
+        const config = this.contactHints[type];
 
-        const placeholders = {
-            'email': 'privat@domain.com',
-            'mobile': '+49 170 1234567',
-            'fax': '+49 123 456789',
-            'website': 'https://www.example.com',
-            'linkedin': 'linkedin.com/in/username',
-            'xing': 'xing.com/profile/username',
-            'other': 'Kontaktdaten eingeben...'
-        };
-
-        if (type && hints[type]) {
-            hintElement.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${hints[type]}`;
-            valueInput.placeholder = placeholders[type];
+        if (config) {
+            hintElement.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${config.hint}`;
+            valueInput.placeholder = config.placeholder;
         } else {
             hintElement.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Geben Sie die entsprechenden Kontaktdaten ein';
             valueInput.placeholder = 'Kontaktdaten eingeben...';
@@ -383,21 +436,13 @@ class AdditionalContactManager {
 
         if (!value) return false;
 
-        switch (type) {
-            case 'email':
-                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-            case 'mobile':
-            case 'fax':
-                return /^[\+]?[0-9\s\-\(\)]{7,20}$/.test(value);
-            case 'website':
-                return /^https?:\/\/.+\..+$/.test(value) || /^www\..+\..+$/.test(value);
-            case 'linkedin':
-                return value.includes('linkedin.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
-            case 'xing':
-                return value.includes('xing.com') || /^[a-zA-Z0-9\-_]+$/.test(value);
-            default:
-                return value.length >= 3;
+        const config = this.contactHints[type];
+        if (config && config.pattern) {
+            const regex = new RegExp(config.pattern);
+            return regex.test(value);
         }
+
+        return value.length >= 3;
     }
 
     setupValidation() {
@@ -719,4 +764,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('Create Admin Step 2 (обновленный) с AdditionalContactManager инициализирован');
     console.log('Загружено дополнительных контактов:', existingAdditionalContacts.length);
+    console.log('Доступные типы контактов с сервера:', window.contactTypeChoices);
 });
