@@ -2,13 +2,93 @@ class AdditionalContactManager {
     constructor() {
         this.additionalContacts = [];
         this.editingIndex = -1;
+        this.deletingIndex = -1;
 
-        // Используем типы контактов с сервера (если доступны) или fallback
+        // Используем типы контактов и конфигурацию с сервера (из MongoDB) или fallback
         this.contactTypeLabels = window.contactTypeChoices ?
             this.buildContactTypeLabelsFromServer() :
             this.getDefaultContactTypeLabels();
 
-        this.contactTypeIcons = {
+        // Загружаем конфигурацию из MongoDB или используем fallback
+        this.communicationConfig = window.communicationConfig ?
+            window.communicationConfig :
+            this.getDefaultCommunicationConfig();
+
+        // Строим hints из конфигурации MongoDB
+        this.contactHints = this.buildContactHintsFromConfig();
+
+        // Строим иконки из конфигурации MongoDB
+        this.contactTypeIcons = this.buildContactTypeIconsFromConfig();
+    }
+
+    buildContactTypeLabelsFromServer() {
+        const labels = {};
+        if (window.contactTypeChoices && Array.isArray(window.contactTypeChoices)) {
+            window.contactTypeChoices.forEach(choice => {
+                if (choice.value) {
+                    // Убираем эмодзи из текста для использования в качестве лейбла
+                    const cleanText = choice.text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+                    labels[choice.value] = cleanText;
+                }
+            });
+        }
+        return labels;
+    }
+
+    getDefaultContactTypeLabels() {
+        return {
+            'email': 'E-Mail (zusätzlich)',
+            'mobile': 'Mobil',
+            'fax': 'Fax',
+            'website': 'Website',
+            'linkedin': 'LinkedIn',
+            'xing': 'XING',
+            'other': 'Sonstige'
+        };
+    }
+
+    buildContactHintsFromConfig() {
+        const hints = {};
+
+        if (this.communicationConfig) {
+            Object.keys(this.communicationConfig).forEach(key => {
+                const config = this.communicationConfig[key];
+                hints[key] = {
+                    placeholder: config.placeholder || 'Kontaktdaten eingeben...',
+                    hint: config.hint || 'Geben Sie die entsprechenden Kontaktdaten ein',
+                    pattern: config.validation_pattern || '.{3,}'
+                };
+            });
+        }
+
+        // Fallback wenn konфигuration не загружена
+        if (Object.keys(hints).length === 0) {
+            return this.getDefaultContactHints();
+        }
+
+        return hints;
+    }
+
+    buildContactTypeIconsFromConfig() {
+        const icons = {};
+
+        if (this.communicationConfig) {
+            Object.keys(this.communicationConfig).forEach(key => {
+                const config = this.communicationConfig[key];
+                icons[key] = config.icon_class || 'bi-question-circle';
+            });
+        }
+
+        // Fallback если конфигурация не загружена
+        if (Object.keys(icons).length === 0) {
+            return this.getDefaultContactTypeIcons();
+        }
+
+        return icons;
+    }
+
+    getDefaultContactTypeIcons() {
+        return {
             'email': 'bi-envelope-plus',
             'mobile': 'bi-phone',
             'fax': 'bi-printer',
@@ -17,8 +97,10 @@ class AdditionalContactManager {
             'xing': 'bi-person-badge',
             'other': 'bi-question-circle'
         };
+    }
 
-        this.contactHints = {
+    getDefaultContactHints() {
+        return {
             'email': {
                 placeholder: 'privat@domain.com',
                 hint: 'Geben Sie eine zusätzliche E-Mail-Adresse ein',
@@ -57,29 +139,57 @@ class AdditionalContactManager {
         };
     }
 
-    buildContactTypeLabelsFromServer() {
-        const labels = {};
-        if (window.contactTypeChoices && Array.isArray(window.contactTypeChoices)) {
-            window.contactTypeChoices.forEach(choice => {
-                if (choice.value) {
-                    // Убираем эмодзи из текста для использования в качестве лейбла
-                    const cleanText = choice.text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
-                    labels[choice.value] = cleanText;
-                }
-            });
-        }
-        return labels;
-    }
-
-    getDefaultContactTypeLabels() {
+    getDefaultCommunicationConfig() {
         return {
-            'email': 'E-Mail (zusätzlich)',
-            'mobile': 'Mobil',
-            'fax': 'Fax',
-            'website': 'Website',
-            'linkedin': 'LinkedIn',
-            'xing': 'XING',
-            'other': 'Sonstige'
+            'email': {
+                'label': 'E-Mail',
+                'icon_class': 'bi-envelope-plus',
+                'validation_pattern': '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
+                'placeholder': 'beispiel@domain.com',
+                'hint': 'Geben Sie eine gültige E-Mail-Adresse ein'
+            },
+            'mobile': {
+                'label': 'Mobil',
+                'icon_class': 'bi-phone',
+                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
+                'placeholder': '+49 170 1234567',
+                'hint': 'Geben Sie eine Mobilnummer ein'
+            },
+            'fax': {
+                'label': 'Fax',
+                'icon_class': 'bi-printer',
+                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
+                'placeholder': '+49 123 456789',
+                'hint': 'Geben Sie eine Faxnummer ein'
+            },
+            'website': {
+                'label': 'Website',
+                'icon_class': 'bi-globe',
+                'validation_pattern': '^https?:\\/\\/.+\\..+$',
+                'placeholder': 'https://www.example.com',
+                'hint': 'Geben Sie eine Website-URL ein'
+            },
+            'linkedin': {
+                'label': 'LinkedIn',
+                'icon_class': 'bi-linkedin',
+                'validation_pattern': '^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
+                'placeholder': 'linkedin.com/in/username',
+                'hint': 'Geben Sie Ihr LinkedIn-Profil ein'
+            },
+            'xing': {
+                'label': 'XING',
+                'icon_class': 'bi-person-badge',
+                'validation_pattern': '^(https?:\\/\\/)?(www\\.)?xing\\.com\\/profile\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
+                'placeholder': 'xing.com/profile/username',
+                'hint': 'Geben Sie Ihr XING-Profil ein'
+            },
+            'other': {
+                'label': 'Sonstige',
+                'icon_class': 'bi-question-circle',
+                'validation_pattern': '.{3,}',
+                'placeholder': 'Kontaktdaten eingeben...',
+                'hint': 'Geben Sie die entsprechenden Kontaktdaten ein'
+            }
         };
     }
 
@@ -495,6 +605,12 @@ class AdditionalContactManager {
 
         const type = typeField.value;
 
+        // Используем конфигурацию из MongoDB или fallback
+        if (this.communicationConfig && this.communicationConfig[type]) {
+            return this.getValidationErrorFromConfig(type);
+        }
+
+        // Fallback ошибки
         const errors = {
             'email': 'Ungültiges E-Mail-Format',
             'mobile': 'Ungültiges Mobilnummer-Format',
@@ -506,6 +622,26 @@ class AdditionalContactManager {
         };
 
         return errors[type] || 'Ungültiges Format';
+    }
+
+    getValidationErrorFromConfig(type) {
+        const config = this.communicationConfig[type];
+        const label = config.label || type;
+
+        // Создаем сообщение об ошибке на основе типа
+        if (type === 'email') {
+            return `Ungültiges ${label}-Format`;
+        } else if (type === 'mobile' || type === 'fax') {
+            return `Ungültiges ${label}nummer-Format`;
+        } else if (type === 'website') {
+            return `Ungültiges ${label}-Format (muss mit http:// oder https:// beginnen)`;
+        } else if (type === 'linkedin') {
+            return `Ungültiges ${label}-Profil-Format`;
+        } else if (type === 'xing') {
+            return `Ungültiges ${label}-Profil-Format`;
+        } else {
+            return `${label} müssen mindestens 3 Zeichen lang sein`;
+        }
     }
 
     setContactFieldValidation(field, isValid, errorMessage = '') {
@@ -765,4 +901,5 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Create Admin Step 2 (обновленный) с AdditionalContactManager инициализирован');
     console.log('Загружено дополнительных контактов:', existingAdditionalContacts.length);
     console.log('Доступные типы контактов с сервера:', window.contactTypeChoices);
+    console.log('Конфигурация коммуникации из MongoDB:', window.communicationConfig);
 });
