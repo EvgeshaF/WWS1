@@ -338,8 +338,10 @@ def register_company_step1(request):
     return render(request, 'register_company_step1.html', context)
 
 
+# Исправление в company/views.py - добавление legal_form в контекст
+
 def register_company_step2(request):
-    """Шаг 2: Регистрационные данные"""
+    """Шаг 2: Регистрационные данные - ИСПРАВЛЕНО: добавлен legal_form в контекст"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -352,6 +354,7 @@ def register_company_step2(request):
 
     session_data = CompanySessionManager.get_session_data(request)
     company_name = session_data.get('company_name', '')
+    legal_form = session_data.get('legal_form', '')  # ДОБАВЛЕНО: получаем legal_form
 
     if request.method == 'POST':
         form = CompanyRegistrationForm(request.POST)
@@ -366,7 +369,10 @@ def register_company_step2(request):
             return render_with_messages(
                 request,
                 'register_company_step2.html',
-                {'form': form, 'step': 2, 'text': text_company_step2, 'company_name': company_name},
+                {
+                    'form': form, 'step': 2, 'text': text_company_step2,
+                    'company_name': company_name, 'legal_form': legal_form  # ДОБАВЛЕНО: legal_form
+                },
                 reverse('company:register_company_step3')
             )
         else:
@@ -378,13 +384,14 @@ def register_company_step2(request):
         'form': form,
         'step': 2,
         'text': text_company_step2,
-        'company_name': company_name
+        'company_name': company_name,
+        'legal_form': legal_form  # ДОБАВЛЕНО: legal_form в GET контекст
     }
     return render(request, 'register_company_step2.html', context)
 
 
 def register_company_step3(request):
-    """Шаг 3: Адресные данные"""
+    """Шаг 3: Адресные данные - ИСПРАВЛЕНО: добавлен legal_form в контекст"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -397,6 +404,7 @@ def register_company_step3(request):
 
     session_data = CompanySessionManager.get_session_data(request)
     company_name = session_data.get('company_name', '')
+    legal_form = session_data.get('legal_form', '')  # ДОБАВЛЕНО: получаем legal_form
 
     if request.method == 'POST':
         form = CompanyAddressForm(request.POST)
@@ -409,7 +417,10 @@ def register_company_step3(request):
             return render_with_messages(
                 request,
                 'register_company_step3.html',
-                {'form': form, 'step': 3, 'text': text_company_step3, 'company_name': company_name},
+                {
+                    'form': form, 'step': 3, 'text': text_company_step3,
+                    'company_name': company_name, 'legal_form': legal_form  # ДОБАВЛЕНО: legal_form
+                },
                 reverse('company:register_company_step4')
             )
         else:
@@ -421,13 +432,14 @@ def register_company_step3(request):
         'form': form,
         'step': 3,
         'text': text_company_step3,
-        'company_name': company_name
+        'company_name': company_name,
+        'legal_form': legal_form  # ДОБАВЛЕНО: legal_form в GET контекст
     }
     return render(request, 'register_company_step3.html', context)
 
 
 def register_company_step4(request):
-    """Шаг 4: Контактные данные"""
+    """Шаг 4: Контактные данные - ИСПРАВЛЕНО: добавлен legal_form в контекст"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -440,6 +452,7 @@ def register_company_step4(request):
 
     session_data = CompanySessionManager.get_session_data(request)
     company_name = session_data.get('company_name', '')
+    legal_form = session_data.get('legal_form', '')  # ДОБАВЛЕНО: получаем legal_form
 
     # Получаем существующие дополнительные контакты из сессии
     existing_additional_contacts = session_data.get('additional_contacts_data', '[]')
@@ -487,13 +500,11 @@ def register_company_step4(request):
                 request,
                 'register_company_step4.html',
                 {
-                    'form': form,
-                    'step': 4,
-                    'text': text_company_step4,
-                    'company_name': company_name,
+                    'form': form, 'step': 4, 'text': text_company_step4,
+                    'company_name': company_name, 'legal_form': legal_form,  # ДОБАВЛЕНО: legal_form
                     'existing_additional_contacts': json.dumps(contacts) if contacts else '[]'
                 },
-                reverse('company:register_company_step5')  # Теперь идем на шаг 5
+                reverse('company:register_company_step5')
             )
         else:
             messages.error(request, company_error_messages['form_submission_error'])
@@ -505,13 +516,14 @@ def register_company_step4(request):
         'step': 4,
         'text': text_company_step4,
         'company_name': company_name,
+        'legal_form': legal_form,  # ДОБАВЛЕНО: legal_form в GET контекст
         'existing_additional_contacts': json.dumps(existing_additional_contacts)
     }
     return render(request, 'register_company_step4.html', context)
 
 
 def register_company_step5(request):
-    """Шаг 5: Финальные настройки и создание компании (бывший шаг 6)"""
+    """Шаг 5: Финальные настройки и создание компании - ИСПРАВЛЕНО: добавлен legal_form в контекст"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -524,6 +536,7 @@ def register_company_step5(request):
 
     session_data = CompanySessionManager.get_session_data(request)
     company_name = session_data.get('company_name', '')
+    legal_form = session_data.get('legal_form', '')  # ДОБАВЛЕНО: получаем legal_form
     primary_email = session_data.get('email', '')
 
     # Подсчитываем контакты
@@ -565,12 +578,9 @@ def register_company_step5(request):
                     request,
                     'register_company_step5.html',
                     {
-                        'form': form,
-                        'step': 5,
-                        'text': text_company_step5,
-                        'company_name': company_name,
-                        'primary_email': primary_email,
-                        'contact_count': contact_count
+                        'form': form, 'step': 5, 'text': text_company_step5,
+                        'company_name': company_name, 'legal_form': legal_form,  # ДОБАВЛЕНО: legal_form
+                        'primary_email': primary_email, 'contact_count': contact_count
                     },
                     reverse('home')
                 )
@@ -586,10 +596,36 @@ def register_company_step5(request):
         'step': 5,
         'text': text_company_step5,
         'company_name': company_name,
+        'legal_form': legal_form,  # ДОБАВЛЕНО: legal_form в GET контекст
         'primary_email': primary_email,
         'contact_count': contact_count
     }
     return render(request, 'register_company_step5.html', context)
+
+
+# ДОПОЛНИТЕЛЬНО: Функция для получения человекочитаемого названия правовой формы
+def get_legal_form_display_name(legal_form_code):
+    """Возвращает человекочитаемое название правовой формы"""
+    legal_forms = {
+        'gmbh': 'GmbH',
+        'ag': 'AG',
+        'ug': 'UG (haftungsbeschränkt)',
+        'ohg': 'OHG',
+        'kg': 'KG',
+        'gbr': 'GbR',
+        'eg': 'eG',
+        'einzelunternehmen': 'Einzelunternehmen',
+        'freiberufler': 'Freiberufler',
+        'se': 'SE (Societas Europaea)',
+        'ltd': 'Ltd.',
+        'sonstige': 'Sonstige'
+    }
+    return legal_forms.get(legal_form_code, legal_form_code)
+
+# Если хотите отображать полное название правовой формы, используйте в шаблоне:
+# {{ legal_form|get_display_name }}
+# Или можете передавать уже преобразованное значение из view:
+# 'legal_form_display': get_legal_form_display_name(legal_form)
 
 
 # =============================================================================

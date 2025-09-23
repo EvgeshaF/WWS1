@@ -1,4 +1,4 @@
-# company/forms.py - Updated for 5-step process with CEO fields in step 1
+# company/forms.py - Updated with dynamic Anrede & Titel loading like users
 
 from django import forms
 from django.core.validators import RegexValidator
@@ -6,6 +6,133 @@ import re
 from mongodb.mongodb_utils import MongoConnection
 from mongodb.mongodb_config import MongoConfig
 from loguru import logger
+
+
+def get_salutations_from_mongodb():
+    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations - SAME AS USERS"""
+    try:
+        logger.info("Загружаем salutations из MongoDB (for company)")
+        db = MongoConnection.get_database()
+        if db is None:
+            logger.error("База данных недоступна")
+            return get_default_salutation_choices()
+
+        config = MongoConfig.read_config()
+        db_name = config.get('db_name')
+        if not db_name:
+            logger.error("Имя базы данных не найдено в конфигурации")
+            return get_default_salutation_choices()
+
+        salutations_collection_name = f"{db_name}_basic_salutations"
+        collections = db.list_collection_names()
+        if salutations_collection_name not in collections:
+            logger.warning(f"Коллекция '{salutations_collection_name}' не найдена")
+            return get_default_salutation_choices()
+
+        salutations_collection = db[salutations_collection_name]
+
+        # SAME LOGIC AS USERS: адаптировано под структуру данных
+        salutations_cursor = salutations_collection.find(
+            {'deleted': {'$ne': True}},
+            {'salutation': 1}
+        ).sort('salutation', 1)
+
+        choices = [('', '-- Auswählen --')]
+        count = 0
+        seen_salutations = set()
+
+        for salutation_doc in salutations_cursor:
+            salutation_value = salutation_doc.get('salutation', '').strip()
+
+            if salutation_value and salutation_value not in seen_salutations:
+                code = salutation_value.lower()
+                display_name = salutation_value
+
+                choices.append((code, display_name))
+                seen_salutations.add(salutation_value)
+                count += 1
+
+        logger.success(f"Успешно загружено {count} salutations для компании")
+        return choices
+
+    except Exception as e:
+        logger.error(f"Ошибка загрузки salutations из MongoDB (company): {e}")
+        return get_default_salutation_choices()
+
+
+def get_default_salutation_choices():
+    """Возвращает статичный список салютаций как fallback - SAME AS USERS"""
+    return [
+        ('', '-- Auswählen --'),
+        ('herr', 'Herr'),
+        ('frau', 'Frau'),
+        ('divers', 'Divers'),
+    ]
+
+
+def get_titles_from_mongodb():
+    """Загружает titles из MongoDB коллекции - SAME AS USERS"""
+    try:
+        logger.info("Загружаем titles из MongoDB (for company)")
+        db = MongoConnection.get_database()
+        if db is None:
+            logger.error("База данных недоступна")
+            return get_default_title_choices()
+
+        config = MongoConfig.read_config()
+        db_name = config.get('db_name')
+        if not db_name:
+            logger.error("Имя базы данных не найдено в конфигурации")
+            return get_default_title_choices()
+
+        titles_collection_name = f"{db_name}_basic_titles"
+        collections = db.list_collection_names()
+        if titles_collection_name not in collections:
+            logger.warning(f"Коллекция '{titles_collection_name}' не найдена")
+            return get_default_title_choices()
+
+        titles_collection = db[titles_collection_name]
+        titles_cursor = titles_collection.find(
+            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
+            {'code': 1, 'name': 1, 'display_order': 1}
+        ).sort('display_order', 1)
+
+        choices = [('', '-- Kein Titel --')]
+        count = 0
+
+        for title_doc in titles_cursor:
+            code = title_doc.get('code', '').strip()
+            name = title_doc.get('name', code).strip()
+
+            if code:
+                choices.append((code, name))
+                count += 1
+
+        logger.success(f"Успешно загружено {count} titles для компании")
+        return choices
+
+    except Exception as e:
+        logger.error(f"Ошибка загрузки titles из MongoDB (company): {e}")
+        return get_default_title_choices()
+
+
+def get_default_title_choices():
+    """Возвращает статичный список титулов как fallback - SAME AS USERS"""
+    return [
+        ('', '-- Kein Titel --'),
+        ('dr', 'Dr.'),
+        ('prof', 'Prof.'),
+        ('prof_dr', 'Prof. Dr.'),
+        ('dipl_ing', 'Dipl.-Ing.'),
+        ('dipl_kfm', 'Dipl.-Kfm.'),
+        ('dipl_oec', 'Dipl.-Oec.'),
+        ('mag', 'Mag.'),
+        ('mba', 'MBA'),
+        ('msc', 'M.Sc.'),
+        ('ba', 'B.A.'),
+        ('bsc', 'B.Sc.'),
+        ('beng', 'B.Eng.'),
+    ]
 
 
 def get_countries_from_mongodb():
@@ -151,7 +278,7 @@ def get_default_industry_choices():
 
 
 class CompanyBasicDataForm(forms.Form):
-    """Шаг 1: Основные данные компании + Geschäftsführer"""
+    """Шаг 1: Основные данные компании + Geschäftsführer - UPDATED WITH DYNAMIC LOADING"""
 
     LEGAL_FORM_CHOICES = [
         ('', '-- Rechtsform auswählen --'),
@@ -169,7 +296,7 @@ class CompanyBasicDataForm(forms.Form):
         ('sonstige', 'Sonstige'),
     ]
 
-    # Основные идентификационные данные (убрали industry и description)
+    # Основные идентификационные данные
     company_name = forms.CharField(
         label="Firmenname",
         max_length=100,
@@ -196,28 +323,22 @@ class CompanyBasicDataForm(forms.Form):
         })
     )
 
-    # БЛОК GESCHÄFTSFÜHRER - поля CEO
+    # БЛОК GESCHÄFTSFÜHRER - UPDATED WITH DYNAMIC LOADING
     ceo_salutation = forms.ChoiceField(
         label="Anrede",
-        choices=[
-            ('', '-- Auswählen --'),
-            ('herr', 'Herr'),
-            ('frau', 'Frau'),
-            ('divers', 'Divers'),
-        ],
+        choices=[],  # CHANGED: Заполняется динамически из MongoDB
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-control'
         })
     )
 
-    ceo_title = forms.CharField(
+    ceo_title = forms.ChoiceField(
         label="Titel",
-        max_length=50,
+        choices=[],  # CHANGED: Заполняется динамически из MongoDB
         required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'z.B. Dr., Prof. (optional)'
+        widget=forms.Select(attrs={
+            'class': 'form-control'
         })
     )
 
@@ -240,6 +361,19 @@ class CompanyBasicDataForm(forms.Form):
             'placeholder': 'Nachname eingeben'
         })
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # НОВОЕ: Динамически загружаем salutations из MongoDB - SAME AS USERS
+        salutation_choices = get_salutations_from_mongodb()
+        self.fields['ceo_salutation'].choices = salutation_choices
+        logger.info(f"Загружено {len(salutation_choices)} вариантов CEO salutation")
+
+        # НОВОЕ: Динамически загружаем titles из MongoDB - SAME AS USERS
+        title_choices = get_titles_from_mongodb()
+        self.fields['ceo_title'].choices = title_choices
+        logger.info(f"Загружено {len(title_choices)} вариантов CEO title")
 
 
 class CompanyRegistrationForm(forms.Form):

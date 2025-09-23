@@ -14,7 +14,7 @@
                         <i class="bi bi-building me-2"></i>
                         {{ text.title }}
                     </h5>
-                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 6</span>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
                 </div>
 
                 <div class="modal-body">
@@ -89,7 +89,7 @@
                             </div>
                         </div>
 
-                        <!-- Данные Geschäftsführer -->
+                        <!-- Данные Geschäftsführer - UPDATED WITH SELECT2 -->
                         <div class="card mb-4">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0">
@@ -99,7 +99,7 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <!-- Первая строка: Anrede и Titel -->
+                                <!-- Первая строка: Anrede и Titel - UPDATED WITH SELECT2 -->
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
@@ -107,7 +107,21 @@
                                                 <i class="bi bi-person me-1"></i>
                                                 Anrede
                                             </label>
-                                            {{ form.ceo_salutation }}
+                                            <select name="{{ form.ceo_salutation.name }}"
+                                                    id="{{ form.ceo_salutation.id_for_label }}"
+                                                    class="form-select select2-basic"
+                                                    data-placeholder="Anrede auswählen..."
+                                                    data-allow-clear="false">
+                                                <option></option>
+                                                {% for value, text in form.ceo_salutation.field.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}"
+                                                                {% if form.ceo_salutation.value == value %}selected{% endif %}>
+                                                            {{ text }}
+                                                        </option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
                                             {% if form.ceo_salutation.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.ceo_salutation.errors }}</div>
                                             {% endif %}
@@ -120,7 +134,21 @@
                                                 <i class="bi bi-mortarboard me-1"></i>
                                                 Titel
                                             </label>
-                                            {{ form.ceo_title }}
+                                            <select name="{{ form.ceo_title.name }}"
+                                                    id="{{ form.ceo_title.id_for_label }}"
+                                                    class="form-select select2-search"
+                                                    data-placeholder="Titel suchen oder auswählen..."
+                                                    data-allow-clear="true">
+                                                <option></option>
+                                                {% for value, text in form.ceo_title.field.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}"
+                                                                {% if form.ceo_title.value == value %}selected{% endif %}>
+                                                            {{ text }}
+                                                        </option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
                                             {% if form.ceo_title.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.ceo_title.errors }}</div>
                                             {% endif %}
@@ -186,12 +214,12 @@
 {% block extra_js %}
     <script>
         $(document).ready(function () {
-            console.log('Инициализируем Select2 для шага 1');
+            console.log('Инициализируем Select2 для шага 1 компании');
 
             // Настройки локализации
             $.fn.select2.defaults.set('language', 'de');
 
-            // Инициализация для Rechtsform (простой выбор)
+            // ==================== Rechtsform (простой выбор) ====================
             $('#{{ form.legal_form.id_for_label }}').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Rechtsform auswählen...',
@@ -200,13 +228,57 @@
                 width: '100%'
             });
 
-            // Обработчики событий
+            // ==================== CEO Anrede (простой выбор) ====================
+            $('#{{ form.ceo_salutation.id_for_label }}').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Anrede auswählen...',
+                allowClear: false,
+                minimumResultsForSearch: Infinity, // скрыть поиск
+                width: '100%'
+            }).on('select2:select', function (e) {
+                console.log('Выбрана CEO Anrede:', e.params.data.id, '-', e.params.data.text);
+                $(this).closest('.mb-3').find('.invalid-feedback').hide();
+            });
+
+            // ==================== CEO Titel (с поиском) ====================
+            $('#{{ form.ceo_title.id_for_label }}').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Titel suchen oder auswählen...',
+                allowClear: true,
+                width: '100%',
+                language: {
+                    noResults: () => 'Keine Ergebnisse gefunden',
+                    searching: () => 'Suche läuft...',
+                    inputTooShort: () => 'Bitte geben Sie mindestens 1 Zeichen ein',
+                    removeAllItems: () => 'Alle Elemente entfernen'
+                },
+                matcher: function (params, data) {
+                    if ($.trim(params.term) === '') {
+                        return data;
+                    }
+                    if (typeof data.text === 'undefined') {
+                        return null;
+                    }
+                    var term = params.term.toLowerCase();
+                    if (data.text.toLowerCase().indexOf(term) > -1 || data.id.toLowerCase().indexOf(term) > -1) {
+                        return data;
+                    }
+                    return null;
+                }
+            }).on('select2:select', function (e) {
+                console.log('Выбран CEO Titel:', e.params.data.id, '-', e.params.data.text);
+                $(this).closest('.mb-3').find('.invalid-feedback').hide();
+            }).on('select2:clear', function () {
+                console.log('CEO Titel очищен');
+            });
+
+            // Обработчики событий для Rechtsform
             $('#{{ form.legal_form.id_for_label }}').on('select2:select', function (e) {
                 console.log('Выбрана rechtsform:', e.params.data.id, '-', e.params.data.text);
                 $(this).closest('.mb-3').find('.invalid-feedback').hide();
             });
 
-            console.log('Select2 для шага 1 успешно инициализирован');
+            console.log('Select2 для шага 1 компании успешно инициализирован');
         });
 
         // Form submission handling

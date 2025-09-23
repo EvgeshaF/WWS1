@@ -4,6 +4,9 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/create_admin_step1-3.css' %}">
 
+{# НОВОЕ: загружаем template tags для legal_form #}
+{% load company_extras %}
+
 {% block content %}
 
     <div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
@@ -21,7 +24,11 @@
                     <div class="alert alert-info" role="alert">
                         <i class="bi bi-info-circle me-2"></i>
                         {{ text.desc }}
-                        <br><small class="text-muted mt-1"><strong>{{ company_name }}</strong></small>
+                        <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
+                            {% if legal_form %}
+                                {{ legal_form|legal_form_display }}
+                            {% endif %}
+                        </strong></small>
                     </div>
 
                     <form method="post" id="company-step2-form" action="{% url 'company:register_company_step2' %}">
