@@ -1,9 +1,76 @@
+# users/forms.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с загрузкой salutation из MongoDB
+
 from django import forms
 from django.core.validators import RegexValidator
 import re
 from mongodb.mongodb_utils import MongoConnection
 from mongodb.mongodb_config import MongoConfig
 from loguru import logger
+
+
+def get_salutations_from_mongodb():
+    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations"""
+    try:
+        logger.info("Загружаем salutations из MongoDB")
+        db = MongoConnection.get_database()
+        if db is None:
+            logger.error("База данных недоступна")
+            return get_default_salutation_choices()
+
+        config = MongoConfig.read_config()
+        db_name = config.get('db_name')
+        if not db_name:
+            logger.error("Имя базы данных не найдено в конфигурации")
+            return get_default_salutation_choices()
+
+        salutations_collection_name = f"{db_name}_basic_salutations"
+        collections = db.list_collection_names()
+        if salutations_collection_name not in collections:
+            logger.warning(f"Коллекция '{salutations_collection_name}' не найдена")
+            return get_default_salutation_choices()
+
+        salutations_collection = db[salutations_collection_name]
+
+        # ИСПРАВЛЕНО: адаптировано под вашу структуру данных
+        # В вашем примере поле называется "salutation", а не "code" и "name"
+        salutations_cursor = salutations_collection.find(
+            {'deleted': {'$ne': True}},  # Убрал проверку active, так как её нет в структуре
+            {'salutation': 1}  # Получаем только поле salutation
+        ).sort('salutation', 1)  # Сортировка по алфавиту
+
+        choices = [('', '-- Auswählen --')]
+        count = 0
+        seen_salutations = set()  # Для избежания дубликатов
+
+        for salutation_doc in salutations_cursor:
+            salutation_value = salutation_doc.get('salutation', '').strip()
+
+            if salutation_value and salutation_value not in seen_salutations:
+                # Используем значение как code и как display text
+                # Для немецких форм обращения это логично: herr -> Herr, frau -> Frau
+                code = salutation_value.lower()
+                display_name = salutation_value  # Используем оригинальное значение для отображения
+
+                choices.append((code, display_name))
+                seen_salutations.add(salutation_value)
+                count += 1
+
+        logger.success(f"Успешно загружено {count} salutations из коллекции")
+        return choices
+
+    except Exception as e:
+        logger.error(f"Ошибка загрузки salutations из MongoDB: {e}")
+        return get_default_salutation_choices()
+
+
+def get_default_salutation_choices():
+    """Возвращает статичный список салютаций как fallback"""
+    return [
+        ('', '-- Auswählen --'),
+        ('herr', 'Herr'),
+        ('frau', 'Frau'),
+        ('divers', 'Divers'),
+    ]
 
 
 def get_titles_from_mongodb():
@@ -354,18 +421,12 @@ class CreateAdminUserForm(forms.Form):
 
 
 class AdminProfileForm(forms.Form):
-    """Шаг 2: Профильные данные администратора С основными контактами"""
+    """Шаг 2: Профильные данные администратора С основными контактами - ИСПРАВЛЕНО"""
 
-    SALUTATION_CHOICES = [
-        ('', '-- Auswählen --'),
-        ('herr', 'Herr'),
-        ('frau', 'Frau'),
-        ('divers', 'Divers'),
-    ]
-
+    # ИСПРАВЛЕНО: теперь salutation загружается динамически из MongoDB
     salutation = forms.ChoiceField(
         label="Anrede",
-        choices=SALUTATION_CHOICES,
+        choices=[],  # Заполняется динамически из MongoDB
         required=True,
         widget=forms.Select(attrs={
             'class': 'form-control'
@@ -429,9 +490,15 @@ class AdminProfileForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # ИСПРАВЛЕНО: Динамически загружаем salutations из MongoDB
+        salutation_choices = get_salutations_from_mongodb()
+        self.fields['salutation'].choices = salutation_choices
+        logger.info(f"Загружено {len(salutation_choices)} вариантов salutation")
+
         # Динамически загружаем titles из MongoDB
         title_choices = get_titles_from_mongodb()
         self.fields['title'].choices = title_choices
+        logger.info(f"Загружено {len(title_choices)} вариантов title")
 
 
 class AdditionalContactForm(forms.Form):
