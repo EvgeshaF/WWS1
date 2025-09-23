@@ -399,6 +399,12 @@ class CompanyRegistrationForm(forms.Form):
         label="Steuernummer",
         max_length=20,
         required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{1,3}/\d{3}/\d{4,5}$',
+                message="Geben Sie eine gültige Steuernummer ein (Format: 12/345/67890)."
+            )
+        ],
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Steuernummer eingeben'
@@ -621,6 +627,7 @@ class CompanyOptionsForm(forms.Form):
             'required': 'Die Datenschutzerklärung muss akzeptiert werden'
         }
     )
+
 
 # Для обратной совместимости (legacy forms)
 class CompanyRegistrationFormLegacy(forms.Form):
