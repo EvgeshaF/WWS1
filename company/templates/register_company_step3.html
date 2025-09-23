@@ -134,55 +134,6 @@
                             </div>
                         </div>
 
-                        <!-- Zusätzliche Adressdaten -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0">
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Zusätzliche Adressinformationen (Optional)
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.address_addition.id_for_label }}" class="form-label">
-                                                <i class="bi bi-building-add me-1"></i>
-                                                {{ text.address_addition }}
-                                                <small class="text-muted">(Optional)</small>
-                                            </label>
-                                            {{ form.address_addition }}
-                                            {% if form.address_addition.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.address_addition.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                z.B. 2. Stock, Gebäude A
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.po_box.id_for_label }}" class="form-label">
-                                                <i class="bi bi-mailbox2 me-1"></i>
-                                                {{ text.po_box }}
-                                                <small class="text-muted">(Optional)</small>
-                                            </label>
-                                            {{ form.po_box }}
-                                            {% if form.po_box.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.po_box.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                z.B. Postfach 1234
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Info Box -->
                         <div class="alert alert-light border" role="alert">
                             <h6 class="alert-heading">

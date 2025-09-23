@@ -777,17 +777,20 @@ class AdditionalContactManager {
                     ${labelText}
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-primary action-btn me-1" 
-                            onclick="additionalContactManager.openContactModal(${index})" 
-                            title="Bearbeiten">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger action-btn" 
-                            onclick="additionalContactManager.confirmDelete(${index})" 
-                            title="Löschen">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
+    <div class="d-inline-flex justify-content-end gap-1">
+        <button type="button" class="btn btn-sm btn-outline-primary" 
+                onclick="additionalContactManager.openContactModal(${index})" 
+                title="Bearbeiten">
+            <i class="bi bi-pencil"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger" 
+                onclick="additionalContactManager.confirmDelete(${index})" 
+                title="Löschen">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+</td>
+
             </tr>
         `;
     }
