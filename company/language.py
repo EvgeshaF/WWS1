@@ -1,4 +1,4 @@
-# company/language.py - Enhanced Company Form Texts for 5-step process
+# company/language.py - Enhanced Company Form Texts for 5-step process with mandatory step 2
 
 # ========================================
 # Company Registration Step 1 (Grunddaten + CEO)
@@ -15,19 +15,19 @@ text_company_step1 = {
 }
 
 # ========================================
-# Company Registration Step 2 (Registrierungsdaten)
+# Company Registration Step 2 (Registrierungsdaten) - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ
 # ========================================
 text_company_step2 = {
     'title': "Registrierungsdaten",
     'header': "Amtliche Registrierungsdaten",
-    'desc': "Geben Sie die offiziellen Registrierungsdaten Ihrer Firma ein:",
+    'desc': "Geben Sie die offiziellen Registrierungsdaten Ihrer Firma ein - alle Felder sind Pflichtfelder:",
     'commercial_register': "Handelsregister:",
     'tax_number': "Steuernummer:",
     'vat_id': "USt-IdNr.:",
     'tax_id': "Steuer-ID:",
     'btn': "Weiter zu Schritt 3",
     'btn_back': "Zurück zu Schritt 1",
-    'notification': "* Registrierungsdaten sind optional, erhöhen aber die Glaubwürdigkeit."
+    'notification': "* Alle Registrierungsfelder sind jetzt Pflichtfelder für die vollständige Firmenregistrierung."
 }
 
 # ========================================
@@ -68,7 +68,7 @@ text_company_step4 = {
 }
 
 # ========================================
-# Company Registration Step 5 (Finale Einstellungen - bывший step6)
+# Company Registration Step 5 (Finale Einstellungen - бывший step6)
 # ========================================
 text_company_step5 = {
     'title': "Einstellungen & Abschluss",
@@ -272,11 +272,11 @@ company_contact_types = {
 }
 
 # ========================================
-# Enhanced Success Messages (5 steps)
+# Enhanced Success Messages (5 steps) - ОБНОВЛЕНО для обязательного шага 2
 # ========================================
 company_success_messages = {
     'step1_completed': "Grunddaten für '{company_name}' erfolgreich validiert",
-    'step2_completed': "Registrierungsdaten erfolgreich erfasst",
+    'step2_completed': "Alle Registrierungsdaten erfolgreich erfasst und validiert",  # ОБНОВЛЕНО
     'step3_completed': "Adressdaten erfolgreich erfasst",
     'step4_completed': "Kontaktdaten erfolgreich erfasst ({contact_info})",
     'company_created': "Firma '{company_name}' wurde erfolgreich registriert! Kontakte: {contact_info}",
@@ -289,11 +289,12 @@ company_success_messages = {
     # Progress messages
     'company_data_saved': "Firmendaten erfolgreich gespeichert",
     'contacts_processed': "Kontaktdaten erfolgreich verarbeitet",
-    'validation_passed': "Validierung erfolgreich abgeschlossen"
+    'validation_passed': "Vollständige Validierung erfolgreich abgeschlossen",  # ОБНОВЛЕНО
+    'registration_data_complete': "Registrierungsdaten vollständig erfasst"  # НОВОЕ
 }
 
 # ========================================
-# Enhanced Error Messages
+# Enhanced Error Messages - ОБНОВЛЕНО для обязательных полей шага 2
 # ========================================
 company_error_messages = {
     'mongodb_not_configured': "MongoDB muss zuerst konfiguriert werden",
@@ -309,11 +310,19 @@ company_error_messages = {
     'invalid_format': "Ungültiges Format",
     'server_error': "Serverfehler aufgetreten",
     'network_error': "Netzwerkfehler aufgetreten",
-    'unexpected_error': "Ein unerwarteter Fehler ist aufgetreten"
+    'unexpected_error': "Ein unerwarteter Fehler ist aufgetreten",
+
+    # НОВЫЕ сообщения об ошибках для обязательных полей шага 2
+    'commercial_register_required': "Handelsregister ist erforderlich",
+    'tax_number_required': "Steuernummer ist erforderlich",
+    'vat_id_required': "USt-IdNr. ist erforderlich",
+    'tax_id_required': "Steuer-ID ist erforderlich",
+    'registration_data_incomplete': "Registrierungsdaten sind unvollständig",
+    'all_registration_fields_required': "Alle Registrierungsfelder müssen ausgefüllt werden"
 }
 
 # ========================================
-# Validation Messages
+# Validation Messages - ОБНОВЛЕНО для обязательных полей
 # ========================================
 company_validation_messages = {
     'form_invalid': "Das Formular wurde ungültig ausgefüllt. Bitte überprüfen Sie die eingegebenen Daten.",
@@ -326,18 +335,31 @@ company_validation_messages = {
     'postal_code_required': "PLZ ist erforderlich",
     'city_required': "Stadt ist erforderlich",
     'country_required': "Land ist erforderlich",
+
+    # НОВЫЕ валидационные сообщения для шага 2
+    'commercial_register_required': "Handelsregister ist erforderlich",
+    'commercial_register_invalid': "Handelsregister-Format ungültig (HRA12345 oder HRB12345)",
+    'tax_number_required': "Steuernummer ist erforderlich",
+    'tax_number_invalid': "Steuernummer-Format ungültig (12/345/67890)",
+    'vat_id_required': "USt-IdNr. ist erforderlich",
+    'vat_id_invalid': "USt-IdNr.-Format ungültig (DE123456789)",
+    'tax_id_required': "Steuer-ID ist erforderlich",
+    'tax_id_invalid': "Steuer-ID-Format ungültig (11 Ziffern)",
+
     'max_length': "Maximal {max} Zeichen erlaubt",
     'min_length': "Mindestens {min} Zeichen erforderlich",
     'invalid_email': "Ungültiges E-Mail-Format",
     'invalid_phone': "Ungültiges Telefonformat",
     'invalid_postal_code': "Ungültige PLZ",
-    'invalid_vat_id': "Ungültige USt-IdNr.",
-    'invalid_commercial_register': "Ungültiges Handelsregister-Format",
-    'data_protection_required': "Datenschutzerklärung muss akzeptiert werden"
+    'data_protection_required': "Datenschutzerklärung muss akzeptiert werden",
+
+    # НОВЫЕ общие сообщения
+    'all_fields_required_step2': "Alle Felder in Schritt 2 sind Pflichtfelder",
+    'complete_registration_required': "Vollständige Registrierungsdaten sind erforderlich"
 }
 
 # ========================================
-# UI Text Elements
+# UI Text Elements - ОБНОВЛЕНО с учетом обязательных полей
 # ========================================
 company_ui_texts = {
     # Button labels
@@ -374,25 +396,33 @@ company_ui_texts = {
     'normal': "Normal",
     'public': "Öffentlich",
     'internal': "Intern",
+    'mandatory': "Pflichtfeld",  # НОВОЕ
+    'all_required': "Alle erforderlich",  # НОВОЕ
 
     # Navigation
     'step_of': "Schritt {current} von {total}",
     'progress': "Fortschritt",
     'completed': "Abgeschlossen",
     'current': "Aktuell",
-    'pending': "Ausstehend"
+    'pending': "Ausstehend",
+    'validation_passed': "Validierung erfolgreich",  # НОВОЕ
+    'validation_failed': "Validierung fehlgeschlagen"  # НОВОЕ
 }
 
 # ========================================
-# Help Text and Tooltips
+# Help Text and Tooltips - ОБНОВЛЕНО для шага 2
 # ========================================
 company_help_texts = {
     'company_name': "Vollständiger Name Ihrer Firma",
     'legal_form': "Rechtsform Ihres Unternehmens",
     'industry': "Hauptgeschäftsfeld Ihrer Firma",
-    'commercial_register': "Eintragung im Handelsregister (falls vorhanden)",
-    'tax_number': "Steuernummer vom Finanzamt",
-    'vat_id': "Umsatzsteuer-Identifikationsnummer für EU-Geschäfte",
+
+    # ОБНОВЛЕННЫЕ тексты помощи для шага 2 - теперь подчеркивают обязательность
+    'commercial_register': "Eintragung im Handelsregister (PFLICHTFELD - Format: HRA12345 oder HRB12345)",
+    'tax_number': "Steuernummer vom Finanzamt (PFLICHTFELD - Format: 12/345/67890)",
+    'vat_id': "Umsatzsteuer-Identifikationsnummer für EU-Geschäfte (PFLICHTFELD - Format: DE123456789)",
+    'tax_id': "11-stellige Steuer-Identifikationsnummer (PFLICHTFELD)",
+
     'street': "Vollständige Geschäftsadresse",
     'postal_code': "5-stellige Postleitzahl",
     'main_email': "Hauptkommunikations-E-Mail der Firma",
@@ -400,11 +430,16 @@ company_help_texts = {
     'additional_contacts': "Weitere Kontaktmöglichkeiten zur Verbesserung der Erreichbarkeit",
     'ceo_data': "Informationen zum Geschäftsführer/Inhaber",
     'is_primary': "Diese Firma als Standardfirma im System verwenden",
-    'data_protection': "Zustimmung zur Verarbeitung der Firmendaten gemäß DSGVO"
+    'data_protection': "Zustimmung zur Verarbeitung der Firmendaten gemäß DSGVO",
+
+    # НОВЫЕ тексты помощи
+    'registration_complete': "Alle Registrierungsfelder müssen für eine vollständige Firmenregistrierung ausgefüllt werden",
+    'official_documents': "Diese Daten werden für offizielle Dokumente und Geschäftskorrespondenz verwendet",
+    'legal_compliance': "Vollständige Registrierungsdaten sind für die Rechtskonformität erforderlich"
 }
 
 # ========================================
-# Accessibility Labels
+# Accessibility Labels - ОБНОВЛЕНО
 # ========================================
 company_aria_labels = {
     'close_modal': "Modal schließen",
@@ -427,5 +462,25 @@ company_aria_labels = {
     'pagination': "Seitennavigation",
     'search_field': "Suchfeld",
     'step_navigation': "Schrittnavigation",
-    'form_section': "Formularabschnitt"
+    'form_section': "Formularabschnitt",
+
+    # НОВЫЕ accessibility labels
+    'required_field_marker': "Pflichtfeld-Kennzeichnung",
+    'validation_status': "Validierungsstatus",
+    'field_valid': "Feld korrekt ausgefüllt",
+    'field_invalid': "Feld fehlerhaft",
+    'all_fields_required': "Alle Felder erforderlich",
+    'registration_form_section': "Registrierungsdaten-Formularabschnitt"
+}
+
+# ========================================
+# НОВЫЕ константы для шага 2
+# ========================================
+company_step2_specific = {
+    'title_emphasis': "Vollständige Registrierungsdaten erforderlich",
+    'all_mandatory_notice': "Alle Felder in diesem Schritt sind Pflichtfelder",
+    'completion_required': "Für eine vollständige Firmenregistrierung müssen alle Registrierungsfelder ausgefüllt werden",
+    'legal_importance': "Diese Daten sind rechtlich erforderlich und erhöhen die Glaubwürdigkeit Ihrer Firma",
+    'field_validation_active': "Alle Eingaben werden in Echtzeit validiert",
+    'format_requirements': "Bitte beachten Sie die angegebenen Formate für jedes Feld"
 }

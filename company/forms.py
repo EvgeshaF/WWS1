@@ -1,4 +1,4 @@
-# company/forms.py - Updated with dynamic Anrede & Titel loading like users
+# company/forms.py - Updated: Шаг 2 с обязательными полями
 
 from django import forms
 from django.core.validators import RegexValidator
@@ -377,12 +377,12 @@ class CompanyBasicDataForm(forms.Form):
 
 
 class CompanyRegistrationForm(forms.Form):
-    """Шаг 2: Регистрационные данные"""
+    """Шаг 2: Регистрационные данные - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ"""
 
     commercial_register = forms.CharField(
         label="Handelsregister",
         max_length=50,
-        required=False,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$',
@@ -392,13 +392,16 @@ class CompanyRegistrationForm(forms.Form):
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'z.B. HRB12345'
-        })
+        }),
+        error_messages={
+            'required': 'Handelsregister ist erforderlich'
+        }
     )
 
     tax_number = forms.CharField(
         label="Steuernummer",
         max_length=20,
-        required=False,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^\d{1,3}/\d{3}/\d{4,5}$',
@@ -407,14 +410,17 @@ class CompanyRegistrationForm(forms.Form):
         ],
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Steuernummer eingeben'
-        })
+            'placeholder': '12/345/67890'
+        }),
+        error_messages={
+            'required': 'Steuernummer ist erforderlich'
+        }
     )
 
     vat_id = forms.CharField(
         label="USt-IdNr.",
         max_length=15,
-        required=False,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^DE\d{9}$',
@@ -424,23 +430,29 @@ class CompanyRegistrationForm(forms.Form):
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'DE123456789'
-        })
+        }),
+        error_messages={
+            'required': 'USt-IdNr. ist erforderlich'
+        }
     )
 
     tax_id = forms.CharField(
         label="Steuer-ID",
         max_length=11,
-        required=False,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^\d{11}$',
-                message='11-stellige Steuer-ID'
+                message='11-stellige Steuer-ID erforderlich'
             )
         ],
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': '12345678901'
-        })
+        }),
+        error_messages={
+            'required': 'Steuer-ID ist erforderlich'
+        }
     )
 
 
