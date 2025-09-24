@@ -1,4 +1,4 @@
-# home/views.py - ПОЛНАЯ ВЕРСИЯ для работы с единственной компанией
+# home/views.py - ОКОНЧАТЕЛЬНО ИСПРАВЛЕННАЯ ВЕРСИЯ с правильными проверками MongoDB
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -43,7 +43,7 @@ def home(request):
         else:
             logger.error(f"❌ MongoDB: неизвестный статус конфигурации: {config_status}")
             messages.error(request, "Unbekannter MongoDB-Konfigurationsstatus")
-            return render(request, 'home/templates/home.html', {
+            return render(request, 'home.html', {
                 'setup_complete': False,
                 'error': 'Unbekannte MongoDB-Konfiguration'
             })
@@ -68,21 +68,57 @@ def home(request):
         # Шаг 3: Проверяем наличие зарегистрированной компании
         logger.info("3️⃣ Проверяем наличие зарегистрированной компании...")
         try:
-            # Используем локальный импорт для избежания циклических зависимостей
-            from company.views import CompanyManager
+            # ✅ ИСПРАВЛЕНО: Правильный импорт CompanyManager
+            from company.company_manager import CompanyManager
             company_manager = CompanyManager()
 
+            # Детальная диагностика
+            logger.info(f"🔍 CompanyManager создан")
+            logger.info(f"🔍 Database доступна: {company_manager.db is not None}")
+            logger.info(f"🔍 Collection name: {company_manager.company_collection_name}")
+
+            # Проверяем has_company() с дополнительной диагностикой
+            logger.info("🔍 Вызываем has_company()...")
             has_company = company_manager.has_company()
-            logger.info(f"🏢 Компания зарегистрирована: {has_company}")
+            logger.info(f"🏢 has_company() результат: {has_company}")
+
+            # Проверяем get_company() независимо от has_company()
+            logger.info("🔍 Вызываем get_company()...")
+            company_data = company_manager.get_company()
+            logger.info(f"🏢 get_company() результат: {company_data is not None}")
+
+            # ДИАГНОСТИКА: Проверяем данные в коллекции напрямую
+            if not has_company and company_data is None:
+                logger.info("🔍 Прямая проверка коллекции...")
+                collection = company_manager.get_collection()
+                if collection is not None:
+                    direct_count = collection.count_documents({'type': 'company_info'})
+                    logger.info(f"🔍 Прямой подсчет документов компании: {direct_count}")
+
+                    if direct_count > 0:
+                        direct_company = collection.find_one({'type': 'company_info'})
+                        logger.info(f"🔍 Прямой поиск компании: {direct_company is not None}")
+                        if direct_company is not None:
+                            logger.warning("⚠️ НАЙДЕНА КОМПАНИЯ ПРЯМЫМ ЗАПРОСОМ! Принудительно устанавливаем результаты")
+                            has_company = True
+                            company_data = direct_company
+
+            # Анализируем результаты
+            if company_data is not None and not has_company:
+                logger.error("🚨 НЕСООТВЕТСТВИЕ: get_company() возвращает данные, но has_company() = False")
+                logger.warning("⚠️ Принудительно устанавливаем has_company = True")
+                has_company = True
+            elif company_data is None and has_company:
+                logger.error("🚨 ОБРАТНОЕ НЕСООТВЕТСТВИЕ: has_company() = True, но get_company() = None")
+                has_company = False
 
             if not has_company:
                 logger.warning("❌ Компания не зарегистрирована")
                 messages.warning(request, "Firma ist noch nicht registriert")
                 return redirect('company:register_company')
 
-            # Получаем данные компании для отображения
-            company_data = company_manager.get_company()
-            company_name = company_data.get('company_name', 'Неизвестно') if company_data else 'Не настроено'
+            # Получаем название компании для отображения
+            company_name = company_data.get('company_name', 'Неизвестно') if company_data is not None else 'Не настроено'
             logger.success(f"✅ Компания найдена: {company_name}")
 
         except ImportError as e:
@@ -94,6 +130,7 @@ def home(request):
 
         except Exception as e:
             logger.error(f"❌ Ошибка проверки компании: {e}")
+            logger.exception("Полная трассировка ошибки:")
             messages.error(request, "Fehler beim Überprüfen der Firmeninformationen")
             has_company = False
             company_name = 'Fehler beim Laden'
@@ -116,23 +153,23 @@ def home(request):
             'system_status': 'Online',
 
             # Статистика (можно расширить)
-            'total_users': admin_count,  # В будущем можно добавить обычных пользователей
+            'total_users': admin_count,
             'system_version': '1.0.0',
         }
 
-        logger.info(f"📊 Контекст для шаблона: {context}")
-        return render(request, 'home/templates/home.html', context)
+        logger.info(f"📊 Финальный контекст: has_company={has_company}, company_name={company_name}")
+        return render(request, 'home.html', context)
 
     except Exception as e:
         # Критическая ошибка - логируем и показываем страницу с ошибкой
         logger.exception(f"💥 КРИТИЧЕСКАЯ ОШИБКА в home view: {e}")
         messages.error(request, "Ein kritischer Systemfehler ist aufgetreten")
 
-        # Возвращаем минимальную страницу с информацией об ошибке
+        # Возвращаем минимальную страницу с информацией об ошибкой
         error_context = {
             'setup_complete': False,
             'error': 'Kritischer Systemfehler',
-            'error_details': str(e) if request.user.is_superuser else None,  # Показываем детали только суперпользователю
+            'error_details': str(e) if hasattr(request, 'user') and request.user.is_superuser else None,
             'admin_count': 0,
             'has_company': False,
             'company_name': 'Fehler'

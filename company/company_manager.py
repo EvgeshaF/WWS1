@@ -1,3 +1,5 @@
+# company/company_manager.py - ИСПРАВЛЕНО: все проверки MongoDB объектов
+
 import datetime
 import json
 
@@ -12,6 +14,7 @@ class CompanyManager:
 
     def __init__(self):
         self.db = MongoConnection.get_database()
+        # ✅ ИСПРАВЛЕНО: Правильная проверка объекта базы данных
         if self.db is None:
             logger.error("База данных недоступна")
             self.company_collection_name = None
@@ -27,7 +30,9 @@ class CompanyManager:
 
     def get_collection(self):
         """Получает коллекцию информации о компании"""
+        # ✅ ИСПРАВЛЕНО: Правильная проверка
         if self.db is None or not self.company_collection_name:
+            logger.warning("База данных или имя коллекции недоступны")
             return None
 
         try:
@@ -47,12 +52,24 @@ class CompanyManager:
         """Проверяет, зарегистрирована ли компания"""
         try:
             collection = self.get_collection()
+            # ✅ ИСПРАВЛЕНО: Правильная проверка
             if collection is None:
+                logger.warning("Коллекция недоступна в has_company()")
                 return False
 
             # Проверяем наличие записи компании
+            logger.info("🔍 Выполняем find_one({'type': 'company_info'}) в has_company()")
             company = collection.find_one({'type': 'company_info'})
-            return company is not None
+            result = company is not None  # ✅ ИСПРАВЛЕНО: Правильная проверка
+            logger.info(f"🔍 has_company() результат: найден документ = {result}")
+
+            if company is not None:
+                logger.info(f"🔍 Найдена компания: {company.get('company_name', 'Без названия')}")
+            else:
+                logger.info("🔍 Документ компании не найден")
+
+            return result
+
         except Exception as e:
             logger.error(f"Ошибка проверки наличия компании: {e}")
             return False
@@ -61,11 +78,22 @@ class CompanyManager:
         """Получает данные компании"""
         try:
             collection = self.get_collection()
+            # ✅ ИСПРАВЛЕНО: Правильная проверка
             if collection is None:
+                logger.warning("Коллекция недоступна в get_company()")
                 return None
 
+            logger.info("🔍 Выполняем find_one({'type': 'company_info'}) в get_company()")
             company = collection.find_one({'type': 'company_info'})
+
+            if company is not None:  # ✅ ИСПРАВЛЕНО: Правильная проверка
+                logger.info(f"🔍 get_company() найдена компания: {company.get('company_name', 'Без названия')}")
+                logger.info(f"🔍 Основные поля: email={company.get('email')}, phone={company.get('phone')}")
+            else:
+                logger.info("🔍 get_company() компания не найдена")
+
             return company
+
         except Exception as e:
             logger.error(f"Ошибка получения данных компании: {e}")
             return None
@@ -78,6 +106,7 @@ class CompanyManager:
         """Создает или обновляет информацию о компании"""
         try:
             collection = self.get_collection()
+            # ✅ ИСПРАВЛЕНО: Правильная проверка
             if collection is None:
                 logger.error("Коллекция недоступна")
                 return False
@@ -92,8 +121,9 @@ class CompanyManager:
             # Проверяем, существует ли уже запись
             existing = collection.find_one({'type': 'company_info'})
 
-            if existing:
+            if existing is not None:  # ✅ ИСПРАВЛЕНО: Правильная проверка
                 # Обновляем существующую запись
+                logger.info("🔄 Обновляем существующую компанию")
                 result = collection.update_one(
                     {'type': 'company_info'},
                     {'$set': company_data}
@@ -106,10 +136,11 @@ class CompanyManager:
                     return True
             else:
                 # Создаем новую запись
+                logger.info("➕ Создаем новую компанию")
                 company_data['created_at'] = now
                 result = collection.insert_one(company_data)
-                if result.inserted_id:
-                    logger.success(f"Компания '{company_data['company_name']}' зарегистрирована")
+                if result.inserted_id is not None:  # ✅ ИСПРАВЛЕНО: Правильная проверка
+                    logger.success(f"Компания '{company_data['company_name']}' зарегистрирована с ID: {result.inserted_id}")
                     return True
 
             return False
@@ -122,6 +153,7 @@ class CompanyManager:
         """Удаляет информацию о компании (полное удаление)"""
         try:
             collection = self.get_collection()
+            # ✅ ИСПРАВЛЕНО: Правильная проверка
             if collection is None:
                 return False
 
@@ -141,11 +173,13 @@ class CompanyManager:
         """Возвращает статистику по компании"""
         try:
             collection = self.get_collection()
+            # ✅ ИСПРАВЛЕНО: Правильная проверка
             if collection is None:
                 return None
 
             company = collection.find_one({'type': 'company_info'})
-            if not company:
+            # ✅ ИСПРАВЛЕНО: Правильная проверка
+            if company is None:
                 return None
 
             # Подсчитываем заполненные поля

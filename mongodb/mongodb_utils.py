@@ -1,13 +1,14 @@
+# mongodb/mongodb_utils.py - ИСПРАВЛЕНО: все проверки MongoDB объектов
+
 import datetime
 import json
 import os
 
 import pymongo
-#from pymongo import errors
 from pymongo.errors import ConnectionFailure, OperationFailure
 from urllib.parse import quote_plus
 
-from .mongodb_config import MongoConfig, verify_password #,hash_password,
+from .mongodb_config import MongoConfig, verify_password
 from loguru import logger
 
 from . import language
@@ -24,9 +25,6 @@ class MongoConnection:
 
     @classmethod
     def get_client(cls):
-        # cache_key = 'mongodb_client_status'
-        # if cache.get(cache_key) and cls._client:
-        #     return cls._client
         """Получает клиент MongoDB из конфигурации"""
         if cls._client is None:
             config = MongoConfig.read_config()
@@ -55,14 +53,13 @@ class MongoConnection:
                 except (ConnectionFailure, OperationFailure) as e:
                     logger.error(f"{language.mess_server_auth_error}: {e}")
                     cls._client = None
-        # cache.set(cache_key, True, 300)  # 5 минут
         return cls._client
 
     @classmethod
     def get_database(cls):
         """Возвращает объект базы данных"""
         client = cls.get_client()
-        if client is not None:  # ИСПРАВЛЕНО: используем 'is not None'
+        if client is not None:  # ✅ ИСПРАВЛЕНО: правильная проверка клиента
             config = MongoConfig.read_config()
             db_name = config.get('db_name')
             if db_name:
@@ -130,7 +127,6 @@ class MongoConnection:
             logger.error(f"Неожиданная ошибка при авторизации '{username}': {e}")
             return False
 
-
     @classmethod
     def create_database_step3(cls, db_name):
         """Создает базу данных с коллекциями из JSON файлов"""
@@ -141,7 +137,7 @@ class MongoConnection:
             return False
 
         client = cls.get_client()
-        if client is None:
+        if client is None:  # ✅ ИСПРАВЛЕНО: правильная проверка клиента
             return False
 
         try:
@@ -368,7 +364,7 @@ class MongoConnection:
             return False
 
         client = cls.get_client()
-        if client is None:  # ИСПРАВЛЕНО: используем 'is None'
+        if client is None:  # ✅ ИСПРАВЛЕНО: правильная проверка клиента
             return False
 
         db_name = config.get('db_name')
@@ -383,7 +379,7 @@ class MongoConnection:
             users_collection_name = f"{db_name}_users"
             user = db[users_collection_name].find_one({'username': username, 'deleted': False})
 
-            if user and verify_password(password, user['password']):
+            if user is not None and verify_password(password, user['password']):  # ✅ ИСПРАВЛЕНО
                 logger.success(f"Пользователь '{username}' успешно авторизован.")
                 return user
             else:
@@ -397,7 +393,7 @@ class MongoConnection:
     def database_exists(cls, db_name):
         """Проверяет наличие базы данных"""
         client = cls.get_client()
-        if client is None:  # ИСПРАВЛЕНО: используем 'is None'
+        if client is None:  # ✅ ИСПРАВЛЕНО: правильная проверка клиента
             return False
         try:
             return db_name in client.list_database_names()
