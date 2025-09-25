@@ -1,4 +1,4 @@
-# home/views.py - ОКОНЧАТЕЛЬНО ИСПРАВЛЕННАЯ ВЕРСИЯ с правильными проверками MongoDB
+# home/views.py - ИСПРАВЛЕННАЯ ВЕРСИЯ с улучшенной диагностикой
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -68,58 +68,32 @@ def home(request):
         # Шаг 3: Проверяем наличие зарегистрированной компании
         logger.info("3️⃣ Проверяем наличие зарегистрированной компании...")
         try:
-            # ✅ ИСПРАВЛЕНО: Правильный импорт CompanyManager
             from company.company_manager import CompanyManager
             company_manager = CompanyManager()
 
-            # Детальная диагностика
-            logger.info(f"🔍 CompanyManager создан")
-            logger.info(f"🔍 Database доступна: {company_manager.db is not None}")
-            logger.info(f"🔍 Collection name: {company_manager.company_collection_name}")
+            # ✅ ИСПРАВЛЕНО: Улучшенная диагностика с использованием нового метода
+            logger.info("🔍 Запускаем диагностику компании...")
+            debug_info = company_manager.debug_company_status()
+            logger.info(f"🔍 Диагностика компании: {debug_info}")
 
-            # Проверяем has_company() с дополнительной диагностикой
-            logger.info("🔍 Вызываем has_company()...")
-            has_company = company_manager.has_company()
-            logger.info(f"🏢 has_company() результат: {has_company}")
-
-            # Проверяем get_company() независимо от has_company()
-            logger.info("🔍 Вызываем get_company()...")
-            company_data = company_manager.get_company()
-            logger.info(f"🏢 get_company() результат: {company_data is not None}")
-
-            # ДИАГНОСТИКА: Проверяем данные в коллекции напрямую
-            if not has_company and company_data is None:
-                logger.info("🔍 Прямая проверка коллекции...")
-                collection = company_manager.get_collection()
-                if collection is not None:
-                    direct_count = collection.count_documents({'type': 'company_info'})
-                    logger.info(f"🔍 Прямой подсчет документов компании: {direct_count}")
-
-                    if direct_count > 0:
-                        direct_company = collection.find_one({'type': 'company_info'})
-                        logger.info(f"🔍 Прямой поиск компании: {direct_company is not None}")
-                        if direct_company is not None:
-                            logger.warning("⚠️ НАЙДЕНА КОМПАНИЯ ПРЯМЫМ ЗАПРОСОМ! Принудительно устанавливаем результаты")
-                            has_company = True
-                            company_data = direct_company
-
-            # Анализируем результаты
-            if company_data is not None and not has_company:
-                logger.error("🚨 НЕСООТВЕТСТВИЕ: get_company() возвращает данные, но has_company() = False")
-                logger.warning("⚠️ Принудительно устанавливаем has_company = True")
-                has_company = True
-            elif company_data is None and has_company:
-                logger.error("🚨 ОБРАТНОЕ НЕСООТВЕТСТВИЕ: has_company() = True, но get_company() = None")
-                has_company = False
+            # Используем результаты диагностики
+            has_company = debug_info.get('has_company_result', False)
+            company_name = debug_info.get('company_name', 'Не настроено')
 
             if not has_company:
-                logger.warning("❌ Компания не зарегистрирована")
-                messages.warning(request, "Firma ist noch nicht registriert")
+                logger.warning("❌ Компания не зарегистрирована или данные неполные")
+                if debug_info.get('raw_document_found'):
+                    logger.warning("⚠️ Найден документ компании, но данные неполные")
+                    messages.warning(request, "Firmendaten sind unvollständig. Bitte vervollständigen Sie die Registrierung.")
+                else:
+                    logger.warning("❌ Документ компании не найден")
+                    messages.warning(request, "Firma ist noch nicht registriert")
+
                 return redirect('company:register_company')
 
-            # Получаем название компании для отображения
-            company_name = company_data.get('company_name', 'Неизвестно') if company_data is not None else 'Не настроено'
-            logger.success(f"✅ Компания найдена: {company_name}")
+            # Получаем полные данные компании для контекста
+            company_data = company_manager.get_company()
+            logger.success(f"✅ Компания найдена и валидна: {company_name}")
 
         except ImportError as e:
             logger.error(f"❌ Ошибка импорта CompanyManager: {e}")

@@ -57,18 +57,31 @@ class CompanyManager:
                 logger.warning("Коллекция недоступна в has_company()")
                 return False
 
-            # Проверяем наличие записи компании
+            # ✅ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Добавляем дополнительную проверку на валидные данные
             logger.info("🔍 Выполняем find_one({'type': 'company_info'}) в has_company()")
             company = collection.find_one({'type': 'company_info'})
-            result = company is not None  # ✅ ИСПРАВЛЕНО: Правильная проверка
-            logger.info(f"🔍 has_company() результат: найден документ = {result}")
 
-            if company is not None:
-                logger.info(f"🔍 Найдена компания: {company.get('company_name', 'Без названия')}")
-            else:
-                logger.info("🔍 Документ компании не найден")
+            # ✅ ИСПРАВЛЕНО: Проверяем не только существование документа, но и наличие обязательных полей
+            if company is None:
+                logger.info("🔍 has_company() результат: False (документ не найден)")
+                return False
 
-            return result
+            # ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Убеждаемся что у компании есть основные данные
+            has_required_fields = (
+                    company.get('company_name') and
+                    str(company.get('company_name')).strip() != '' and
+                    company.get('legal_form') and
+                    str(company.get('legal_form')).strip() != ''
+            )
+
+            if not has_required_fields:
+                logger.warning("🔍 has_company() результат: False (найден документ, но нет обязательных полей)")
+                logger.warning(f"🔍 company_name: '{company.get('company_name')}'")
+                logger.warning(f"🔍 legal_form: '{company.get('legal_form')}'")
+                return False
+
+            logger.info(f"🔍 has_company() результат: True (найдена компания: {company.get('company_name', 'Без названия')})")
+            return True
 
         except Exception as e:
             logger.error(f"Ошибка проверки наличия компании: {e}")
@@ -86,13 +99,13 @@ class CompanyManager:
             logger.info("🔍 Выполняем find_one({'type': 'company_info'}) в get_company()")
             company = collection.find_one({'type': 'company_info'})
 
-            if company is not None:  # ✅ ИСПРАВЛЕНО: Правильная проверка
+            if company is None:  # ✅ ИСПРАВЛЕНО: Правильная проверка
+                logger.info("🔍 get_company() компания не найдена")
+                return None
+            else:
                 logger.info(f"🔍 get_company() найдена компания: {company.get('company_name', 'Без названия')}")
                 logger.info(f"🔍 Основные поля: email={company.get('email')}, phone={company.get('phone')}")
-            else:
-                logger.info("🔍 get_company() компания не найдена")
-
-            return company
+                return company
 
         except Exception as e:
             logger.error(f"Ошибка получения данных компании: {e}")
@@ -110,6 +123,13 @@ class CompanyManager:
             if collection is None:
                 logger.error("Коллекция недоступна")
                 return False
+
+            # ✅ ДОПОЛНИТЕЛЬНАЯ ВАЛИДАЦИЯ: Проверяем обязательные поля
+            required_fields = ['company_name', 'legal_form']
+            for field in required_fields:
+                if not company_data.get(field) or str(company_data.get(field)).strip() == '':
+                    logger.error(f"Обязательное поле '{field}' отсутствует или пустое")
+                    return False
 
             # Добавляем служебные поля
             now = datetime.datetime.now()
@@ -212,3 +232,42 @@ class CompanyManager:
         except Exception as e:
             logger.error(f"Ошибка получения статистики компании: {e}")
             return None
+
+    # ✅ НОВЫЙ МЕТОД: Диагностика для отладки
+    def debug_company_status(self):
+        """Диагностический метод для отладки состояния компании"""
+        try:
+            collection = self.get_collection()
+            if collection is None:
+                return {
+                    'error': 'Collection unavailable',
+                    'has_company': False,
+                    'company_data': None
+                }
+
+            # Получаем сырые данные
+            company_data = collection.find_one({'type': 'company_info'})
+
+            # Проверяем has_company логику
+            has_company_result = self.has_company()
+
+            # Возвращаем диагностическую информацию
+            return {
+                'collection_name': self.company_collection_name,
+                'collection_exists': collection is not None,
+                'raw_document_found': company_data is not None,
+                'has_company_result': has_company_result,
+                'company_name': company_data.get('company_name') if company_data else None,
+                'legal_form': company_data.get('legal_form') if company_data else None,
+                'document_fields': list(company_data.keys()) if company_data else [],
+                'all_documents_count': collection.count_documents({}),
+                'company_documents_count': collection.count_documents({'type': 'company_info'})
+            }
+
+        except Exception as e:
+            logger.error(f"Ошибка диагностики: {e}")
+            return {
+                'error': str(e),
+                'has_company': False,
+                'company_data': None
+            }

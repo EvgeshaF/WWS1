@@ -11,8 +11,13 @@
         <div class="welcome-section mb-4">
             <div class="welcome-card">
                 <div class="welcome-header mb-3">
-                    <i class="bi bi-check-circle-fill text-success me-3"></i>
-                    <h3 class="mb-0">System bereit!</h3>
+                    {% if has_company %}
+                        <i class="bi bi-check-circle-fill text-success me-3"></i>
+                        <h3 class="mb-0">System vollständig konfiguriert!</h3>
+                    {% else %}
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-3"></i>
+                        <h3 class="mb-0">Systemkonfiguration unvollständig!</h3>
+                    {% endif %}
                 </div>
                 <p class="welcome-text mb-0">
                     {% if has_company %}
@@ -20,34 +25,59 @@
                         MongoDB-Verbindung aktiv, Administrator erstellt, Firma registriert.
                     {% else %}
                         MongoDB wurde erfolgreich konfiguriert und die Datenbankverbindung ist aktiv.
-                        Das Warehouse Management System ist einsatzbereit.
+                        <strong>Bitte registrieren Sie Ihre Firma, um die Konfiguration abzuschließen.</strong>
                     {% endif %}
                 </p>
+
+                <!-- DEBUG-Информация (только в режиме отладки) -->
+                {% if debug and user.is_superuser %}
+                <div class="mt-3 p-3 bg-light border rounded">
+                    <small class="text-muted">
+                        <strong>DEBUG-Info:</strong><br>
+                        has_company: {{ has_company }}<br>
+                        company_name: "{{ company_name }}"<br>
+                        company_data: {{ company_data|yesno:"да,нет" }}<br>
+                        {% if company_data %}
+                        company_data.company_name: "{{ company_data.company_name }}"<br>
+                        company_data.legal_form: "{{ company_data.legal_form }}"<br>
+                        {% endif %}
+                    </small>
+                </div>
+                {% endif %}
             </div>
         </div>
 
-        <!-- Aktionscards -->
+        <!-- Актионscards -->
         <div class="row g-4 mb-4">
-            <!-- Firmenregistrierung (nur wenn keine Firma) -->
+            <!-- Firmenregistrierung (всегда показываем если нет компании) -->
             {% if not has_company %}
-            <div class="col-lg-4 col-md-6">
-                <div class="action-card border-warning">
+            <div class="col-lg-6 col-md-8 mx-auto">
+                <div class="action-card border-warning bg-warning bg-opacity-10">
                     <div class="action-header">
                         <i class="bi bi-building-add text-warning"></i>
-                        <h5>Firma registrieren</h5>
+                        <h5>⚠️ Firma registrieren (ERFORDERLICH)</h5>
                     </div>
                     <p class="action-text">
-                        Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration abzuschließen.
+                        <strong>Die Systemkonfiguration ist noch nicht abgeschlossen.</strong><br>
+                        Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration zu vervollständigen.
+                        Ohne Firmenregistrierung können Sie das System nicht vollständig nutzen.
                     </p>
-                    <a href="{% url 'company:register_company' %}" class="action-btn btn btn-warning">
-                        <i class="bi bi-building-add me-1"></i>
-                        Firma registrieren
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'company:register_company' %}" class="action-btn btn btn-warning">
+                            <i class="bi bi-building-add me-1"></i>
+                            Firma jetzt registrieren
+                        </a>
+                        <a href="{% url 'company:company_info' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Details prüfen
+                        </a>
+                    </div>
                 </div>
             </div>
             {% endif %}
 
-            <!-- Lagerverwaltung -->
+            <!-- Lagerverwaltung (только если компания есть) -->
+            {% if has_company %}
             <div class="col-lg-4 col-md-6">
                 <div class="action-card">
                     <div class="action-header">
@@ -63,8 +93,10 @@
                     </a>
                 </div>
             </div>
+            {% endif %}
 
-            <!-- Benutzerverwaltung -->
+            <!-- Benutzerverwaltung (только если компания есть) -->
+            {% if has_company %}
             <div class="col-lg-4 col-md-6">
                 <div class="action-card">
                     <div class="action-header">
@@ -74,14 +106,16 @@
                     <p class="action-text">
                         Verwalten Sie Benutzerkonten, Rollen und Berechtigungen für das System.
                     </p>
-                    <a href="#" class="action-btn btn btn-primary">
+                    <a href="{% url 'users:create_admin_step1' %}" class="action-btn btn btn-primary">
                         <i class="bi bi-arrow-right me-1"></i>
                         Benutzer verwalten
                     </a>
                 </div>
             </div>
+            {% endif %}
 
-            <!-- Berichte -->
+            <!-- Berichte (только если компания есть) -->
+            {% if has_company %}
             <div class="col-lg-4 col-md-6">
                 <div class="action-card">
                     <div class="action-header">
@@ -97,8 +131,9 @@
                     </a>
                 </div>
             </div>
+            {% endif %}
 
-            <!-- Firmenverwaltung (nur если есть компания) -->
+            <!-- Firmenverwaltung (только если есть компания) -->
             {% if has_company %}
             <div class="col-lg-4 col-md-6">
                 <div class="action-card">
@@ -109,7 +144,7 @@
                     <p class="action-text">
                         Verwalten Sie Ihre Firmendaten, Kontakte und Einstellungen.
                     </p>
-                    <a href="{% url 'company:company_list' %}" class="action-btn btn btn-primary">
+                    <a href="{% url 'company:company_info' %}" class="action-btn btn btn-primary">
                         <i class="bi bi-arrow-right me-1"></i>
                         Firma verwalten
                     </a>
@@ -146,7 +181,13 @@
                         <i class="bi bi-{% if has_company %}check-circle-fill text-success{% else %}exclamation-triangle-fill text-warning{% endif %}"></i>
                         <span>Firma</span>
                         <span class="{% if has_company %}text-success{% else %}text-warning{% endif %} fw-bold">
-                            {% if has_company %}{{ company_name }}{% else %}Nicht registriert{% endif %}
+                            {% if has_company %}
+                                {{ company_name }}
+                                <i class="bi bi-check-circle-fill text-success ms-1" title="Vollständig registriert"></i>
+                            {% else %}
+                                Nicht registriert
+                                <i class="bi bi-exclamation-triangle-fill text-warning ms-1" title="Registrierung erforderlich"></i>
+                            {% endif %}
                         </span>
                     </div>
                     <div class="status-item">
@@ -166,19 +207,36 @@
                     </div>
 
                     {% if not has_company %}
-                    <a href="{% url 'company:register_company' %}" class="quick-link text-warning">
-                        <i class="bi bi-building-add"></i>
-                        <span>Firma registrieren (erforderlich)</span>
+                    <!-- Критичные действия если нет компании -->
+                    <a href="{% url 'company:register_company' %}" class="quick-link text-danger fw-bold">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>Firma registrieren (ERFORDERLICH)</span>
                         <i class="bi bi-chevron-right"></i>
                     </a>
+                    <a href="{% url 'company:company_info' %}" class="quick-link text-warning">
+                        <i class="bi bi-search"></i>
+                        <span>Firmenstatus prüfen</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <hr class="my-2">
+                    <div class="text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Weitere Funktionen werden nach der Firmenregistrierung verfügbar
+                        </small>
+                    </div>
                     {% else %}
-                    <a href="{% url 'company:company_list' %}" class="quick-link">
+                    <!-- Обычные действия если компания есть -->
+                    <a href="{% url 'company:company_info' %}" class="quick-link">
                         <i class="bi bi-building"></i>
+                        <span>Firmendaten anzeigen</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="{% url 'company:edit_company' %}" class="quick-link">
+                        <i class="bi bi-pencil"></i>
                         <span>Firmendaten bearbeiten</span>
                         <i class="bi bi-chevron-right"></i>
                     </a>
-                    {% endif %}
-
                     <a href="#" class="quick-link">
                         <i class="bi bi-plus-circle"></i>
                         <span>Neues Produkt hinzufügen</span>
@@ -204,6 +262,7 @@
                         <span>Hilfe & Dokumentation</span>
                         <i class="bi bi-chevron-right"></i>
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -212,14 +271,28 @@
         {% if not has_company %}
         <div class="row mt-4">
             <div class="col-12">
-                <div class="alert alert-warning" role="alert">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Systemkonfiguration nicht vollständig!</strong>
-                    Bitte registrieren Sie Ihre Firma, um die Konfiguration abzuschließen.
-                    <a href="{% url 'company:register_company' %}" class="alert-link ms-2">
-                        <i class="bi bi-building-add me-1"></i>
-                        Jetzt registrieren
-                    </a>
+                <div class="alert alert-danger" role="alert">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
+                        <h5 class="mb-0">Systemkonfiguration nicht vollständig!</h5>
+                    </div>
+                    <p class="mb-2">
+                        <strong>Das WWS1 System kann ohne Firmenregistrierung nicht vollständig genutzt werden.</strong>
+                    </p>
+                    <p class="mb-3">
+                        Viele Funktionen wie Lagerverwaltung, Berichte und Benutzerverwaltung sind erst nach der
+                        Firmenregistrierung verfügbar. Die Registrierung dauert nur wenige Minuten.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'company:register_company' %}" class="btn btn-danger">
+                            <i class="bi bi-building-add me-1"></i>
+                            Jetzt registrieren
+                        </a>
+                        <a href="{% url 'company:company_info' %}" class="btn btn-outline-danger">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Status prüfen
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -252,6 +325,20 @@
             box-shadow: 0 8px 20px rgba(255, 193, 7, 0.4);
         }
 
+        .quick-link.text-danger {
+            font-weight: 700;
+            background-color: rgba(220, 53, 69, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem 1rem !important;
+            margin: 0.1rem 0;
+        }
+
+        .quick-link.text-danger:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #dc3545 !important;
+            transform: translateX(8px);
+        }
+
         .quick-link.text-warning {
             font-weight: 600;
         }
@@ -259,6 +346,15 @@
         .quick-link.text-warning:hover {
             background-color: rgba(255, 193, 7, 0.1);
             color: #ff8c00 !important;
+        }
+
+        /* Специальные стили для предупреждений */
+        .alert-danger {
+            border-left: 5px solid #dc3545;
+        }
+
+        .alert-warning {
+            border-left: 5px solid #ffc107;
         }
 
         @media (max-width: 768px) {
