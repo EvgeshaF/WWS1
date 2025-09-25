@@ -4,10 +4,6 @@
 {# загружаем template tags для legal_form #}
 {% load company_extras %}
 
-{#{% block title %}WWS1 - Hauptseite{% endblock %}#}
-{#{% block header %}Warehouse Management System{% endblock %}#}
-{#{% block subtitle %}Willkommen im WWS1 System{% endblock %}#}
-
 {% block content %}
     <div class="container-fluid p-4">
         <!-- Willkommensnachricht -->
@@ -101,7 +97,7 @@
                 </div>
             </div>
 
-            <!-- Firmenverwaltung (nur если есть компания) -->
+            <!-- Firmenverwaltung (только если есть компания) -->
             {% if has_company %}
             <div class="col-lg-4 col-md-6">
                 <div class="action-card">
@@ -112,7 +108,7 @@
                     <p class="action-text">
                         Verwalten Sie Ihre Firmendaten, Kontakte und Einstellungen.
                     </p>
-                    <a href="{% url 'company:company_list' %}" class="action-btn btn btn-primary">
+                    <a href="{% url 'company:company_info' %}" class="action-btn btn btn-primary">
                         <i class="bi bi-arrow-right me-1"></i>
                         Firma verwalten
                     </a>
@@ -175,8 +171,13 @@
                         <i class="bi bi-chevron-right"></i>
                     </a>
                     {% else %}
-                    <a href="{% url 'company:company_list' %}" class="quick-link">
+                    <a href="{% url 'company:company_info' %}" class="quick-link">
                         <i class="bi bi-building"></i>
+                        <span>Firmendaten anzeigen</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="{% url 'company:register_company' %}" class="quick-link">
+                        <i class="bi bi-pencil"></i>
                         <span>Firmendaten bearbeiten</span>
                         <i class="bi bi-chevron-right"></i>
                     </a>

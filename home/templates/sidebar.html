@@ -1,6 +1,6 @@
 {% load static %}
 
-<!-- Боковая панель - UPDATED with Modal Company Registration -->
+<!-- Боковая панель - FIXED URLs -->
 <aside class="sidebar bg-primary text-white d-flex flex-column">
     <!-- Основная навигация -->
     <nav class="sidebar-nav flex-grow-1">
@@ -13,7 +13,7 @@
                 </a>
             </li>
 
-            <!-- Firma Section - ENHANCED with Modal -->
+            <!-- Firma Section - FIXED URLs -->
             <li class="nav-item mb-2">
                 <a href="#" class="nav-link text-white d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#companiesSubmenu">
                     <i class="bi bi-building me-3"></i>
@@ -22,7 +22,7 @@
                 </a>
                 <div class="collapse" id="companiesSubmenu">
                     <ul class="nav flex-column ps-4">
-                        <!-- Registrieren/Bearbeiten in modal -->
+                        <!-- Registrieren/Bearbeiten -->
                         <li class="nav-item">
                             <a href="{% url 'company:register_company' %}" class="nav-link text-white-50 d-flex align-items-center py-2">
                                 <i class="bi bi-building-add me-2"></i>

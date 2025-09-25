@@ -1,4 +1,4 @@
-# home/views.py - ОКОНЧАТЕЛЬНО ИСПРАВЛЕННАЯ ВЕРСИЯ с правильными проверками MongoDB
+# home/views.py - ИСПРАВЛЕНО: убрана неправильная логика перенаправления
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -68,7 +68,6 @@ def home(request):
         # Шаг 3: Проверяем наличие зарегистрированной компании
         logger.info("3️⃣ Проверяем наличие зарегистрированной компании...")
         try:
-            # ✅ ИСПРАВЛЕНО: Правильный импорт CompanyManager
             from company.company_manager import CompanyManager
             company_manager = CompanyManager()
 
@@ -112,14 +111,14 @@ def home(request):
                 logger.error("🚨 ОБРАТНОЕ НЕСООТВЕТСТВИЕ: has_company() = True, но get_company() = None")
                 has_company = False
 
+            # ИСПРАВЛЕНО: НЕ ПЕРЕНАПРАВЛЯЕМ НА РЕГИСТРАЦИЮ, ЕСЛИ КОМПАНИЯ ЕСТЬ
             if not has_company:
                 logger.warning("❌ Компания не зарегистрирована")
-                messages.warning(request, "Firma ist noch nicht registriert")
-                return redirect('company:register_company')
-
-            # Получаем название компании для отображения
-            company_name = company_data.get('company_name', 'Неизвестно') if company_data is not None else 'Не настроено'
-            logger.success(f"✅ Компания найдена: {company_name}")
+                company_name = 'Не зарегистрирована'
+            else:
+                # Получаем название компании для отображения
+                company_name = company_data.get('company_name', 'Неизвестно') if company_data is not None else 'Не настроено'
+                logger.success(f"✅ Компания найдена: {company_name}")
 
         except ImportError as e:
             logger.error(f"❌ Ошибка импорта CompanyManager: {e}")

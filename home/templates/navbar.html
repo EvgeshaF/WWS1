@@ -4,8 +4,8 @@
     <div class="container-fluid px-4 h-100 d-flex align-items-center"> <!-- ИСПРАВЛЕНО: добавлен h-100 и выравнивание -->
         <!-- Логотип и название -->
         <a class="modern-brand navbar-brand d-flex align-items-center" href="{% url 'home' %}">
-            <span class="brand-text">WWS1</span>
-            <small class="brand-subtitle ms-2">EF-SOFT</small>
+            <span class="brand-text">{{ company_name|default:"?" }} {{ company_legal_form }}</span>
+{#            <small class="brand-subtitle ms-2">EF-SOFT</small>#}
         </a>
 
         <!-- Кнопка мобильного меню -->

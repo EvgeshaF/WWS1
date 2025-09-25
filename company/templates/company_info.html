@@ -1,9 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{# загружаем template tags для legal_form #}
-{% load company_extras %}
-
 {% block title %}Firmendaten{% endblock %}
 
 {% block extra_css %}
@@ -136,7 +133,6 @@
 {% endblock %}
 
 {% block content %}
-
     <div class="container-fluid py-4">
 
         <!-- Header с основной информацией -->
@@ -146,25 +142,8 @@
                     <div class="col-md-8">
                         <h1 class="mb-2">
                             <i class="bi bi-building me-3"></i>
-                            {{ company.company_name|default:"Firmenname nicht verfügbar" }}
+                            {{ company.company_name|default:"Firmenname nicht verfügbar" }} {{ company_legal_form }}
                         </h1>
-                        <div class="d-flex flex-wrap align-items-center gap-3">
-                            {% if company.legal_form %}
-                                <span class="badge bg-light text-dark fs-6">{{ company.legal_form|legal_form_display }}</span>
-                            {% endif %}
-                            {% if company.industry %}
-                                <span class="badge bg-light text-dark fs-6">{{ company.industry|industry_display }}</span>
-                            {% endif %}
-                            {% if company.is_primary %}
-                                <span class="badge bg-warning text-dark fs-6">
-                                <i class="bi bi-star-fill me-1"></i>
-                                Hauptfirma
-                            </span>
-                            {% endif %}
-                        </div>
-                        {% if company.description %}
-                            <p class="mt-3 mb-0 opacity-90">{{ company.description }}</p>
-                        {% endif %}
                     </div>
                     <div class="col-md-4">
                         {% if stats %}
@@ -203,24 +182,34 @@
                         </h5>
                     </div>
                     <div class="card-body p-0">
-                        <div class="field-row">
-                            <div class="field-label">Firmenname</div>
-                            <div class="field-value">{{ company.company_name|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-label">Rechtsform</div>
-                            <div class="field-value">{{ company.legal_form|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-label">Branche</div>
-                            <div class="field-value">{{ company.industry|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
-                        </div>
-                        {% if company.description %}
-                            <div class="field-row">
-                                <div class="field-label">Beschreibung</div>
-                                <div class="field-value">{{ company.description }}</div>
+
+                        <div class="row ms-3 mt-3 mb-3">
+                            <div class="col-12">
+                                <div class="field-label">Firmenname</div>
+                                <div class="field-value">
+                                    <span class="{% if not company.company_name %}field-empty{% endif %}">
+                                        {{ company.company_name|default:"Nicht angegeben" }}
+                                    </span>
+                                    <span class="{% if not company_legal_form %}field-empty{% endif %}">
+                                        {{ company_legal_form|default:"Nicht angegeben" }}
+                                    </span>
+                                </div>
                             </div>
-                        {% endif %}
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field-label">Geschäftsführer</div>
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <div class="fw-bold">
+                                        {% if company.ceo_salutation %}{{ company.ceo_salutation|title }} {% endif %}
+                                        {% if company.ceo_title %}{{ company.ceo_title }} {% endif %}
+                                        {{ company.ceo_first_name|default:"" }} {{ company.ceo_last_name|default:"" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -232,23 +221,39 @@
                             Registrierungsdaten
                         </h5>
                     </div>
+
                     <div class="card-body p-0">
-                        <div class="field-row">
-                            <div class="field-label">Handelsregister</div>
-                            <div class="field-value">{{ company.commercial_register|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+
+                        <div class="row ms-3 mt-3 mb-3">
+                            <div class="col-6">
+                                <div class="field-label">Handelsregister</div>
+                                <div class="field-value{% if not company.commercial_register %} field-empty{% endif %}">
+                                    {{ company.commercial_register|default:"Nicht angegeben" }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="field-label">Steuernummer</div>
+                                <div class="field-value{% if not company.tax_number %} field-empty{% endif %}">
+                                    {{ company.tax_number|default:"Nicht angegeben" }}
+                                </div>
+                            </div>
                         </div>
-                        <div class="field-row">
-                            <div class="field-label">Steuernummer</div>
-                            <div class="field-value">{{ company.tax_number|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+
+                        <div class="row ms-3 mt-3 mb-3">
+                            <div class="col-6">
+                                <div class="field-label">USt-IdNr.</div>
+                                <div class="field-value{% if not company.vat_id %} field-empty{% endif %}">
+                                    {{ company.vat_id|default:"Nicht angegeben" }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="field-label">Steuer-ID</div>
+                                <div class="field-value{% if not company.tax_id %} field-empty{% endif %}">
+                                    {{ company.tax_id|default:"Nicht angegeben" }}
+                                </div>
+                            </div>
                         </div>
-                        <div class="field-row">
-                            <div class="field-label">USt-IdNr.</div>
-                            <div class="field-value">{{ company.vat_id|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-label">Steuer-ID</div>
-                            <div class="field-value">{{ company.tax_id|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -262,24 +267,33 @@
                             Geschäftsadresse
                         </h5>
                     </div>
+
                     <div class="card-body p-0">
-                        <div class="field-row">
-                            <div class="field-label">Straße</div>
-                            <div class="field-value">{{ company.street|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-label">PLZ / Stadt</div>
-                            <div class="field-value">
-                                {% if company.postal_code and company.city %}
-                                    {{ company.postal_code }} {{ company.city }}
-                                {% else %}
-                                    <span class="field-empty">Nicht vollständig angegeben</span>
-                                {% endif %}
+
+                        <div class="row ms-3 mt-3 mb-3">
+                            <div class="col-6">
+                                <div class="field-label">Straße</div>
+                                <div class="field-value{% if not company.street %} field-empty{% endif %}">
+                                    {{ company.street|default:"Nicht angegeben" }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="field-label">PLZ / Stadt</div>
+                                <div class="field-value">
+                                    {% if company.postal_code and company.city %}
+                                        {{ company.postal_code }} {{ company.city }}
+                                    {% else %}
+                                        <span class="field-empty">Nicht vollständig angegeben</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
+
                         <div class="field-row">
                             <div class="field-label">Land</div>
-                            <div class="field-value">{{ company.country|default:"<span class='field-empty'>Nicht angegeben</span>"|safe }}</div>
+                            <div class="field-value{% if not company.country %} field-empty{% endif %}">
+                                {{ company.country|default:"Nicht angegeben" }}
+                            </div>
                         </div>
                         {% if company.address_addition %}
                             <div class="field-row">
@@ -305,43 +319,52 @@
                         </h5>
                     </div>
                     <div class="card-body p-0">
-                        <div class="field-row">
-                            <div class="field-label">E-Mail</div>
-                            <div class="field-value">
-                                {% if company.email %}
-                                    <a href="mailto:{{ company.email }}">{{ company.email }}</a>
-                                {% else %}
-                                    <span class="field-empty">Nicht angegeben</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field-label">Telefon</div>
-                            <div class="field-value">
-                                {% if company.phone %}
-                                    <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
-                                {% else %}
-                                    <span class="field-empty">Nicht angegeben</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% if company.fax %}
-                            <div class="field-row">
-                                <div class="field-label">Fax</div>
-                                <div class="field-value">{{ company.fax }}</div>
-                            </div>
-                        {% endif %}
-                        {% if company.website %}
-                            <div class="field-row">
-                                <div class="field-label">Website</div>
+
+                        <div class="row ms-3 mt-3 mb-3">
+                            <div class="col-6">
+                                <div class="field-label">E-Mail</div>
                                 <div class="field-value">
-                                    <a href="{{ company.website }}" target="_blank" rel="noopener">
-                                        {{ company.website }}
-                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                    </a>
+                                    {% if company.email %}
+                                        <a href="mailto:{{ company.email }}">{{ company.email }}</a>
+                                    {% else %}
+                                        <span class="field-empty">Nicht angegeben</span>
+                                    {% endif %}
                                 </div>
                             </div>
+                            <div class="col-6">
+                                <div class="field-label">Telefon</div>
+                                <div class="field-value">
+                                    {% if company.phone %}
+                                        <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
+                                    {% else %}
+                                        <span class="field-empty">Nicht angegeben</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if company.fax or company.website %}
+                            <div class="row ms-3 mt-3 mb-3">
+                                {% if company.fax %}
+                                    <div class="col-6">
+                                        <div class="field-label">Fax</div>
+                                        <div class="field-value">{{ company.fax }}</div>
+                                    </div>
+                                {% endif %}
+                                {% if company.website %}
+                                    <div class="col-{% if company.fax %}6{% else %}12{% endif %}">
+                                        <div class="field-label">Website</div>
+                                        <div class="field-value">
+                                            <a href="{{ company.website }}" target="_blank" rel="noopener">
+                                                {{ company.website }}
+                                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
                         {% endif %}
+
                     </div>
                 </div>
             </div>
@@ -414,68 +437,6 @@
             </div>
         {% endif %}
 
-        <!-- Management -->
-        {% if company.ceo_first_name or company.ceo_last_name or company.contact_person_first_name or company.contact_person_last_name %}
-            <div class="section-card">
-                <div class="section-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-people me-2"></i>
-                        Management & Ansprechpartner
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% if company.ceo_first_name or company.ceo_last_name %}
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2">Geschäftsführer</h6>
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-person-badge-fill text-primary fs-4 me-3"></i>
-                                    <div>
-                                        <div class="fw-bold">
-                                            {% if company.ceo_salutation %}{{ company.ceo_salutation|title }} {% endif %}
-                                            {% if company.ceo_title %}{{ company.ceo_title }} {% endif %}
-                                            {{ company.ceo_first_name|default:"" }} {{ company.ceo_last_name|default:"" }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        {% if company.contact_person_first_name or company.contact_person_last_name %}
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2">Ansprechpartner</h6>
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-person-lines-fill text-success fs-4 me-3"></i>
-                                    <div>
-                                        <div class="fw-bold">
-                                            {% if company.contact_person_salutation %}{{ company.contact_person_salutation|title }} {% endif %}
-                                            {% if company.contact_person_title %}{{ company.contact_person_title }} {% endif %}
-                                            {{ company.contact_person_first_name|default:"" }} {{ company.contact_person_last_name|default:"" }}
-                                        </div>
-                                        {% if company.contact_person_position %}
-                                            <div class="text-muted small">{{ company.contact_person_position }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    {% if company.employee_count %}
-                        <div class="mt-3 pt-3 border-top">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-people-fill text-info fs-4 me-3"></i>
-                                <div>
-                                    <div class="fw-bold">Mitarbeiteranzahl</div>
-                                    <div class="text-muted">{{ company.employee_count }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
-
         <!-- Metadaten -->
         {% if stats %}
             <div class="section-card">
@@ -498,15 +459,6 @@
                             <div class="field-value">{{ stats.modified_at|date:"d.m.Y H:i" }} Uhr</div>
                         </div>
                     {% endif %}
-                    <div class="field-row">
-                        <div class="field-label">Datenvollständigkeit</div>
-                        <div class="field-value">
-                            <div class="completion-bar" style="height: 15px;">
-                                <div class="completion-fill" style="width: {{ stats.completion_percentage }}%"></div>
-                                <div class="completion-text" style="font-size: 0.7rem;">{{ stats.completion_percentage }}%</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         {% endif %}
@@ -600,16 +552,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Анимация прогресс-бара
-            const progressBars = document.querySelectorAll('.completion-fill');
-            progressBars.forEach(bar => {
+            document.querySelectorAll('.completion-fill').forEach(bar => {
                 const width = bar.style.width;
                 bar.style.width = '0%';
-                setTimeout(() => {
-                    bar.style.width = width;
-                }, 500);
+                setTimeout(() => bar.style.width = width, 500);
             });
 
-            // Добавляем подтверждение удаления
+            // Подтверждение удаления
             const deleteForm = document.querySelector('#deleteCompanyModal form');
             if (deleteForm) {
                 deleteForm.addEventListener('submit', function (e) {
@@ -627,7 +576,6 @@
                         e.preventDefault();
                         const text = this.textContent.trim();
                         navigator.clipboard.writeText(text).then(() => {
-                            // Показываем уведомление о копировании
                             showToast(`"${text}" in die Zwischenablage kopiert`, 'success', 2000);
                         });
                     }
@@ -635,23 +583,14 @@
             });
         });
 
-        // Функция для показа уведомлений
+        // Функция уведомлений
         function showToast(message, type = 'info', delay = 3000) {
             const toast = document.createElement('div');
             toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
             toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-
+            toast.innerHTML = `${message} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
             document.body.appendChild(toast);
-
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, delay);
+            setTimeout(() => toast.remove(), delay);
         }
     </script>
 {% endblock %}
