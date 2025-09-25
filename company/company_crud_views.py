@@ -238,3 +238,125 @@ def company_info(request):
         'stats': stats
     }
     return render(request, 'company_info.html', context)
+
+
+def edit_company(request):
+    """Редактирование компании - перенаправляет на процесс регистрации с данными"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
+        return redirect('company:register_company_step1')
+
+    # Очищаем предыдущие данные сессии
+    CompanySessionManager.clear_session_data(request)
+
+    # Подготавливаем данные компании для сессии
+    session_data = {}
+
+    # Основные данные (шаг 1)
+    session_data['company_name'] = company.get('company_name', '')
+    session_data['legal_form'] = company.get('legal_form', '')
+    session_data['ceo_salutation'] = company.get('ceo_salutation', '')
+    session_data['ceo_title'] = company.get('ceo_title', '')
+    session_data['ceo_first_name'] = company.get('ceo_first_name', '')
+    session_data['ceo_last_name'] = company.get('ceo_last_name', '')
+
+    # Регистрационные данные (шаг 2)
+    session_data['commercial_register'] = company.get('commercial_register', '')
+    session_data['tax_number'] = company.get('tax_number', '')
+    session_data['vat_id'] = company.get('vat_id', '')
+    session_data['tax_id'] = company.get('tax_id', '')
+    session_data['registration_data_processed'] = True
+    session_data['all_registration_fields_complete'] = True
+
+    # Адресные данные (шаг 3)
+    session_data['street'] = company.get('street', '')
+    session_data['postal_code'] = company.get('postal_code', '')
+    session_data['city'] = company.get('city', '')
+    session_data['country'] = company.get('country', '')
+    session_data['address_addition'] = company.get('address_addition', '')
+    session_data['po_box'] = company.get('po_box', '')
+
+    # Контактные данные (шаг 4)
+    session_data['email'] = company.get('email', '')
+    session_data['phone'] = company.get('phone', '')
+    session_data['fax'] = company.get('fax', '')
+    session_data['website'] = company.get('website', '')
+    session_data['additional_contacts_data'] = company.get('additional_contacts_data', '[]')
+
+    # Настройки (шаг 5)
+    session_data['is_primary'] = company.get('is_primary', True)
+    session_data['enable_notifications'] = company.get('enable_notifications', True)
+    session_data['enable_marketing'] = company.get('enable_marketing', False)
+    session_data['data_protection_consent'] = True  # Уже согласие было дано
+
+    # Сохраняем в сессию
+    CompanySessionManager.set_session_data(request, session_data)
+
+    messages.info(request, f"Bearbeitung der Firma '{company.get('company_name', 'Unbekannt')}' gestartet")
+    logger.info(f"Редактирование компании '{company.get('company_name')}' - данные загружены в сессию")
+
+    return redirect('company:register_company_step1')
+
+
+@require_http_methods(["POST"])
+def delete_company(request):
+    """Удаление компании"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma zum Löschen gefunden")
+        return redirect('home')
+
+    company_name = company.get('company_name', 'Unbekannte Firma')
+
+    try:
+        if company_manager.delete_company():
+            messages.success(request, f"Firma '{company_name}' wurde erfolgreich gelöscht")
+            logger.info(f"Компания '{company_name}' удалена")
+        else:
+            messages.error(request, f"Fehler beim Löschen der Firma '{company_name}'")
+            logger.error(f"Ошибка удаления компании '{company_name}'")
+    except Exception as e:
+        messages.error(request, f"Kritischer Fehler beim Löschen: {str(e)}")
+        logger.error(f"Критическая ошибка удаления компании: {e}")
+
+    return redirect('home')
+
+
+def set_primary_company(request):
+    """Устанавливает компанию как основную (заглушка для совместимости)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma gefunden")
+        return redirect('home')
+
+    # Поскольку у нас только одна компания, просто обновляем флаг is_primary
+    try:
+        updated_data = {'is_primary': True}
+        if company_manager.create_or_update_company({**company, **updated_data}):
+            messages.success(request, f"Firma '{company.get('company_name')}' als Hauptfirma gesetzt")
+        else:
+            messages.error(request, "Fehler beim Setzen als Hauptfirma")
+    except Exception as e:
+        messages.error(request, f"Fehler: {str(e)}")
+        logger.error(f"Ошибка установки основной компании: {e}")
+
+    return redirect('company:company_info')
