@@ -207,24 +207,6 @@
             background: transparent;
             padding: 0;
         }
-
-        /* Специальные стили для полей с отступами */
-        .section-card .row.ms-3 {
-            background: rgba(255, 255, 255, 0.5);
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            padding: 0.75rem 1.5rem;
-            border-bottom: 1px solid rgba(33, 150, 243, 0.1);
-        }
-
-        .section-card .row.ms-3:nth-child(even) {
-            background: rgba(255, 255, 255, 0.7);
-        }
-
-        .section-card .row.ms-3:last-child {
-            border-bottom: none;
-            border-radius: 0 0 10px 10px;
-        }
     </style>
 {% endblock %}
 
@@ -279,30 +261,28 @@
                     </div>
                     <div class="card-body p-0">
 
-                        <div class="row ms-3 mt-3 mb-3">
-                            <div class="col-12">
-                                <div class="field-label">Firmenname</div>
-                                <div class="field-value">
-                                    <span class="{% if not company.company_name %}field-empty{% endif %}">
-                                        {{ company.company_name|default:"Nicht angegeben" }}
-                                    </span>
-                                    <span class="{% if not company_legal_form %}field-empty{% endif %}">
-                                        {{ company_legal_form|default:"Nicht angegeben" }}
-                                    </span>
-                                </div>
+                        <div class="field-row">
+                            <div class="field-label">Firmenname</div>
+                            <div class="field-value">
+                                <span class="{% if not company.company_name %}field-empty{% endif %}">
+                                    {{ company.company_name|default:"Nicht angegeben" }}
+                                </span>
+                                <span class="{% if not company_legal_form %}field-empty{% endif %}">
+                                    {{ company_legal_form|default:"Nicht angegeben" }}
+                                </span>
                             </div>
                         </div>
 
                         <div class="field-row">
                             <div class="field-label">Geschäftsführer</div>
-                            <div class="d-flex align-items-center">
-                                <div>
-                                    <div class="fw-bold">
-                                        {% if company.ceo_salutation %}{{ company.ceo_salutation|title }} {% endif %}
-                                        {% if company.ceo_title %}{{ company.ceo_title }} {% endif %}
-                                        {{ company.ceo_first_name|default:"" }} {{ company.ceo_last_name|default:"" }}
-                                    </div>
-                                </div>
+                            <div class="field-value">
+                                {% if company.ceo_salutation or company.ceo_title or company.ceo_first_name or company.ceo_last_name %}
+                                    {% if company.ceo_salutation %}{{ company.ceo_salutation|title }} {% endif %}
+                                    {% if company.ceo_title %}{{ company.ceo_title }} {% endif %}
+                                    {{ company.ceo_first_name|default:"" }} {{ company.ceo_last_name|default:"" }}
+                                {% else %}
+                                    <span class="field-empty">Nicht angegeben</span>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -320,32 +300,36 @@
 
                     <div class="card-body p-0">
 
-                        <div class="row ms-3 mt-3 mb-3">
-                            <div class="col-6">
-                                <div class="field-label">Handelsregister</div>
-                                <div class="field-value{% if not company.commercial_register %} field-empty{% endif %}">
-                                    {{ company.commercial_register|default:"Nicht angegeben" }}
+                        <div class="field-row">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="field-label">Handelsregister</div>
+                                    <div class="field-value{% if not company.commercial_register %} field-empty{% endif %}">
+                                        {{ company.commercial_register|default:"Nicht angegeben" }}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="field-label">Steuernummer</div>
-                                <div class="field-value{% if not company.tax_number %} field-empty{% endif %}">
-                                    {{ company.tax_number|default:"Nicht angegeben" }}
+                                <div class="col-6">
+                                    <div class="field-label">Steuernummer</div>
+                                    <div class="field-value{% if not company.tax_number %} field-empty{% endif %}">
+                                        {{ company.tax_number|default:"Nicht angegeben" }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row ms-3 mt-3 mb-3">
-                            <div class="col-6">
-                                <div class="field-label">USt-IdNr.</div>
-                                <div class="field-value{% if not company.vat_id %} field-empty{% endif %}">
-                                    {{ company.vat_id|default:"Nicht angegeben" }}
+                        <div class="field-row">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="field-label">USt-IdNr.</div>
+                                    <div class="field-value{% if not company.vat_id %} field-empty{% endif %}">
+                                        {{ company.vat_id|default:"Nicht angegeben" }}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="field-label">Steuer-ID</div>
-                                <div class="field-value{% if not company.tax_id %} field-empty{% endif %}">
-                                    {{ company.tax_id|default:"Nicht angegeben" }}
+                                <div class="col-6">
+                                    <div class="field-label">Steuer-ID</div>
+                                    <div class="field-value{% if not company.tax_id %} field-empty{% endif %}">
+                                        {{ company.tax_id|default:"Nicht angegeben" }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -369,23 +353,25 @@
                                 <div class="field-value{% if not company.iban %} field-empty{% endif %}">{{ company.iban|default:"Nicht angegeben" }}</div>
                             </div>
 
-                            <div class="row ms-3 mt-3 mb-3">
-                                <div class="col-6">
-                                    <div class="field-label">BIC</div>
-                                    <div class="field-value{% if not company.bic %} field-empty{% endif %}">
-                                        {{ company.bic|default:"Nicht angegeben" }}
+                            <div class="field-row">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="field-label">BIC</div>
+                                        <div class="field-value{% if not company.bic %} field-empty{% endif %}">
+                                            {{ company.bic|default:"Nicht angegeben" }}
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="field-label">Kontoinhaber</div>
-                                    <div class="field-value{% if not company.account_holder %} field-empty{% endif %}">
-                                        {{ company.account_holder|default:"Nicht angegeben" }}
+                                    <div class="col-6">
+                                        <div class="field-label">Kontoinhaber</div>
+                                        <div class="field-value{% if not company.account_holder %} field-empty{% endif %}">
+                                            {{ company.account_holder|default:"Nicht angegeben" }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {% if company.secondary_bank_name or company.secondary_iban %}
-                                <div class="field-row">
+                                <div class="field-row" style="margin-top: 1rem; border-top: 1px solid rgba(33, 150, 243, 0.2); padding-top: 1rem;">
                                     <div class="field-label">Zweitbank</div>
                                     <div class="field-value{% if not company.secondary_bank_name %} field-empty{% endif %}">{{ company.secondary_bank_name|default:"Nicht angegeben" }}</div>
                                 </div>
@@ -425,21 +411,23 @@
 
                     <div class="card-body p-0">
 
-                        <div class="row ms-3 mt-3 mb-3">
-                            <div class="col-6">
-                                <div class="field-label">Straße</div>
-                                <div class="field-value{% if not company.street %} field-empty{% endif %}">
-                                    {{ company.street|default:"Nicht angegeben" }}
+                        <div class="field-row">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="field-label">Straße</div>
+                                    <div class="field-value{% if not company.street %} field-empty{% endif %}">
+                                        {{ company.street|default:"Nicht angegeben" }}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="field-label">PLZ / Stadt</div>
-                                <div class="field-value">
-                                    {% if company.postal_code and company.city %}
-                                        {{ company.postal_code }} {{ company.city }}
-                                    {% else %}
-                                        <span class="field-empty">Nicht vollständig angegeben</span>
-                                    {% endif %}
+                                <div class="col-6">
+                                    <div class="field-label">PLZ / Stadt</div>
+                                    <div class="field-value">
+                                        {% if company.postal_code and company.city %}
+                                            {{ company.postal_code }} {{ company.city }}
+                                        {% else %}
+                                            <span class="field-empty">Nicht vollständig angegeben</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -475,48 +463,52 @@
                     </div>
                     <div class="card-body p-0">
 
-                        <div class="row ms-3 mt-3 mb-3">
-                            <div class="col-6">
-                                <div class="field-label">E-Mail</div>
-                                <div class="field-value">
-                                    {% if company.email %}
-                                        <a href="mailto:{{ company.email }}">{{ company.email }}</a>
-                                    {% else %}
-                                        <span class="field-empty">Nicht angegeben</span>
-                                    {% endif %}
+                        <div class="field-row">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="field-label">E-Mail</div>
+                                    <div class="field-value">
+                                        {% if company.email %}
+                                            <a href="mailto:{{ company.email }}">{{ company.email }}</a>
+                                        {% else %}
+                                            <span class="field-empty">Nicht angegeben</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="field-label">Telefon</div>
-                                <div class="field-value">
-                                    {% if company.phone %}
-                                        <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
-                                    {% else %}
-                                        <span class="field-empty">Nicht angegeben</span>
-                                    {% endif %}
+                                <div class="col-6">
+                                    <div class="field-label">Telefon</div>
+                                    <div class="field-value">
+                                        {% if company.phone %}
+                                            <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
+                                        {% else %}
+                                            <span class="field-empty">Nicht angegeben</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {% if company.fax or company.website %}
-                            <div class="row ms-3 mt-3 mb-3">
-                                {% if company.fax %}
-                                    <div class="col-6">
-                                        <div class="field-label">Fax</div>
-                                        <div class="field-value">{{ company.fax }}</div>
-                                    </div>
-                                {% endif %}
-                                {% if company.website %}
-                                    <div class="col-{% if company.fax %}6{% else %}12{% endif %}">
-                                        <div class="field-label">Website</div>
-                                        <div class="field-value">
-                                            <a href="{{ company.website }}" target="_blank" rel="noopener">
-                                                {{ company.website }}
-                                                <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                            </a>
+                            <div class="field-row">
+                                <div class="row">
+                                    {% if company.fax %}
+                                        <div class="col-6">
+                                            <div class="field-label">Fax</div>
+                                            <div class="field-value">{{ company.fax }}</div>
                                         </div>
-                                    </div>
-                                {% endif %}
+                                    {% endif %}
+                                    {% if company.website %}
+                                        <div class="col-{% if company.fax %}6{% else %}12{% endif %}">
+                                            <div class="field-label">Website</div>
+                                            <div class="field-value">
+                                                <a href="{{ company.website }}" target="_blank" rel="noopener">
+                                                    {{ company.website }}
+                                                    <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         {% endif %}
 
