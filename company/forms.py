@@ -1,4 +1,4 @@
-# company/forms.py - ОБНОВЛЕНО: добавлены функции для загрузки типов контактов из MongoDB
+# company/forms.py - НОВЫЙ ФАЙЛ: формы для регистрации компании
 
 from django import forms
 from django.core.validators import RegexValidator
@@ -9,7 +9,7 @@ from loguru import logger
 
 
 def get_salutations_from_mongodb():
-    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations - SAME AS USERS"""
+    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations"""
     try:
         logger.info("Загружаем salutations из MongoDB (for company)")
         db = MongoConnection.get_database()
@@ -31,7 +31,6 @@ def get_salutations_from_mongodb():
 
         salutations_collection = db[salutations_collection_name]
 
-        # SAME LOGIC AS USERS: адаптировано под структуру данных
         salutations_cursor = salutations_collection.find(
             {'deleted': {'$ne': True}},
             {'salutation': 1}
@@ -61,7 +60,7 @@ def get_salutations_from_mongodb():
 
 
 def get_default_salutation_choices():
-    """Возвращает статичный список салютаций как fallback - SAME AS USERS"""
+    """Возвращает статичный список салютаций как fallback"""
     return [
         ('', '-- Auswählen --'),
         ('herr', 'Herr'),
@@ -71,7 +70,7 @@ def get_default_salutation_choices():
 
 
 def get_titles_from_mongodb():
-    """Загружает titles из MongoDB коллекции - SAME AS USERS"""
+    """Загружает titles из MongoDB коллекции"""
     try:
         logger.info("Загружаем titles из MongoDB (for company)")
         db = MongoConnection.get_database()
@@ -117,7 +116,7 @@ def get_titles_from_mongodb():
 
 
 def get_default_title_choices():
-    """Возвращает статичный список титулов как fallback - SAME AS USERS"""
+    """Возвращает статичный список титулов как fallback"""
     return [
         ('', '-- Kein Titel --'),
         ('dr', 'Dr.'),
@@ -135,7 +134,6 @@ def get_default_title_choices():
     ]
 
 
-# НОВОЕ: Функции для загрузки типов контактов из MongoDB (как в users)
 def get_communication_types_from_mongodb():
     """Загружает типы коммуникации из MongoDB коллекции basic_communications"""
     try:
@@ -399,7 +397,7 @@ def get_default_communication_config():
     }
 
 
-# Новая функция для удобного доступа к choices (для компании)
+# Функция для удобного доступа к choices (для компании)
 def get_contact_type_choices():
     """Получает типы контактов из MongoDB или возвращает fallback (для компании)"""
     return get_communication_types_from_mongodb()
@@ -547,8 +545,10 @@ def get_default_industry_choices():
     ]
 
 
+# ==================== ФОРМЫ ====================
+
 class CompanyBasicDataForm(forms.Form):
-    """Шаг 1: Основные данные компании + Geschäftsführer - UPDATED WITH DYNAMIC LOADING"""
+    """Шаг 1: Основные данные компании + Geschäftsführer"""
 
     LEGAL_FORM_CHOICES = [
         ('', '-- Rechtsform auswählen --'),
@@ -573,15 +573,15 @@ class CompanyBasicDataForm(forms.Form):
         min_length=2,
         validators=[
             RegexValidator(
-                regex=r'^[a-zA-ZäöüÄÖÜß0-9\s\.\-&,]+,
-            message = 'Firmenname darf nur Buchstaben, Zahlen und gängige Sonderzeichen enthalten'
-    )
-    ],
-    widget = forms.TextInput(attrs={
-        'class': 'form-control',
-        'placeholder': 'Vollständiger Firmenname eingeben',
-        'autofocus': True
-    })
+                regex=r'^[a-zA-ZäöüÄÖÜß0-9\s\.\-&,]+$',
+                message='Firmenname darf nur Buchstaben, Zahlen und gängige Sonderzeichen enthalten'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Vollständiger Firmenname eingeben',
+            'autofocus': True
+        })
     )
 
     legal_form = forms.ChoiceField(
@@ -593,10 +593,10 @@ class CompanyBasicDataForm(forms.Form):
         })
     )
 
-    # БЛОК GESCHÄFTSFÜHRER - UPDATED WITH DYNAMIC LOADING
+    # БЛОК GESCHÄFTSFÜHRER
     ceo_salutation = forms.ChoiceField(
         label="Anrede",
-        choices=[],  # CHANGED: Заполняется динамически из MongoDB
+        choices=[],  # Заполняется динамически из MongoDB
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-control'
@@ -605,7 +605,7 @@ class CompanyBasicDataForm(forms.Form):
 
     ceo_title = forms.ChoiceField(
         label="Titel",
-        choices=[],  # CHANGED: Заполняется динамически из MongoDB
+        choices=[],  # Заполняется динамически из MongoDB
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-control'
@@ -635,508 +635,507 @@ class CompanyBasicDataForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # НОВОЕ: Динамически загружаем salutations из MongoDB - SAME AS USERS
+        # Динамически загружаем salutations из MongoDB
         salutation_choices = get_salutations_from_mongodb()
         self.fields['ceo_salutation'].choices = salutation_choices
         logger.info(f"Загружено {len(salutation_choices)} вариантов CEO salutation")
 
-        # НОВОЕ: Динамически загружаем titles из MongoDB - SAME AS USERS
+        # Динамически загружаем titles из MongoDB
         title_choices = get_titles_from_mongodb()
         self.fields['ceo_title'].choices = title_choices
         logger.info(f"Загружено {len(title_choices)} вариантов CEO title")
 
 
 class CompanyRegistrationForm(forms.Form):
-    """Шаг 2: Регистрационные данные - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ"""
+    """Шаг 2: Регистрационные данные - ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ"""
 
     commercial_register = forms.CharField(
         label="Handelsregister",
         max_length=50,
-        required=True,  # ИЗМЕНЕНО: теперь обязательно
+        required=True,
         validators=[
             RegexValidator(
-                regex=r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+),
-            message = 'Format: HRA12345 oder HRB12345'
-    )
-    ],
-    widget = forms.TextInput(attrs={
-        'class': 'form-control',
-        'placeholder': 'z.B. HRB12345'
-    }),
-    error_messages = {
-        'required': 'Handelsregister ist erforderlich'
-    }
+                regex=r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$',
+                message='Format: HRA12345 oder HRB12345'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. HRB12345'
+        }),
+        error_messages={
+            'required': 'Handelsregister ist erforderlich'
+        }
     )
 
     tax_number = forms.CharField(
         label="Steuernummer",
         max_length=20,
-        required=True,  # ИЗМЕНЕНО: теперь обязательно
+        required=True,
         validators=[
             RegexValidator(
-                regex=r'^\d{1,3}/\d{3}/\d{4,5},
-            message = "Geben Sie eine gültige Steuernummer ein (Format: 12/345/67890)."
-    )
-    ],
-    widget = forms.TextInput(attrs={
-        'class': 'form-control',
-        'placeholder': '12/345/67890'
-    }),
-    error_messages = {
-        'required': 'Steuernummer ist erforderlich'
-    }
+                regex=r'^\d{1,3}/\d{3}/\d{4,5}$',
+                message="Geben Sie eine gültige Steuernummer ein (Format: 12/345/67890)."
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '12/345/67890'
+        }),
+        error_messages={
+            'required': 'Steuernummer ist erforderlich'
+        }
     )
 
     vat_id = forms.CharField(
         label="USt-IdNr.",
         max_length=15,
-        required=True,  # ИЗМЕНЕНО: теперь обязательно
+        required=True,
         validators=[
             RegexValidator(
-                regex=r'^DE\d{9},
-            message = 'Format: DE123456789'
-    )
-    ],
-    widget = forms.TextInput(attrs={
-        'class': 'form-control',
-        'placeholder': 'DE123456789'
-    }),
-    error_messages = {
-        'required': 'USt-IdNr. ist erforderlich'
-    }
+                regex=r'^DE\d{9}$',
+                message='Format: DE123456789'
+            )
+        ],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'DE123456789'
+        }),
+        error_messages={
+            'required': 'USt-IdNr. ist erforderlich'
+        }
     )
 
     tax_id = forms.CharField(
         label="Steuer-ID",
         max_length=11,
-        required=True,  # ИЗМЕНЕНО: теперь обязательно
+        required=True,
         validators=[
             RegexValidator(
-                regex=r'^\d{11},
-            message = '11-stellige Steuer-ID erforderlich'
-    )
-    ],
-    widget = forms.TextInput(attrs={
-        'class': 'form-control',
-        'placeholder': '12345678901'
-    }),
-    error_messages = {
-        'required': 'Steuer-ID ist erforderlich'
-    }
-    )
-
-    class CompanyAddressForm(forms.Form):
-        """Шаг 3: Адресные данные"""
-
-        street = forms.CharField(
-            label="Straße und Hausnummer",
-            max_length=100,
-            validators=[
-                RegexValidator(
-                    regex=r'^[a-zA-ZäöüÄÖÜß0-9\s\.\-,]+,
-                message = 'Straße darf nur Buchstaben, Zahlen und gängige Zeichen enthalten'
-        )
+                regex=r'^\d{11}$',
+                message='11-stellige Steuer-ID erforderlich'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '12345678901'
+        }),
+        error_messages={
+            'required': 'Steuer-ID ist erforderlich'
+        }
+    )
+
+
+class CompanyAddressForm(forms.Form):
+    """Шаг 3: Адресные данные"""
+
+    street = forms.CharField(
+        label="Straße und Hausnummer",
+        max_length=100,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-ZäöüÄÖÜß0-9\s\.\-,]+$',
+                message='Straße darf nur Buchstaben, Zahlen und gängige Zeichen enthalten'
+            )
+        ],
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Musterstraße 123'
         })
-        )
+    )
 
-        postal_code = forms.CharField(
-            label="PLZ",
-            max_length=5,
-            min_length=5,
-            validators=[
-                RegexValidator(
-                    regex=r'^\d{5},
-                message = 'PLZ muss 5 Ziffern haben'
-        )
+    postal_code = forms.CharField(
+        label="PLZ",
+        max_length=5,
+        min_length=5,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{5}$',
+                message='PLZ muss 5 Ziffern haben'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': '12345'
         })
-        )
+    )
 
-        city = forms.CharField(
-            label="Stadt",
-            max_length=100,
-            validators=[
-                RegexValidator(
-                    regex=r'^[a-zA-ZäöüÄÖÜß\s\-]+,
-                message = 'Stadt darf nur Buchstaben, Leerzeichen und Bindestriche enthalten'
-        )
+    city = forms.CharField(
+        label="Stadt",
+        max_length=100,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-ZäöüÄÖÜß\s\-]+$',
+                message='Stadt darf nur Buchstaben, Leerzeichen und Bindestriche enthalten'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Musterstadt'
         })
-        )
+    )
 
-        country = forms.ChoiceField(
-            label="Land",
-            choices=[],  # Заполняется динамически
-            required=True,
-            widget=forms.Select(attrs={
-                'class': 'form-control'
-            })
-        )
+    country = forms.ChoiceField(
+        label="Land",
+        choices=[],  # Заполняется динамически
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        })
+    )
 
-        address_addition = forms.CharField(
-            label="Adresszusatz",
-            max_length=100,
-            required=False,
-            widget=forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'z.B. 2. Stock, Gebäude A (optional)'
-            })
-        )
+    address_addition = forms.CharField(
+        label="Adresszusatz",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. 2. Stock, Gebäude A (optional)'
+        })
+    )
 
-        po_box = forms.CharField(
-            label="Postfach",
-            max_length=50,
-            required=False,
-            widget=forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'z.B. Postfach 123456 (optional)'
-            })
-        )
+    po_box = forms.CharField(
+        label="Postfach",
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. Postfach 123456 (optional)'
+        })
+    )
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            # Динамически загружаем страны из MongoDB
-            country_choices = get_countries_from_mongodb()
-            self.fields['country'].choices = country_choices
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Динамически загружаем страны из MongoDB
+        country_choices = get_countries_from_mongodb()
+        self.fields['country'].choices = country_choices
 
-    class CompanyContactForm(forms.Form):
-        """Шаг 4: Контактные данные"""
 
-        email = forms.EmailField(
-            label="Haupt-E-Mail",
-            max_length=100,
-            widget=forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'kontakt@firma.de'
-            })
-        )
+class CompanyContactForm(forms.Form):
+    """Шаг 4: Контактные данные"""
 
-        phone = forms.CharField(
-            label="Haupttelefon",
-            max_length=20,
-            validators=[
-                RegexValidator(
-                    regex=r'^[\+]?[0-9\s\-\(\)]{7,20},
-                message = 'Ungültiges Telefonformat'
-        )
+    email = forms.EmailField(
+        label="Haupt-E-Mail",
+        max_length=100,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'kontakt@firma.de'
+        })
+    )
+
+    phone = forms.CharField(
+        label="Haupttelefon",
+        max_length=20,
+        validators=[
+            RegexValidator(
+                regex=r'^[\+]?[0-9\s\-\(\)]{7,20}$',
+                message='Ungültiges Telefonformat'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': '+49 123 456789'
         })
-        )
+    )
 
-        fax = forms.CharField(
-            label="Fax",
-            max_length=20,
-            required=False,
-            validators=[
-                RegexValidator(
-                    regex=r'^[\+]?[0-9\s\-\(\)]{7,20},
-                message = 'Ungültiges Faxformat'
-        )
+    fax = forms.CharField(
+        label="Fax",
+        max_length=20,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[\+]?[0-9\s\-\(\)]{7,20}$',
+                message='Ungültiges Faxformat'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': '+49 123 456789'
         })
-        )
+    )
 
-        website = forms.URLField(
-            label="Website",
-            max_length=200,
-            required=False,
-            widget=forms.URLInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'https://www.firma.de'
-            })
-        )
+    website = forms.URLField(
+        label="Website",
+        max_length=200,
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://www.firma.de'
+        })
+    )
 
-    # НОВОЕ: Форма для дополнительных контактов компании
-    class AdditionalCompanyContactForm(forms.Form):
-        """Форма для дополнительных контактов компании (используется в модальном окне)"""
 
-        contact_type = forms.ChoiceField(
-            label="Kontakttyp",
-            choices=[],  # Заполняется динамически из MongoDB
-            required=True,
-            widget=forms.Select(attrs={
-                'class': 'form-control',
-                'id': 'contactType'
-            })
-        )
+class CompanyBankingForm(forms.Form):
+    """Шаг 5 - Банковские данные"""
 
-        contact_value = forms.CharField(
-            label="Kontaktdaten",
-            max_length=200,
-            required=True,
-            widget=forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Kontaktdaten eingeben...',
-                'id': 'contactValue'
-            })
-        )
+    # Основной банковский счет
+    bank_name = forms.CharField(
+        label="Name der Bank",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. Deutsche Bank AG'
+        })
+    )
 
-        contact_department = forms.ChoiceField(
-            label="Abteilung",
-            choices=[
-                ('', '-- Abteilung auswählen --'),
-                ('management', 'Geschäftsführung'),
-                ('sales', 'Vertrieb'),
-                ('support', 'Kundensupport'),
-                ('accounting', 'Buchhaltung'),
-                ('hr', 'Personalabteilung'),
-                ('it', 'IT-Abteilung'),
-                ('marketing', 'Marketing'),
-                ('production', 'Produktion'),
-                ('logistics', 'Logistik'),
-                ('purchasing', 'Einkauf'),
-                ('quality', 'Qualitätsmanagement'),
-                ('legal', 'Rechtsabteilung'),
-                ('reception', 'Empfang/Zentrale'),
-                ('other', 'Sonstige')
-            ],
-            required=False,
-            widget=forms.Select(attrs={
-                'class': 'form-control',
-                'id': 'contactLabel'
-            })
-        )
-
-        contact_important = forms.BooleanField(
-            label="Als wichtig markieren",
-            required=False,
-            widget=forms.CheckboxInput(attrs={
-                'class': 'form-check-input',
-                'id': 'contactImportant'
-            })
-        )
-
-        contact_public = forms.BooleanField(
-            label="Öffentlich sichtbar",
-            required=False,
-            help_text="Kann auf der Webseite angezeigt werden",
-            widget=forms.CheckboxInput(attrs={
-                'class': 'form-check-input',
-                'id': 'contactPublic'
-            })
-        )
-
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-            # Динамически загружаем типы контактов из MongoDB
-            contact_type_choices = get_communication_types_from_mongodb()
-            self.fields['contact_type'].choices = contact_type_choices
-
-    class CompanyBankingForm(forms.Form):
-        """НОВОЕ: Шаг 5 - Банковские данные"""
-
-        # Основной банковский счет
-        bank_name = forms.CharField(
-            label="Name der Bank",
-            max_length=100,
-            required=False,
-            widget=forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'z.B. Deutsche Bank AG'
-            })
-        )
-
-        iban = forms.CharField(
-            label="IBAN",
-            max_length=34,
-            required=False,
-            validators=[
-                RegexValidator(
-                    regex=r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16},
-                message = 'Ungültiges IBAN-Format (z.B. DE89370400440532013000)'
-        )
+    iban = forms.CharField(
+        label="IBAN",
+        max_length=34,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$',
+                message='Ungültiges IBAN-Format (z.B. DE89370400440532013000)'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'DE89370400440532013000',
             'style': 'text-transform: uppercase;'
         })
-        )
+    )
 
-        bic = forms.CharField(
-            label="BIC/SWIFT",
-            max_length=11,
-            required=False,
-            validators=[
-                RegexValidator(
-                    regex=r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?,
-                message = 'Ungültiges BIC-Format (z.B. DEUTDEFF)'
-        )
+    bic = forms.CharField(
+        label="BIC/SWIFT",
+        max_length=11,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$',
+                message='Ungültiges BIC-Format (z.B. DEUTDEFF)'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'DEUTDEFF',
             'style': 'text-transform: uppercase;'
         })
-        )
+    )
 
-        account_holder = forms.CharField(
-            label="Kontoinhaber",
-            max_length=100,
-            required=False,
-            widget=forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Name des Kontoinhabers'
-            })
-        )
+    account_holder = forms.CharField(
+        label="Kontoinhaber",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Name des Kontoinhabers'
+        })
+    )
 
-        # Zusätzliche Informationen
-        bank_address = forms.CharField(
-            label="Adresse der Bank",
-            max_length=200,
-            required=False,
-            widget=forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Straße, PLZ Stadt (optional)'
-            })
-        )
+    # Zusätzliche Informationen
+    bank_address = forms.CharField(
+        label="Adresse der Bank",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Straße, PLZ Stadt (optional)'
+        })
+    )
 
-        account_type = forms.ChoiceField(
-            label="Kontotyp",
-            choices=[
-                ('', '-- Auswählen --'),
-                ('geschaeft', 'Geschäftskonto'),
-                ('haupt', 'Hauptkonto'),
-                ('liquiditaet', 'Liquiditätskonto'),
-                ('kredit', 'Kreditkonto'),
-                ('tagesgeld', 'Tagesgeldkonto'),
-                ('sonstige', 'Sonstige'),
-            ],
-            required=False,
-            widget=forms.Select(attrs={
-                'class': 'form-control'
-            })
-        )
-
-        # Sekundäre Bankverbindung (falls vorhanden)
-        secondary_bank_name = forms.CharField(
-            label="Zweitbank (optional)",
-            max_length=100,
-            required=False,
-            widget=forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'z.B. Commerzbank AG'
-            })
-        )
-
-        secondary_iban = forms.CharField(
-            label="IBAN (Zweitbank)",
-            max_length=34,
-            required=False,
-            validators=[
-                RegexValidator(
-                    regex=r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16},
-                message = 'Ungültiges IBAN-Format'
-        )
+    account_type = forms.ChoiceField(
+        label="Kontotyp",
+        choices=[
+            ('', '-- Auswählen --'),
+            ('geschaeft', 'Geschäftskonto'),
+            ('haupt', 'Hauptkonto'),
+            ('liquiditaet', 'Liquiditätskonto'),
+            ('kredit', 'Kreditkonto'),
+            ('tagesgeld', 'Tagesgeldkonto'),
+            ('sonstige', 'Sonstige'),
         ],
-        widget = forms.TextInput(attrs={
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-control'
+        })
+    )
+
+    # Sekundäre Bankverbindung (falls vorhanden)
+    secondary_bank_name = forms.CharField(
+        label="Zweitbank (optional)",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. Commerzbank AG'
+        })
+    )
+
+    secondary_iban = forms.CharField(
+        label="IBAN (Zweitbank)",
+        max_length=34,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$',
+                message='Ungültiges IBAN-Format'
+            )
+        ],
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'DE89370400440532013001',
             'style': 'text-transform: uppercase;'
         })
-        )
+    )
 
-        secondary_bic = forms.CharField(
-            label="BIC/SWIFT (Zweitbank)",
-            max_length=11,
-            required=False,
-            validators=[
-                RegexValidator(
-                    regex=r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?,
-                message = 'Ungültiges BIC-Format'
-        )
+    secondary_bic = forms.CharField(
+        label="BIC/SWIFT (Zweitbank)",
+        max_length=11,
+        required=False,
+        validators=[
+            RegexValidator(
+                regex=r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$',
+                message='Ungültiges BIC-Format'
+            )
         ],
-        widget = forms.TextInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'COBADEFF',
             'style': 'text-transform: uppercase;'
         })
-        )
+    )
 
-        # Einstellungen
-        is_primary_account = forms.BooleanField(
-            label="Als Hauptkonto für Rechnungen verwenden",
-            required=False,
-            initial=True,
-            help_text="Diese Bankverbindung wird standardmäßig auf Rechnungen angezeigt",
-            widget=forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
-        )
+    # Einstellungen
+    is_primary_account = forms.BooleanField(
+        label="Als Hauptkonto für Rechnungen verwenden",
+        required=False,
+        initial=True,
+        help_text="Diese Bankverbindung wird standardmäßig auf Rechnungen angezeigt",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
 
-        enable_sepa = forms.BooleanField(
-            label="SEPA-Lastschriftverfahren aktiviert",
-            required=False,
-            initial=False,
-            help_text="Ermöglicht Lastschrifteinzug von Kunden",
-            widget=forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
-        )
+    enable_sepa = forms.BooleanField(
+        label="SEPA-Lastschriftverfahren aktiviert",
+        required=False,
+        initial=False,
+        help_text="Ermöglicht Lastschrifteinzug von Kunden",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
 
-        banking_notes = forms.CharField(
-            label="Notizen zu Bankverbindungen",
-            max_length=500,
-            required=False,
-            widget=forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Zusätzliche Informationen zu den Bankverbindungen (optional)'
-            })
-        )
+    banking_notes = forms.CharField(
+        label="Notizen zu Bankverbindungen",
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Zusätzliche Informationen zu den Bankverbindungen (optional)'
+        })
+    )
 
-        def clean_iban(self):
-            iban = self.cleaned_data.get('iban', '').replace(' ', '').upper()
-            if iban and not self.validate_iban_checksum(iban):
-                raise forms.ValidationError('IBAN-Prüfsumme ist ungültig')
-            return iban
+    def clean_iban(self):
+        iban = self.cleaned_data.get('iban', '').replace(' ', '').upper()
+        if iban and not self.validate_iban_checksum(iban):
+            raise forms.ValidationError('IBAN-Prüfsumme ist ungültig')
+        return iban
 
-        def clean_secondary_iban(self):
-            iban = self.cleaned_data.get('secondary_iban', '').replace(' ', '').upper()
-            if iban and not self.validate_iban_checksum(iban):
-                raise forms.ValidationError('IBAN-Prüfsumme ist ungültig')
-            return iban
+    def clean_secondary_iban(self):
+        iban = self.cleaned_data.get('secondary_iban', '').replace(' ', '').upper()
+        if iban and not self.validate_iban_checksum(iban):
+            raise forms.ValidationError('IBAN-Prüfsumme ist ungültig')
+        return iban
 
-        def validate_iban_checksum(self, iban):
-            """Einfache IBAN-Validierung (Mod-97-Prüfung)"""
-            if len(iban) < 15:
-                return False
+    def validate_iban_checksum(self, iban):
+        """Einfache IBAN-Validierung (Mod-97-Prüfung)"""
+        if len(iban) < 15:
+            return False
 
-            try:
-                # Bewege die ersten 4 Zeichen ans Ende
-                rearranged = iban[4:] + iban[:4]
+        try:
+            # Bewege die ersten 4 Zeichen ans Ende
+            rearranged = iban[4:] + iban[:4]
 
-                # Ersetze Buchstaben durch Zahlen (A=10, B=11, etc.)
-                numeric = ''
-                for char in rearranged:
-                    if char.isdigit():
-                        numeric += char
-                    else:
-                        numeric += str(ord(char) - ord('A') + 10)
+            # Ersetze Buchstaben durch Zahlen (A=10, B=11, etc.)
+            numeric = ''
+            for char in rearranged:
+                if char.isdigit():
+                    numeric += char
+                else:
+                    numeric += str(ord(char) - ord('A') + 10)
 
-                # Mod 97 Prüfung
-                return int(numeric) % 97 == 1
-            except:
-                return False
+            # Mod 97 Prüfung
+            return int(numeric) % 97 == 1
+        except:
+            return False
 
-    # Для обратной совместимости (legacy forms)
-    class CompanyRegistrationFormLegacy(forms.Form):
-        """Legacy форма для совместимости со старым кодом"""
-        pass
+
+# Дополнительная форма для модального окна дополнительных контактов
+class AdditionalCompanyContactForm(forms.Form):
+    """Форма для дополнительных контактов компании (используется в модальном окне)"""
+
+    contact_type = forms.ChoiceField(
+        label="Kontakttyp",
+        choices=[],  # Заполняется динамически из MongoDB
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'contactType'
+        })
+    )
+
+    contact_value = forms.CharField(
+        label="Kontaktdaten",
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Kontaktdaten eingeben...',
+            'id': 'contactValue'
+        })
+    )
+
+    contact_department = forms.ChoiceField(
+        label="Abteilung",
+        choices=[
+            ('', '-- Abteilung auswählen --'),
+            ('management', 'Geschäftsführung'),
+            ('sales', 'Vertrieb'),
+            ('support', 'Kundensupport'),
+            ('accounting', 'Buchhaltung'),
+            ('hr', 'Personalabteilung'),
+            ('it', 'IT-Abteilung'),
+            ('marketing', 'Marketing'),
+            ('production', 'Produktion'),
+            ('logistics', 'Logistik'),
+            ('purchasing', 'Einkauf'),
+            ('quality', 'Qualitätsmanagement'),
+            ('legal', 'Rechtsabteilung'),
+            ('reception', 'Empfang/Zentrale'),
+            ('other', 'Sonstige')
+        ],
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'contactLabel'
+        })
+    )
+
+    contact_important = forms.BooleanField(
+        label="Als wichtig markieren",
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'contactImportant'
+        })
+    )
+
+    contact_public = forms.BooleanField(
+        label="Öffentlich sichtbar",
+        required=False,
+        help_text="Kann auf der Webseite angezeigt werden",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'contactPublic'
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Динамически загружаем типы контактов из MongoDB
+        contact_type_choices = get_communication_types_from_mongodb()
+        self.fields['contact_type'].choices = contact_type_choices

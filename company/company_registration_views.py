@@ -1,4 +1,4 @@
-# company/company_registration_views.py - ОБНОВЛЕНО: поддержка дополнительных контактов как в users
+# company/company_registration_views.py - ИСПРАВЛЕНО: синтаксические ошибки
 
 from django.shortcuts import redirect
 from loguru import logger
@@ -30,7 +30,7 @@ from company.company_utils import check_mongodb_availability, render_with_messag
 from company.forms import (
     CompanyBasicDataForm, CompanyRegistrationForm, CompanyAddressForm,
     CompanyContactForm, CompanyBankingForm,
-    get_contact_type_choices, get_communication_config_from_mongodb  # НОВОЕ: импорт функций контактов
+    get_contact_type_choices, get_communication_config_from_mongodb
 )
 from company.language import company_success_messages, company_error_messages, text_company_step1, text_company_step2, text_company_step3, text_company_step4, text_company_step5
 
@@ -78,7 +78,7 @@ def register_company_step1(request):
 
 
 def register_company_step2(request):
-    """Шаг 2: Регистрационные данные - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ с улучшенной валидацией"""
+    """Шаг 2: Регистрационные данные - ИСПРАВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ с улучшенной валидацией"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -114,72 +114,71 @@ def register_company_step2(request):
 
         # Проверяем форматы полей
         commercial_register = request.POST.get('commercial_register', '').strip()
-        if commercial_register and not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+), commercial_register):
-        additional_errors.append("Handelsregister: Format HRA12345 oder HRB12345 erforderlich")
+        if commercial_register and not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$', commercial_register):
+            additional_errors.append("Handelsregister: Format HRA12345 oder HRB12345 erforderlich")
 
         tax_number = request.POST.get('tax_number', '').strip()
-        if tax_number and not re.match(r'^\d{1,3}/\d{3}/\d{4,5}, tax_number):
-        additional_errors.append("Steuernummer: Format 12/345/67890 erforderlich")
+        if tax_number and not re.match(r'^\d{1,3}/\d{3}/\d{4,5}$', tax_number):
+            additional_errors.append("Steuernummer: Format 12/345/67890 erforderlich")
 
         vat_id = request.POST.get('vat_id', '').strip()
-        if vat_id and not re.match(r'^DE\d{9}, vat_id):
-        additional_errors.append("USt-IdNr.: Format DE123456789 erforderlich")
+        if vat_id and not re.match(r'^DE\d{9}$', vat_id):
+            additional_errors.append("USt-IdNr.: Format DE123456789 erforderlich")
 
         tax_id = request.POST.get('tax_id', '').strip()
-        if tax_id and not re.match(r'^\d{11}, tax_id):
-        additional_errors.append("Steuer-ID: 11-stellige Nummer erforderlich")
+        if tax_id and not re.match(r'^\d{11}$', tax_id):
+            additional_errors.append("Steuer-ID: 11-stellige Nummer erforderlich")
 
         # Если есть дополнительные ошибки, добавляем их в форму
         if additional_errors:
-            for
-        error in additional_errors:
-        messages.error(request, error)
-        logger.warning(f"Валидационные ошибки шага 2: {additional_errors}")
+            for error in additional_errors:
+                messages.error(request, error)
+            logger.warning(f"Валидационные ошибки шага 2: {additional_errors}")
 
         if form.is_valid() and not additional_errors:
-        # Сохраняем данные шага в сессию
+            # Сохраняем данные шага в сессию
             step_data = form.cleaned_data.copy()
-        step_data['registration_data_processed'] = True
-        step_data['all_registration_fields_complete'] = True  # НОВОЕ: флаг полноты
-        CompanySessionManager.update_session_data(request, step_data)
+            step_data['registration_data_processed'] = True
+            step_data['all_registration_fields_complete'] = True  # НОВОЕ: флаг полноты
+            CompanySessionManager.update_session_data(request, step_data)
 
-        logger.success(f"Шаг 2 завершен для компании '{company_name}': все регистрационные данные валидны")
-        messages.success(request, company_success_messages['step2_completed'])
+            logger.success(f"Шаг 2 завершен для компании '{company_name}': все регистрационные данные валидны")
+            messages.success(request, company_success_messages['step2_completed'])
 
-        return render_with_messages(
-            request,
-            'register_company_step2.html',
-            {
-                'form': form, 'step': 2, 'text': text_company_step2,
-                'company_name': company_name, 'legal_form': legal_form
-            },
-            reverse('company:register_company_step3')
-        )
+            return render_with_messages(
+                request,
+                'register_company_step2.html',
+                {
+                    'form': form, 'step': 2, 'text': text_company_step2,
+                    'company_name': company_name, 'legal_form': legal_form
+                },
+                reverse('company:register_company_step3')
+            )
         else:
-        # Логируем конкретные ошибки формы
-        if form.errors:
-            for field, errors in form.errors.items():
-                logger.error(f"Ошибка поля {field}: {errors}")
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
+            # Логируем конкретные ошибки формы
+            if form.errors:
+                for field, errors in form.errors.items():
+                    logger.error(f"Ошибка поля {field}: {errors}")
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
 
-        if additional_errors:
-            messages.error(request, "Alle Registrierungsfelder müssen korrekt ausgefüllt werden")
-        else:
-            messages.error(request, company_error_messages['form_submission_error'])
+            if additional_errors:
+                messages.error(request, "Alle Registrierungsfelder müssen korrekt ausgefüllt werden")
+            else:
+                messages.error(request, company_error_messages['form_submission_error'])
 
-else:
-# GET запрос - предзаполняем форму данными из сессии
-form = CompanyRegistrationForm(initial=session_data)
+    else:
+        # GET запрос - предзаполняем форму данными из сессии
+        form = CompanyRegistrationForm(initial=session_data)
 
-context = {
-    'form': form,
-    'step': 2,
-    'text': text_company_step2,
-    'company_name': company_name,
-    'legal_form': legal_form
-}
-return render(request, 'register_company_step2.html', context)
+    context = {
+        'form': form,
+        'step': 2,
+        'text': text_company_step2,
+        'company_name': company_name,
+        'legal_form': legal_form
+    }
+    return render(request, 'register_company_step2.html', context)
 
 
 def register_company_step3(request):
@@ -476,31 +475,31 @@ def validate_additional_contacts_data(additional_contacts_data_raw):
 
         # Validate email format
         if contact_type == 'email':
-            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+
+            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
             if not re.match(email_pattern, contact_value):
                 return None, f"Ungültiges E-Mail-Format: {contact_value}"
 
         # Validate phone format
         elif contact_type in ['phone', 'mobile', 'fax', 'emergency']:
-            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}
+            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}$'
             if not re.match(phone_pattern, contact_value):
                 return None, f"Ungültiges Telefonformat: {contact_value}"
 
         # Validate website format
         elif contact_type == 'website':
-            website_pattern = r'^https?:\/\/.+\..+$|^www\..+\..+
+            website_pattern = r'^https?:\/\/.+\..+$|^www\..+\..+$'
             if not re.match(website_pattern, contact_value):
                 return None, f"Ungültiges Website-Format: {contact_value}"
 
         # Validate LinkedIn format
         elif contact_type == 'linkedin':
-            linkedin_pattern = r'^(https?:\/\/)?(www\.)?linkedin\.com\/company\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+
+            linkedin_pattern = r'^(https?:\/\/)?(www\.)?linkedin\.com\/company\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$'
             if not re.match(linkedin_pattern, contact_value):
                 return None, f"Ungültiges LinkedIn-Format: {contact_value}"
 
         # Validate XING format
         elif contact_type == 'xing':
-            xing_pattern = r'^(https?:\/\/)?(www\.)?xing\.com\/companies\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+
+            xing_pattern = r'^(https?:\/\/)?(www\.)?xing\.com\/companies\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$'
             if not re.match(xing_pattern, contact_value):
                 return None, f"Ungültiges XING-Format: {contact_value}"
 
@@ -591,62 +590,58 @@ def company_validation_check(request):
                 # НОВАЯ: Дополнительная валидация форматов для шага 2
                 if step == 'step2':
                     field_value = str(company.get(field, '')).strip()
-                    if field == 'commercial_register' and not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+), field_value):
-                    step_errors.append(f'{label}: Format HRA12345 oder HRB12345 erforderlich')
-                    validation_results['warnings'].append(f'{label}: Ungültiges Format')
-                    elif field == 'tax_number' and not re.match(r'^\d{1,3}/\d{3}/\d{4,5}, field_value):
-                    step_errors.append(f'{label}: Format 12/345/67890 erforderlich')
-                    validation_results['warnings'].append(f'{label}: Ungültiges Format')
-                    elif field == 'vat_id' and not re.match(r'^DE\d{9}, field_value):
-                    step_errors.append(f'{label}: Format DE123456789 erforderlich')
-                    validation_results['warnings'].append(f'{label}: Ungültiges Format')
-                    elif field == 'tax_id' and not re.match(r'^\d{11}, field_value):
-                    step_errors.append(f'{label}: 11-stellige Nummer erforderlich')
-                    validation_results['warnings'].append(f'{label}: Ungültiges Format')
+                    if field == 'commercial_register' and not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$', field_value):
+                        step_errors.append(f'{label}: Format HRA12345 oder HRB12345 erforderlich')
+                        validation_results['warnings'].append(f'{label}: Ungültiges Format')
+                    elif field == 'tax_number' and not re.match(r'^\d{1,3}/\d{3}/\d{4,5}$', field_value):
+                        step_errors.append(f'{label}: Format 12/345/67890 erforderlich')
+                        validation_results['warnings'].append(f'{label}: Ungültiges Format')
+                    elif field == 'vat_id' and not re.match(r'^DE\d{9}$', field_value):
+                        step_errors.append(f'{label}: Format DE123456789 erforderlich')
+                        validation_results['warnings'].append(f'{label}: Ungültiges Format')
+                    elif field == 'tax_id' and not re.match(r'^\d{11}$', field_value):
+                        step_errors.append(f'{label}: 11-stellige Nummer erforderlich')
+                        validation_results['warnings'].append(f'{label}: Ungültiges Format')
 
-                    validation_results['step_status'][step]['complete'] = step_complete
-                    validation_results['step_status'][step]['errors'] = step_errors
+        validation_results['step_status'][step]['complete'] = step_complete
+        validation_results['step_status'][step]['errors'] = step_errors
 
-                    # НОВАЯ: Проверяем банковские данные (шаг 5) - ВСЕ ОПЦИОНАЛЬНЫ
-                    step5_complete = True
-                    step5_errors =[]
-                    banking_data_present = False
+    # НОВАЯ: Проверяем банковские данные (шаг 5) - ВСЕ ОПЦИОНАЛЬНЫ
+    step5_complete = True
+    step5_errors = []
+    banking_data_present = False
 
-                    for field, label in step5_fields.items():
-                        field_value = company.get(field, '')
-                    if field_value and str(field_value).strip():
-                        banking_data_present = True
-                    # Валидация IBAN
-                    if field == 'iban':
-                        if
-                    not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}, field_value):
+    for field, label in step5_fields.items():
+        field_value = company.get(field, '')
+        if field_value and str(field_value).strip():
+            banking_data_present = True
+            # Валидация IBAN
+            if field == 'iban':
+                if not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', field_value):
                     step5_errors.append(f'{label}: Ungültiges Format')
                     validation_results['warnings'].append(f'{label}: Ungültiges Format')
-                    # Валидация BIC
-                    elif field == 'bic':
-                    if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?, field_value):
+            # Валидация BIC
+            elif field == 'bic':
+                if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', field_value):
                     step5_errors.append(f'{label}: Ungültiges Format')
                     validation_results['warnings'].append(f'{label}: Ungültiges Format')
 
-                    validation_results['step_status']['step5']['complete'] = step5_complete
-                    validation_results['step_status']['step5']['errors'] = step5_errors
-                    validation_results['banking_data_present'] = banking_data_present
+    validation_results['step_status']['step5']['complete'] = step5_complete
+    validation_results['step_status']['step5']['errors'] = step5_errors
+    validation_results['banking_data_present'] = banking_data_present
 
-                    # Подсчитываем полноту заполнения
-                    validation_results['completeness'] = round((filled_count / total_count) * 100, 1) if total_count > 0 else 0
+    # Подсчитываем полноту заполнения
+    validation_results['completeness'] = round((filled_count / total_count) * 100, 1) if total_count > 0 else 0
 
-                    # Дополнительные проверки форматов (существующий код)
-                    if company.get('email'):
-                        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+
-                    if not re.match(email_pattern, company.get('email', '')):
-                        validation_results['warnings'].append('E-Mail-Format möglicherweise ungültig')
+    # Дополнительные проверки форматов (существующий код)
+    if company.get('email'):
+        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        if not re.match(email_pattern, company.get('email', '')):
+            validation_results['warnings'].append('E-Mail-Format möglicherweise ungültig')
 
-                    if company.get('postal_code'):
-                        if
-                    not re.match(r'^[0-9]{5}, company.get('
-                    postal_code
-                    ', '')):
-                    validation_results['warnings'].append('PLZ-Format möglicherweise ungültig')
+    if company.get('postal_code'):
+        if not re.match(r'^[0-9]{5}$', company.get('postal_code', '')):
+            validation_results['warnings'].append('PLZ-Format möglicherweise ungültig')
 
     return JsonResponse(validation_results)
 
@@ -669,28 +664,19 @@ def validate_registration_data(data):
 
     # Проверяем форматы
     if data.get('commercial_register'):
-        if not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+), data['commercial_register']):
-        errors.append("Handelsregister: Format HRA12345 oder HRB12345 erforderlich")
+        if not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$', data['commercial_register']):
+            errors.append("Handelsregister: Format HRA12345 oder HRB12345 erforderlich")
 
-        if data.get('tax_number'):
-            if
-        not re.match(r'^\d{1,3}/\d{3}/\d{4,5}, data['
-        tax_number
-        ']):
-        errors.append("Steuernummer: Format 12/345/67890 erforderlich")
+    if data.get('tax_number'):
+        if not re.match(r'^\d{1,3}/\d{3}/\d{4,5}$', data['tax_number']):
+            errors.append("Steuernummer: Format 12/345/67890 erforderlich")
 
-        if data.get('vat_id'):
-            if
-        not re.match(r'^DE\d{9}, data['
-        vat_id
-        ']):
-        errors.append("USt-IdNr.: Format DE123456789 erforderlich")
+    if data.get('vat_id'):
+        if not re.match(r'^DE\d{9}$', data['vat_id']):
+            errors.append("USt-IdNr.: Format DE123456789 erforderlich")
 
-        if data.get('tax_id'):
-            if
-        not re.match(r'^\d{11}, data['
-        tax_id
-        ']):
-        errors.append("Steuer-ID: 11-stellige Nummer erforderlich")
+    if data.get('tax_id'):
+        if not re.match(r'^\d{11}$', data['tax_id']):
+            errors.append("Steuer-ID: 11-stellige Nummer erforderlich")
 
     return errors
