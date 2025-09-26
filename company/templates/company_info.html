@@ -291,6 +291,44 @@
 
                     </div>
                 </div>
+
+                <!-- Bankverbindungen -->
+                {% if has_banking_data %}
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h5 class="mb-0"><i class="bi bi-bank me-2"></i>Bankverbindungen</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="field-row">
+                                <div class="field-label">Bank</div>
+                                <div class="field-value{% if not company.bank_name %} field-empty{% endif %}">{{ company.bank_name|default:"Nicht angegeben" }}</div>
+                            </div>
+                            <div class="field-row">
+                                <div class="field-label">IBAN</div>
+                                <div class="field-value{% if not company.iban %} field-empty{% endif %}">{{ company.iban|default:"Nicht angegeben" }}</div>
+                            </div>
+                            <div class="field-row">
+                                <div class="field-label">BIC</div>
+                                <div class="field-value{% if not company.bic %} field-empty{% endif %}">{{ company.bic|default:"Nicht angegeben" }}</div>
+                            </div>
+                            <div class="field-row">
+                                <div class="field-label">Kontoinhaber</div>
+                                <div class="field-value{% if not company.account_holder %} field-empty{% endif %}">{{ company.account_holder|default:"Nicht angegeben" }}</div>
+                            </div>
+                            {% if company.secondary_bank_name or company.secondary_iban %}
+                                <div class="field-row">
+                                    <div class="field-label">Zweitbank</div>
+                                    <div class="field-value">{% if company.secondary_bank_name %}{{ company.secondary_bank_name }}{% endif %}{% if company.secondary_iban %} – {{ company.secondary_iban }}{% endif %}</div>
+                                </div>{% endif %}
+                            {% if company.banking_notes %}
+                                <div class="field-row">
+                                    <div class="field-label">Notizen</div>
+                                    <div class="field-value">{{ company.banking_notes|linebreaks }}</div>
+                                </div>{% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
             </div>
 
             <!-- Adresse und Kontakt -->
@@ -402,245 +440,78 @@
 
                     </div>
                 </div>
+
+                <!-- Zusätzliche Kontakte -->
+                {% if additional_contacts %}
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Zusätzliche Kontakte <span class="badge bg-primary ms-2">{{ additional_contacts|length }}</span></h5>
+                        </div>
+                        <div class="card-body p-0">
+                            {% for contact in additional_contacts %}
+                                <div class="field-row">
+                                    <div class="field-label">{{ contact.type|capfirst }}</div>
+                                    <div class="field-value">{{ contact.value }}{% if contact.label %} ({{ contact.label }}){% endif %}{% if contact.important %} – <strong>Wichtig</strong>{% endif %}{% if contact.public %} –
+                                        <em>Öffentlich</em>{% else %} – <em>Intern</em>{% endif %}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Metadaten -->
+    {% if stats %}
+        <div class="section-card">
+            <div class="section-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-square me-2"></i>
+                    Systemdaten
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if stats.created_at %}
+                    <div class="field-row">
+                        <div class="field-label">Erstellt am</div>
+                        <div class="field-value">{{ stats.created_at|date:"d.m.Y H:i" }} Uhr</div>
+                    </div>
+                {% endif %}
+                {% if stats.modified_at %}
+                    <div class="field-row">
+                        <div class="field-label">Zuletzt geändert</div>
+                        <div class="field-value">{{ stats.modified_at|date:"d.m.Y H:i" }} Uhr</div>
+                    </div>
+                {% endif %}
             </div>
         </div>
+    {% endif %}
 
-        <!-- НОВОЕ: Банковские данные -->
-        {% if has_banking_data %}
-            <div class="section-card banking-card">
-                <div class="section-header banking-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-bank me-2"></i>
-                        Bankverbindungen
-                        {% if company.is_primary_account %}
-                            <span class="badge bg-light text-dark ms-2">Hauptkonto</span>
-                        {% endif %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Hauptbankverbindung -->
-                        {% if company.bank_name or company.iban %}
-                            <div class="col-md-6">
-                                <div class="mb-4">
-                                    <h6 class="fw-bold text-primary mb-3">
-                                        <i class="bi bi-bank me-1"></i>
-                                        Hauptbankverbindung
-                                        {% if company.account_type %}
-                                            <span class="bank-type-badge ms-2">{{ company.account_type_display|default:company.account_type }}</span>
-                                        {% endif %}
-                                    </h6>
-
-                                    {% if company.bank_name %}
-                                        <div class="mb-2">
-                                            <strong>Bank:</strong> {{ company.bank_name }}
-                                        </div>
-                                    {% endif %}
-
-                                    {% if company.iban %}
-                                        <div class="mb-2">
-                                            <strong>IBAN:</strong>
-                                            <div class="iban-display mt-1">{{ company.iban_formatted|default:company.iban }}</div>
-                                        </div>
-                                    {% endif %}
-
-                                    {% if company.bic %}
-                                        <div class="mb-2">
-                                            <strong>BIC:</strong> <code>{{ company.bic }}</code>
-                                        </div>
-                                    {% endif %}
-
-                                    {% if company.account_holder %}
-                                        <div class="mb-2">
-                                            <strong>Kontoinhaber:</strong> {{ company.account_holder }}
-                                        </div>
-                                    {% endif %}
-
-                                    {% if company.bank_address %}
-                                        <div class="mb-2">
-                                            <strong>Bankadresse:</strong> {{ company.bank_address }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <!-- Zweitbankverbindung -->
-                        {% if company.secondary_bank_name or company.secondary_iban %}
-                            <div class="col-md-6">
-                                <div class="mb-4 secondary-bank">
-                                    <h6 class="fw-bold text-secondary mb-3">
-                                        <i class="bi bi-bank2 me-1"></i>
-                                        Zweitbankverbindung
-                                    </h6>
-
-                                    {% if company.secondary_bank_name %}
-                                        <div class="mb-2">
-                                            <strong>Bank:</strong> {{ company.secondary_bank_name }}
-                                        </div>
-                                    {% endif %}
-
-                                    {% if company.secondary_iban %}
-                                        <div class="mb-2">
-                                            <strong>IBAN:</strong>
-                                            <div class="iban-display mt-1">{{ company.secondary_iban_formatted|default:company.secondary_iban }}</div>
-                                        </div>
-                                    {% endif %}
-
-                                    {% if company.secondary_bic %}
-                                        <div class="mb-2">
-                                            <strong>BIC:</strong> <code>{{ company.secondary_bic }}</code>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Bankeinstellungen und Notizen -->
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <div class="d-flex flex-wrap gap-3 align-items-center">
-                                {% if company.is_primary_account %}
-                                    <span class="badge bg-primary">
-                                        <i class="bi bi-star-fill me-1"></i>Hauptkonto für Rechnungen
-                                    </span>
-                                {% endif %}
-                                {% if company.enable_sepa %}
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-check-circle me-1"></i>SEPA-Lastschrift aktiv
-                                    </span>
-                                {% endif %}
-                            </div>
-
-                            {% if company.banking_notes %}
-                                <div class="mt-3 p-3 bg-light rounded">
-                                    <strong>Interne Notizen:</strong><br>
-                                    {{ company.banking_notes|linebreaks }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-
-        <!-- Zusätzliche Kontakte -->
-        {% if additional_contacts %}
-            <div class="section-card">
-                <div class="section-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person-lines-fill me-2"></i>
-                        Zusätzliche Kontakte
-                        <span class="badge bg-primary ms-2">{{ additional_contacts|length }}</span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        {% for contact in additional_contacts %}
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-3">
-                                        {% if contact.type == 'email' %}
-                                            <i class="bi bi-envelope-fill text-primary fs-4"></i>
-                                        {% elif contact.type == 'phone' %}
-                                            <i class="bi bi-telephone-fill text-success fs-4"></i>
-                                        {% elif contact.type == 'mobile' %}
-                                            <i class="bi bi-phone-fill text-info fs-4"></i>
-                                        {% elif contact.type == 'fax' %}
-                                            <i class="bi bi-printer-fill text-secondary fs-4"></i>
-                                        {% elif contact.type == 'website' %}
-                                            <i class="bi bi-globe text-primary fs-4"></i>
-                                        {% elif contact.type == 'linkedin' %}
-                                            <i class="bi bi-linkedin text-primary fs-4"></i>
-                                        {% elif contact.type == 'xing' %}
-                                            <i class="bi bi-person-badge text-warning fs-4"></i>
-                                        {% elif contact.type == 'emergency' %}
-                                            <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
-                                        {% else %}
-                                            <i class="bi bi-question-circle text-muted fs-4"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <strong>{{ contact.type|capfirst }}</strong>
-                                            {% if contact.important %}
-                                                <span class="contact-badge important">
-                                        <i class="bi bi-star-fill me-1"></i>Wichtig
-                                    </span>
-                                            {% endif %}
-                                            {% if contact.public %}
-                                                <span class="contact-badge public">
-                                        <i class="bi bi-eye-fill me-1"></i>Öffentlich
-                                    </span>
-                                            {% else %}
-                                                <span class="contact-badge standard">Intern</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="text-muted small">{{ contact.value }}</div>
-                                        {% if contact.label %}
-                                            <div class="text-muted small">
-                                                <i class="bi bi-building me-1"></i>{{ contact.label }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-
-        <!-- Metadaten -->
-        {% if stats %}
-            <div class="section-card">
-                <div class="section-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-info-square me-2"></i>
-                        Systemdaten
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    {% if stats.created_at %}
-                        <div class="field-row">
-                            <div class="field-label">Erstellt am</div>
-                            <div class="field-value">{{ stats.created_at|date:"d.m.Y H:i" }} Uhr</div>
-                        </div>
-                    {% endif %}
-                    {% if stats.modified_at %}
-                        <div class="field-row">
-                            <div class="field-label">Zuletzt geändert</div>
-                            <div class="field-value">{{ stats.modified_at|date:"d.m.Y H:i" }} Uhr</div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
-
-        <!-- Floating Action Buttons -->
-        <div class="action-buttons">
-            <div class="container-fluid">
-                <div class="row justify-content-end">
-                    <div class="col-auto">
-                        <div class="floating-actions">
-                            <a href="{% url 'company:edit_company' %}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-pencil me-1"></i>
-                                Bearbeiten
-                            </a>
-                            <a href="{% url 'company:export_company_data' %}" class="btn btn-info btn-sm">
-                                <i class="bi bi-download me-1"></i>
-                                Exportieren
-                            </a>
-                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteCompanyModal">
-                                <i class="bi bi-trash me-1"></i>
-                                Löschen
-                            </button>
-                        </div>
+    <!-- Floating Action Buttons -->
+    <div class="action-buttons">
+        <div class="container-fluid">
+            <div class="row justify-content-end">
+                <div class="col-auto">
+                    <div class="floating-actions">
+                        <a href="{% url 'company:edit_company' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>
+                            Bearbeiten
+                        </a>
+                        <a href="{% url 'company:export_company_data' %}" class="btn btn-info btn-sm">
+                            <i class="bi bi-download me-1"></i>
+                            Exportieren
+                        </a>
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteCompanyModal">
+                            <i class="bi bi-trash me-1"></i>
+                            Löschen
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
     </div>
 
@@ -747,7 +618,7 @@
             document.querySelectorAll('.iban-display').forEach(iban => {
                 iban.style.cursor = 'pointer';
                 iban.title = 'Klicken zum Kopieren';
-                iban.addEventListener('click', function() {
+                iban.addEventListener('click', function () {
                     const text = this.textContent.trim();
                     navigator.clipboard.writeText(text.replace(/\s/g, '')).then(() => {
                         showToast(`IBAN "${text}" in die Zwischenablage kopiert`, 'success', 2000);
@@ -757,12 +628,12 @@
 
             // Hover эффекты для банковских данных
             document.querySelectorAll('.iban-display').forEach(iban => {
-                iban.addEventListener('mouseenter', function() {
+                iban.addEventListener('mouseenter', function () {
                     this.style.backgroundColor = 'rgba(33, 150, 243, 0.2)';
                     this.style.transform = 'scale(1.02)';
                     this.style.transition = 'all 0.2s ease';
                 });
-                iban.addEventListener('mouseleave', function() {
+                iban.addEventListener('mouseleave', function () {
                     this.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
                     this.style.transform = 'scale(1)';
                 });
@@ -846,7 +717,7 @@
                 if (code.textContent.match(/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/)) {
                     code.style.cursor = 'pointer';
                     code.title = 'BIC kopieren';
-                    code.addEventListener('click', function() {
+                    code.addEventListener('click', function () {
                         navigator.clipboard.writeText(this.textContent).then(() => {
                             showToast(`BIC "${this.textContent}" kopiert`, 'success', 2000);
                         });
@@ -855,7 +726,7 @@
             });
 
             // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 // Ctrl+E для Bearbeiten
                 if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
                     e.preventDefault();
