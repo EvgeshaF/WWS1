@@ -368,19 +368,40 @@
                                 <div class="field-label">IBAN</div>
                                 <div class="field-value{% if not company.iban %} field-empty{% endif %}">{{ company.iban|default:"Nicht angegeben" }}</div>
                             </div>
-                            <div class="field-row">
-                                <div class="field-label">BIC</div>
-                                <div class="field-value{% if not company.bic %} field-empty{% endif %}">{{ company.bic|default:"Nicht angegeben" }}</div>
+
+                            <div class="row ms-3 mt-3 mb-3">
+                                <div class="col-6">
+                                    <div class="field-label">BIC</div>
+                                    <div class="field-value{% if not company.bic %} field-empty{% endif %}">
+                                        {{ company.bic|default:"Nicht angegeben" }}
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="field-label">Kontoinhaber</div>
+                                    <div class="field-value{% if not company.account_holder %} field-empty{% endif %}">
+                                        {{ company.account_holder|default:"Nicht angegeben" }}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="field-row">
-                                <div class="field-label">Kontoinhaber</div>
-                                <div class="field-value{% if not company.account_holder %} field-empty{% endif %}">{{ company.account_holder|default:"Nicht angegeben" }}</div>
-                            </div>
+
                             {% if company.secondary_bank_name or company.secondary_iban %}
                                 <div class="field-row">
                                     <div class="field-label">Zweitbank</div>
-                                    <div class="field-value">{% if company.secondary_bank_name %}{{ company.secondary_bank_name }}{% endif %}{% if company.secondary_iban %} – {{ company.secondary_iban }}{% endif %}</div>
-                                </div>{% endif %}
+                                    <div class="field-value{% if not company.secondary_bank_name %} field-empty{% endif %}">{{ company.secondary_bank_name|default:"Nicht angegeben" }}</div>
+                                </div>
+                                {% if company.secondary_iban %}
+                                    <div class="field-row">
+                                        <div class="field-label">IBAN (Zweitbank)</div>
+                                        <div class="field-value">{{ company.secondary_iban }}</div>
+                                    </div>
+                                {% endif %}
+                                {% if company.secondary_bic %}
+                                    <div class="field-row">
+                                        <div class="field-label">BIC (Zweitbank)</div>
+                                        <div class="field-value">{{ company.secondary_bic }}</div>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
                             {% if company.banking_notes %}
                                 <div class="field-row">
                                     <div class="field-label">Notizen</div>
