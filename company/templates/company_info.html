@@ -50,12 +50,17 @@
         <div class="row">
             <!-- Grunddaten -->
             <div class="col-lg-6">
+                <!-- ОБНОВЛЕНО: Добавлена кнопка редактирования Grunddaten -->
                 <div class="section-card">
-                    <div class="section-header">
+                    <div class="section-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="bi bi-info-circle me-2"></i>
                             Grunddaten
                         </h5>
+                        <a href="{% url 'company:edit_company_step1' %}" class="btn btn-sm btn-outline-light" title="Grunddaten bearbeiten">
+                            <i class="bi bi-pencil me-1"></i>
+                            Bearbeiten
+                        </a>
                     </div>
                     <div class="card-body p-0">
 
@@ -87,13 +92,17 @@
                     </div>
                 </div>
 
-                <!-- Registrierungsdaten -->
+                <!-- ОБНОВЛЕНО: Добавлена кнопка редактирования Registrierungsdaten -->
                 <div class="section-card">
-                    <div class="section-header">
+                    <div class="section-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="bi bi-file-earmark-text me-2"></i>
                             Registrierungsdaten
                         </h5>
+                        <a href="{% url 'company:edit_company_step2' %}" class="btn btn-sm btn-outline-light" title="Registrierungsdaten bearbeiten">
+                            <i class="bi bi-pencil me-1"></i>
+                            Bearbeiten
+                        </a>
                     </div>
 
                     <div class="card-body p-0">
@@ -135,11 +144,18 @@
                     </div>
                 </div>
 
-                <!-- Bankverbindungen -->
+                <!-- ОБНОВЛЕНО: Добавлена кнопка редактирования Bankverbindungen -->
                 {% if has_banking_data %}
                     <div class="section-card">
-                        <div class="section-header">
-                            <h5 class="mb-0"><i class="bi bi-bank me-2"></i>Bankverbindungen</h5>
+                        <div class="section-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-bank me-2"></i>
+                                Bankverbindungen
+                            </h5>
+                            <a href="{% url 'company:edit_company_step5' %}" class="btn btn-sm btn-outline-light" title="Bankdaten bearbeiten">
+                                <i class="bi bi-pencil me-1"></i>
+                                Bearbeiten
+                            </a>
                         </div>
                         <div class="card-body p-0">
                             <div class="field-row">
@@ -193,18 +209,46 @@
                                 </div>{% endif %}
                         </div>
                     </div>
+                {% else %}
+                    <!-- НОВОЕ: Секция для добавления банковских данных, если их нет -->
+                    <div class="section-card">
+                        <div class="section-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-bank me-2"></i>
+                                Bankverbindungen
+                            </h5>
+                            <a href="{% url 'company:edit_company_step5' %}" class="btn btn-sm btn-outline-light" title="Bankdaten hinzufügen">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Hinzufügen
+                            </a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="field-row">
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-bank2 display-6 mb-3"></i>
+                                    <p class="mb-2"><strong>Keine Bankverbindungen hinterlegt</strong></p>
+                                    <p class="mb-0 small">Bankdaten erleichtern die Rechnungsstellung</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 {% endif %}
 
             </div>
 
             <!-- Adresse und Kontakt -->
             <div class="col-lg-6">
+                <!-- ОБНОВЛЕНО: Добавлена кнопка редактирования Geschäftsadresse -->
                 <div class="section-card">
-                    <div class="section-header">
+                    <div class="section-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="bi bi-geo-alt me-2"></i>
                             Geschäftsadresse
                         </h5>
+                        <a href="{% url 'company:edit_company_step3' %}" class="btn btn-sm btn-outline-light" title="Adressdaten bearbeiten">
+                            <i class="bi bi-pencil me-1"></i>
+                            Bearbeiten
+                        </a>
                     </div>
 
                     <div class="card-body p-0">
@@ -251,13 +295,17 @@
                     </div>
                 </div>
 
-                <!-- Hauptkontakte -->
+                <!-- ОБНОВЛЕНО: Добавлена кнопка редактирования Hauptkontakte -->
                 <div class="section-card">
-                    <div class="section-header">
+                    <div class="section-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="bi bi-telephone me-2"></i>
                             Hauptkontakte
                         </h5>
+                        <a href="{% url 'company:edit_company_step4' %}" class="btn btn-sm btn-outline-light" title="Kontaktdaten bearbeiten">
+                            <i class="bi bi-pencil me-1"></i>
+                            Bearbeiten
+                        </a>
                     </div>
                     <div class="card-body p-0">
 
@@ -313,11 +361,19 @@
                     </div>
                 </div>
 
-                <!-- Zusätzliche Kontakte -->
+                <!-- Zusätzliche Kontakte (редактируются вместе с основными в шаге 4) -->
                 {% if additional_contacts %}
                     <div class="section-card">
-                        <div class="section-header">
-                            <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Zusätzliche Kontakte <span class="badge bg-primary ms-2">{{ additional_contacts|length }}</span></h5>
+                        <div class="section-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-lines-fill me-2"></i>
+                                Zusätzliche Kontakte
+                                <span class="badge bg-primary ms-2">{{ additional_contacts|length }}</span>
+                            </h5>
+                            <a href="{% url 'company:edit_company_step4' %}" class="btn btn-sm btn-outline-light" title="Zusätzliche Kontakte bearbeiten">
+                                <i class="bi bi-pencil me-1"></i>
+                                Bearbeiten
+                            </a>
                         </div>
                         <div class="card-body p-0">
                             {% for contact in additional_contacts %}
@@ -333,57 +389,57 @@
             </div>
 
         </div>
-    </div>
 
-    <!-- Metadaten -->
-    {% if stats %}
-        <div class="section-card">
-            <div class="section-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-info-square me-2"></i>
-                    Systemdaten
-                </h5>
+        <!-- Metadaten -->
+        {% if stats %}
+            <div class="section-card">
+                <div class="section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-square me-2"></i>
+                        Systemdaten
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if stats.created_at %}
+                        <div class="field-row">
+                            <div class="field-label">Erstellt am</div>
+                            <div class="field-value">{{ stats.created_at|date:"d.m.Y H:i" }} Uhr</div>
+                        </div>
+                    {% endif %}
+                    {% if stats.modified_at %}
+                        <div class="field-row">
+                            <div class="field-label">Zuletzt geändert</div>
+                            <div class="field-value">{{ stats.modified_at|date:"d.m.Y H:i" }} Uhr</div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body p-0">
-                {% if stats.created_at %}
-                    <div class="field-row">
-                        <div class="field-label">Erstellt am</div>
-                        <div class="field-value">{{ stats.created_at|date:"d.m.Y H:i" }} Uhr</div>
-                    </div>
-                {% endif %}
-                {% if stats.modified_at %}
-                    <div class="field-row">
-                        <div class="field-label">Zuletzt geändert</div>
-                        <div class="field-value">{{ stats.modified_at|date:"d.m.Y H:i" }} Uhr</div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Floating Action Buttons -->
-    <div class="action-buttons">
-        <div class="container-fluid">
-            <div class="row justify-content-end">
-                <div class="col-auto">
-                    <div class="floating-actions">
-                        <a href="{% url 'company:edit_company' %}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-pencil me-1"></i>
-                            Bearbeiten
-                        </a>
-                        <a href="{% url 'company:export_company_data' %}" class="btn btn-info btn-sm">
-                            <i class="bi bi-download me-1"></i>
-                            Exportieren
-                        </a>
-                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteCompanyModal">
-                            <i class="bi bi-trash me-1"></i>
-                            Löschen
-                        </button>
+        <!-- ОБНОВЛЕННЫЕ Floating Action Buttons -->
+        <div class="action-buttons">
+            <div class="container-fluid">
+                <div class="row justify-content-end">
+                    <div class="col-auto">
+                        <div class="floating-actions">
+                            <!-- НОВОЕ: Кнопка полного редактирования -->
+                            <a href="{% url 'company:edit_company' %}" class="btn btn-warning btn-sm" title="Alle Daten bearbeiten">
+                                <i class="bi bi-pencil-square me-1"></i>
+                                Alle Daten
+                            </a>
+                            <a href="{% url 'company:export_company_data' %}" class="btn btn-info btn-sm">
+                                <i class="bi bi-download me-1"></i>
+                                Exportieren
+                            </a>
+                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteCompanyModal">
+                                <i class="bi bi-trash me-1"></i>
+                                Löschen
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
     </div>
 

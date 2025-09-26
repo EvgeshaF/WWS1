@@ -1,4 +1,4 @@
-# company/company_crud_views.py - ОБНОВЛЕНО с банковскими данными
+# company/company_crud_views.py - ОБНОВЛЕНО: добавлены функции редактирования отдельных шагов
 
 import datetime
 import json
@@ -290,7 +290,7 @@ def company_info(request):
 
 
 def edit_company(request):
-    """Редактирование компании - перенаправляет на процесс регистрации с данными - ОБНОВЛЕНО с банковскими данными"""
+    """Редактирование всей компании - все шаги сразу (старый способ)"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -302,10 +302,216 @@ def edit_company(request):
         messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
         return redirect('company:register_company_step1')
 
-    # Очищаем предыдущие данные сессии
+    # Загружаем все данные компании в сессию
+    _load_all_company_data_to_session(request, company)
+
+    messages.info(request, f"Vollständige Bearbeitung der Firma '{company.get('company_name', 'Unbekannt')}' gestartet")
+    logger.info(f"Полное редактирование компании '{company.get('company_name')}' - все данные загружены в сессию")
+
+    return redirect('company:register_company_step1')
+
+
+# ==================== НОВЫЕ ФУНКЦИИ: Редактирование отдельных шагов ====================
+
+def edit_company_step1(request):
+    """НОВОЕ: Редактирование только Grunddaten (шаг 1)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
+        return redirect('company:register_company_step1')
+
+    # Очищаем сессию и загружаем только данные шага 1
     CompanySessionManager.clear_session_data(request)
 
-    # Подготавливаем данные компании для сессии
+    session_data = {
+        # Только данные шага 1
+        'company_name': company.get('company_name', ''),
+        'legal_form': company.get('legal_form', ''),
+        'ceo_salutation': company.get('ceo_salutation', ''),
+        'ceo_title': company.get('ceo_title', ''),
+        'ceo_first_name': company.get('ceo_first_name', ''),
+        'ceo_last_name': company.get('ceo_last_name', ''),
+
+        # Загружаем ВСЕ остальные данные, чтобы они не потерялись при сохранении
+        **_get_all_company_data_except_step1(company)
+    }
+
+    CompanySessionManager.set_session_data(request, session_data)
+
+    messages.info(request, f"Bearbeitung der Grunddaten für '{company.get('company_name', 'Unbekannt')}'")
+    logger.info(f"Редактирование шага 1 (Grunddaten) для компании '{company.get('company_name')}'")
+
+    return redirect('company:register_company_step1')
+
+
+def edit_company_step2(request):
+    """НОВОЕ: Редактирование только Registrierungsdaten (шаг 2)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
+        return redirect('company:register_company_step1')
+
+    # Очищаем сессию и загружаем данные для шага 2
+    CompanySessionManager.clear_session_data(request)
+
+    session_data = {
+        # Данные шага 1 (чтобы пройти валидацию)
+        'company_name': company.get('company_name', ''),
+        'legal_form': company.get('legal_form', ''),
+        'ceo_salutation': company.get('ceo_salutation', ''),
+        'ceo_title': company.get('ceo_title', ''),
+        'ceo_first_name': company.get('ceo_first_name', ''),
+        'ceo_last_name': company.get('ceo_last_name', ''),
+
+        # Данные шага 2 (редактируемые)
+        'commercial_register': company.get('commercial_register', ''),
+        'tax_number': company.get('tax_number', ''),
+        'vat_id': company.get('vat_id', ''),
+        'tax_id': company.get('tax_id', ''),
+        'registration_data_processed': True,
+        'all_registration_fields_complete': True,
+
+        # Все остальные данные
+        **_get_all_company_data_except_steps(company, [1, 2])
+    }
+
+    CompanySessionManager.set_session_data(request, session_data)
+
+    messages.info(request, f"Bearbeitung der Registrierungsdaten für '{company.get('company_name', 'Unbekannt')}'")
+    logger.info(f"Редактирование шага 2 (Registrierungsdaten) для компании '{company.get('company_name')}'")
+
+    return redirect('company:register_company_step2')
+
+
+def edit_company_step3(request):
+    """НОВОЕ: Редактирование только Adressdaten (шаг 3)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
+        return redirect('company:register_company_step1')
+
+    # Очищаем сессию и загружаем данные для шага 3
+    CompanySessionManager.clear_session_data(request)
+
+    session_data = {
+        # Данные предыдущих шагов (для прохождения валидации)
+        **_get_steps_1_and_2_data(company),
+
+        # Данные шага 3 (редактируемые)
+        'street': company.get('street', ''),
+        'postal_code': company.get('postal_code', ''),
+        'city': company.get('city', ''),
+        'country': company.get('country', ''),
+        'address_addition': company.get('address_addition', ''),
+        'po_box': company.get('po_box', ''),
+
+        # Все остальные данные
+        **_get_all_company_data_except_steps(company, [1, 2, 3])
+    }
+
+    CompanySessionManager.set_session_data(request, session_data)
+
+    messages.info(request, f"Bearbeitung der Adressdaten für '{company.get('company_name', 'Unbekannt')}'")
+    logger.info(f"Редактирование шага 3 (Adressdaten) для компании '{company.get('company_name')}'")
+
+    return redirect('company:register_company_step3')
+
+
+def edit_company_step4(request):
+    """НОВОЕ: Редактирование только Kontaktdaten (шаг 4)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
+        return redirect('company:register_company_step1')
+
+    # Очищаем сессию и загружаем данные для шага 4
+    CompanySessionManager.clear_session_data(request)
+
+    session_data = {
+        # Данные предыдущих шагов
+        **_get_steps_1_2_3_data(company),
+
+        # Данные шага 4 (редактируемые)
+        'email': company.get('email', ''),
+        'phone': company.get('phone', ''),
+        'fax': company.get('fax', ''),
+        'website': company.get('website', ''),
+        'additional_contacts_data': company.get('additional_contacts_data', '[]'),
+
+        # Остальные данные (шаг 5)
+        **_get_step_5_data(company)
+    }
+
+    CompanySessionManager.set_session_data(request, session_data)
+
+    messages.info(request, f"Bearbeitung der Kontaktdaten für '{company.get('company_name', 'Unbekannt')}'")
+    logger.info(f"Редактирование шага 4 (Kontaktdaten) для компании '{company.get('company_name')}'")
+
+    return redirect('company:register_company_step4')
+
+
+def edit_company_step5(request):
+    """НОВОЕ: Редактирование только Bankdaten (шаг 5)"""
+    if not check_mongodb_availability():
+        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
+        return redirect('home')
+
+    company_manager = CompanyManager()
+    company = company_manager.get_company()
+
+    if not company:
+        messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
+        return redirect('company:register_company_step1')
+
+    # Очищаем сессию и загружаем данные для шага 5
+    CompanySessionManager.clear_session_data(request)
+
+    session_data = {
+        # Данные всех предыдущих шагов
+        **_get_steps_1_2_3_4_data(company),
+
+        # Данные шага 5 (редактируемые)
+        **_get_step_5_data(company)
+    }
+
+    CompanySessionManager.set_session_data(request, session_data)
+
+    messages.info(request, f"Bearbeitung der Bankdaten für '{company.get('company_name', 'Unbekannt')}'")
+    logger.info(f"Редактирование шага 5 (Bankdaten) для компании '{company.get('company_name')}'")
+
+    return redirect('company:register_company_step5')
+
+
+# ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+
+def _load_all_company_data_to_session(request, company):
+    """Загружает все данные компании в сессию (для полного редактирования)"""
+    CompanySessionManager.clear_session_data(request)
+
     session_data = {}
 
     # Основные данные (шаг 1)
@@ -339,34 +545,145 @@ def edit_company(request):
     session_data['website'] = company.get('website', '')
     session_data['additional_contacts_data'] = company.get('additional_contacts_data', '[]')
 
-    # НОВОЕ: Банковские данные (шаг 5)
-    session_data['bank_name'] = company.get('bank_name', '')
-    session_data['iban'] = company.get('iban', '')
-    session_data['bic'] = company.get('bic', '')
-    session_data['account_holder'] = company.get('account_holder', '')
-    session_data['bank_address'] = company.get('bank_address', '')
-    session_data['account_type'] = company.get('account_type', '')
-    session_data['secondary_bank_name'] = company.get('secondary_bank_name', '')
-    session_data['secondary_iban'] = company.get('secondary_iban', '')
-    session_data['secondary_bic'] = company.get('secondary_bic', '')
-    session_data['is_primary_account'] = company.get('is_primary_account', True)
-    session_data['enable_sepa'] = company.get('enable_sepa', False)
-    session_data['banking_notes'] = company.get('banking_notes', '')
+    # Банковские данные (шаг 5)
+    session_data.update(_get_step_5_data(company))
 
     # Стандартные настройки
-    session_data['is_primary'] = company.get('is_primary', True)
-    session_data['enable_notifications'] = company.get('enable_notifications', True)
-    session_data['enable_marketing'] = company.get('enable_marketing', False)
-    session_data['data_protection_consent'] = True  # Уже согласие было дано
+    session_data.update({
+        'is_primary': company.get('is_primary', True),
+        'enable_notifications': company.get('enable_notifications', True),
+        'enable_marketing': company.get('enable_marketing', False),
+        'data_protection_consent': True
+    })
 
-    # Сохраняем в сессию
     CompanySessionManager.set_session_data(request, session_data)
 
-    messages.info(request, f"Bearbeitung der Firma '{company.get('company_name', 'Unbekannt')}' gestartet")
-    logger.info(f"Редактирование компании '{company.get('company_name')}' - данные загружены в сессию")
 
-    return redirect('company:register_company_step1')
+def _get_steps_1_and_2_data(company):
+    """Возвращает данные шагов 1 и 2"""
+    return {
+        'company_name': company.get('company_name', ''),
+        'legal_form': company.get('legal_form', ''),
+        'ceo_salutation': company.get('ceo_salutation', ''),
+        'ceo_title': company.get('ceo_title', ''),
+        'ceo_first_name': company.get('ceo_first_name', ''),
+        'ceo_last_name': company.get('ceo_last_name', ''),
+        'commercial_register': company.get('commercial_register', ''),
+        'tax_number': company.get('tax_number', ''),
+        'vat_id': company.get('vat_id', ''),
+        'tax_id': company.get('tax_id', ''),
+        'registration_data_processed': True,
+        'all_registration_fields_complete': True,
+    }
 
+
+def _get_steps_1_2_3_data(company):
+    """Возвращает данные шагов 1, 2 и 3"""
+    return {
+        **_get_steps_1_and_2_data(company),
+        'street': company.get('street', ''),
+        'postal_code': company.get('postal_code', ''),
+        'city': company.get('city', ''),
+        'country': company.get('country', ''),
+        'address_addition': company.get('address_addition', ''),
+        'po_box': company.get('po_box', ''),
+    }
+
+
+def _get_steps_1_2_3_4_data(company):
+    """Возвращает данные шагов 1, 2, 3 и 4"""
+    return {
+        **_get_steps_1_2_3_data(company),
+        'email': company.get('email', ''),
+        'phone': company.get('phone', ''),
+        'fax': company.get('fax', ''),
+        'website': company.get('website', ''),
+        'additional_contacts_data': company.get('additional_contacts_data', '[]'),
+    }
+
+
+def _get_step_5_data(company):
+    """Возвращает данные шага 5 (банковские данные)"""
+    return {
+        'bank_name': company.get('bank_name', ''),
+        'iban': company.get('iban', ''),
+        'bic': company.get('bic', ''),
+        'account_holder': company.get('account_holder', ''),
+        'bank_address': company.get('bank_address', ''),
+        'account_type': company.get('account_type', ''),
+        'secondary_bank_name': company.get('secondary_bank_name', ''),
+        'secondary_iban': company.get('secondary_iban', ''),
+        'secondary_bic': company.get('secondary_bic', ''),
+        'is_primary_account': company.get('is_primary_account', True),
+        'enable_sepa': company.get('enable_sepa', False),
+        'banking_notes': company.get('banking_notes', ''),
+        'is_primary': company.get('is_primary', True),
+        'enable_notifications': company.get('enable_notifications', True),
+        'enable_marketing': company.get('enable_marketing', False),
+        'data_protection_consent': True
+    }
+
+
+def _get_all_company_data_except_step1(company):
+    """Возвращает все данные компании кроме шага 1"""
+    return {
+        **_get_steps_1_and_2_data(company),
+        **_get_steps_1_2_3_data(company),
+        **_get_steps_1_2_3_4_data(company),
+        **_get_step_5_data(company)
+    }
+
+
+def _get_all_company_data_except_steps(company, exclude_steps):
+    """Возвращает все данные компании кроме указанных шагов"""
+    data = {}
+
+    if 1 not in exclude_steps:
+        data.update({
+            'company_name': company.get('company_name', ''),
+            'legal_form': company.get('legal_form', ''),
+            'ceo_salutation': company.get('ceo_salutation', ''),
+            'ceo_title': company.get('ceo_title', ''),
+            'ceo_first_name': company.get('ceo_first_name', ''),
+            'ceo_last_name': company.get('ceo_last_name', ''),
+        })
+
+    if 2 not in exclude_steps:
+        data.update({
+            'commercial_register': company.get('commercial_register', ''),
+            'tax_number': company.get('tax_number', ''),
+            'vat_id': company.get('vat_id', ''),
+            'tax_id': company.get('tax_id', ''),
+            'registration_data_processed': True,
+            'all_registration_fields_complete': True,
+        })
+
+    if 3 not in exclude_steps:
+        data.update({
+            'street': company.get('street', ''),
+            'postal_code': company.get('postal_code', ''),
+            'city': company.get('city', ''),
+            'country': company.get('country', ''),
+            'address_addition': company.get('address_addition', ''),
+            'po_box': company.get('po_box', ''),
+        })
+
+    if 4 not in exclude_steps:
+        data.update({
+            'email': company.get('email', ''),
+            'phone': company.get('phone', ''),
+            'fax': company.get('fax', ''),
+            'website': company.get('website', ''),
+            'additional_contacts_data': company.get('additional_contacts_data', '[]'),
+        })
+
+    if 5 not in exclude_steps:
+        data.update(_get_step_5_data(company))
+
+    return data
+
+
+# ==================== ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ====================
 
 @require_http_methods(["POST"])
 def delete_company(request):

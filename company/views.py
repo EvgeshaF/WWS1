@@ -32,6 +32,11 @@ from .company_registration_views import (
 from .company_crud_views import (
     company_info,
     edit_company,
+    edit_company_step1,  # НОВОЕ: Редактирование только Grunddaten
+    edit_company_step2,  # НОВОЕ: Редактирование только Registrierungsdaten
+    edit_company_step3,  # НОВОЕ: Редактирование только Adressdaten
+    edit_company_step4,  # НОВОЕ: Редактирование только Kontaktdaten
+    edit_company_step5,  # НОВОЕ: Редактирование только Bankdaten
     delete_company,
     set_primary_company,
 )

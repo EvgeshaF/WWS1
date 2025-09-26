@@ -1,4 +1,4 @@
-        .company-info-card {
+.company-info-card {
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             border: none;
             border-radius: 15px;
@@ -97,6 +97,34 @@
             color: white;
         }
 
+        /* НОВОЕ: Стили для кнопок редактирования в заголовках */
+        .section-header .btn-outline-light {
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 0.85rem;
+            padding: 0.375rem 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .section-header .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.8);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-header .btn-outline-light:focus {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-color: white;
+            color: white;
+            box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.3);
+        }
+
+        .section-header .btn-outline-light i {
+            margin-right: 0.25rem;
+        }
+
         .field-row {
             padding: 0.75rem 1.5rem;
             border-bottom: 1px solid rgba(33, 150, 243, 0.1);
@@ -142,6 +170,19 @@
             gap: 0.5rem;
         }
 
+        /* НОВОЕ: Стили для кнопки "Alle Daten bearbeiten" */
+        .floating-actions .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #ff8f00);
+            border: none;
+            color: white;
+        }
+
+        .floating-actions .btn-warning:hover {
+            background: linear-gradient(135deg, #ff8f00, #f57c00);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+
         /* Стили для банковских данных (уже единые) */
         .banking-card {
             background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
@@ -177,6 +218,20 @@
             opacity: 0.8;
         }
 
+        /* НОВОЕ: Стили для пустого состояния банковских данных */
+        .section-card .text-center.text-muted {
+            padding: 2rem 1rem;
+        }
+
+        .section-card .text-center.text-muted .display-6 {
+            color: #90caf9;
+            margin-bottom: 1rem;
+        }
+
+        .section-card .text-center.text-muted p {
+            color: #666;
+        }
+
         /* Дополнительные эффекты для единообразия */
         .section-card:hover {
             transform: translateY(-2px);
@@ -198,4 +253,46 @@
         .section-card .card-body {
             background: transparent;
             padding: 0;
+        }
+
+        /* НОВОЕ: Респонсивные стили для мобильных устройств */
+        @media (max-width: 768px) {
+            .section-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+
+            .section-header .btn-outline-light {
+                align-self: center;
+                width: auto;
+            }
+
+            .floating-actions {
+                flex-direction: column;
+                gap: 0.25rem;
+                padding: 0.75rem;
+            }
+
+            .floating-actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* НОВОЕ: Анимация для кнопок редактирования */
+        @keyframes pulse-edit {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+
+        .section-header .btn-outline-light:focus {
+            animation: pulse-edit 1s;
         }
