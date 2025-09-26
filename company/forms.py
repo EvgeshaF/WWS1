@@ -1,4 +1,4 @@
-# company/forms.py - НОВЫЙ ФАЙЛ: формы для регистрации компании
+# company/forms.py - ОБНОВЛЕНО: добавлен шаг банковских данных
 
 from django import forms
 from django.core.validators import RegexValidator
@@ -9,7 +9,7 @@ from loguru import logger
 
 
 def get_salutations_from_mongodb():
-    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations"""
+    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations - SAME AS USERS"""
     try:
         logger.info("Загружаем salutations из MongoDB (for company)")
         db = MongoConnection.get_database()
@@ -31,6 +31,7 @@ def get_salutations_from_mongodb():
 
         salutations_collection = db[salutations_collection_name]
 
+        # SAME LOGIC AS USERS: адаптировано под структуру данных
         salutations_cursor = salutations_collection.find(
             {'deleted': {'$ne': True}},
             {'salutation': 1}
@@ -60,7 +61,7 @@ def get_salutations_from_mongodb():
 
 
 def get_default_salutation_choices():
-    """Возвращает статичный список салютаций как fallback"""
+    """Возвращает статичный список салютаций как fallback - SAME AS USERS"""
     return [
         ('', '-- Auswählen --'),
         ('herr', 'Herr'),
@@ -70,7 +71,7 @@ def get_default_salutation_choices():
 
 
 def get_titles_from_mongodb():
-    """Загружает titles из MongoDB коллекции"""
+    """Загружает titles из MongoDB коллекции - SAME AS USERS"""
     try:
         logger.info("Загружаем titles из MongoDB (for company)")
         db = MongoConnection.get_database()
@@ -116,7 +117,7 @@ def get_titles_from_mongodb():
 
 
 def get_default_title_choices():
-    """Возвращает статичный список титулов как fallback"""
+    """Возвращает статичный список титулов как fallback - SAME AS USERS"""
     return [
         ('', '-- Kein Titel --'),
         ('dr', 'Dr.'),
@@ -132,275 +133,6 @@ def get_default_title_choices():
         ('bsc', 'B.Sc.'),
         ('beng', 'B.Eng.'),
     ]
-
-
-def get_communication_types_from_mongodb():
-    """Загружает типы коммуникации из MongoDB коллекции basic_communications"""
-    try:
-        logger.info("Загружаем типы коммуникации из MongoDB (for company)")
-        db = MongoConnection.get_database()
-        if db is None:
-            logger.error("База данных недоступна")
-            return get_default_contact_type_choices()
-
-        config = MongoConfig.read_config()
-        db_name = config.get('db_name')
-        if not db_name:
-            logger.error("Имя базы данных не найдено в конфигурации")
-            return get_default_contact_type_choices()
-
-        communications_collection_name = f"{db_name}_basic_communications"
-        collections = db.list_collection_names()
-        if communications_collection_name not in collections:
-            logger.warning(f"Коллекция '{communications_collection_name}' не найдена")
-            return get_default_contact_type_choices()
-
-        communications_collection = db[communications_collection_name]
-        communications_cursor = communications_collection.find(
-            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
-            {
-                'type': 1, 'icon': 1, 'required_format': 1, 'display_order': 1,
-                'validation_pattern': 1, 'placeholder': 1, 'hint_de': 1
-            }
-        ).sort('display_order', 1)
-
-        choices = [('', '-- Kontakttyp auswählen --')]
-        count = 0
-
-        # Мапинг иконок Bootstrap Icons для компании
-        icon_mapping = {
-            'envelope': '📧',
-            'phone': '📞',
-            'mobile': '📱',
-            'printer': '📠',
-            'globe': '🌐',
-            'linkedin': '💼',
-            'person-badge': '🔗',
-            'exclamation-triangle': '🚨',
-            'question-circle': '📝'
-        }
-
-        for comm_doc in communications_cursor:
-            comm_type = comm_doc.get('type', '').strip()
-            icon = comm_doc.get('icon', 'question-circle')
-            required_format = comm_doc.get('required_format', '').lower()
-
-            if comm_type:
-                # Используем required_format как ключ (например, email, mobile, fax)
-                # Если required_format пустой, используем type в нижнем регистре
-                key = required_format if required_format else comm_type.lower().replace('-', '_')
-
-                # Добавляем эмодзи к тексту
-                emoji = icon_mapping.get(icon, '📝')
-
-                # АДАПТАЦИЯ для компании: разные тексты
-                if key == 'email':
-                    display_text = f"{emoji} {comm_type} (Abteilung)"
-                elif key == 'phone':
-                    display_text = f"{emoji} Telefon (Abteilung)"
-                elif key == 'mobile':
-                    display_text = f"{emoji} Mobil"
-                elif key == 'emergency':
-                    display_text = f"{emoji} Notfallkontakt"
-                else:
-                    display_text = f"{emoji} {comm_type}"
-
-                choices.append((key, display_text))
-                count += 1
-
-                logger.debug(f"Добавлен тип коммуникации для компании: {key} -> {display_text}")
-
-        logger.success(f"Успешно загружено {count} типов коммуникации для компании из коллекции")
-        return choices
-
-    except Exception as e:
-        logger.error(f"Ошибка загрузки типов коммуникации из MongoDB (company): {e}")
-        return get_default_contact_type_choices()
-
-
-def get_default_contact_type_choices():
-    """Возвращает статичный список типов контактов как fallback для компании"""
-    return [
-        ('', '-- Kontakttyp auswählen --'),
-        ('email', '📧 E-Mail (Abteilung)'),
-        ('phone', '📞 Telefon (Abteilung)'),
-        ('mobile', '📱 Mobil'),
-        ('fax', '📠 Fax'),
-        ('website', '🌐 Website'),
-        ('linkedin', '💼 LinkedIn (Unternehmen)'),
-        ('xing', '🔗 XING (Unternehmen)'),
-        ('emergency', '🚨 Notfallkontakt'),
-        ('other', '📝 Sonstige'),
-    ]
-
-
-def get_communication_config_from_mongodb():
-    """Загружает полную конфигурацию типов коммуникации для JavaScript (компания)"""
-    try:
-        logger.info("Загружаем конфигурацию коммуникации для JavaScript (company)")
-        db = MongoConnection.get_database()
-        if db is None:
-            return get_default_communication_config()
-
-        config = MongoConfig.read_config()
-        db_name = config.get('db_name')
-        if not db_name:
-            return get_default_communication_config()
-
-        communications_collection_name = f"{db_name}_basic_communications"
-        collections = db.list_collection_names()
-        if communications_collection_name not in collections:
-            return get_default_communication_config()
-
-        communications_collection = db[communications_collection_name]
-        communications_cursor = communications_collection.find(
-            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
-            {
-                'type': 1, 'icon': 1, 'required_format': 1, 'display_order': 1,
-                'validation_pattern': 1, 'placeholder': 1, 'hint_de': 1
-            }
-        ).sort('display_order', 1)
-
-        config_dict = {}
-
-        for comm_doc in communications_cursor:
-            comm_type = comm_doc.get('type', '').strip()
-            icon = comm_doc.get('icon', 'question-circle')
-            required_format = comm_doc.get('required_format', '').lower()
-            validation_pattern = comm_doc.get('validation_pattern', '')
-            placeholder = comm_doc.get('placeholder', '')
-            hint_de = comm_doc.get('hint_de', '')
-
-            if comm_type:
-                # Используем required_format как ключ
-                key = required_format if required_format else comm_type.lower().replace('-', '_')
-
-                # Мапинг иконок для Bootstrap Icons класса
-                icon_class_mapping = {
-                    'envelope': 'bi-envelope',
-                    'phone': 'bi-telephone',
-                    'mobile': 'bi-phone',
-                    'printer': 'bi-printer',
-                    'globe': 'bi-globe',
-                    'linkedin': 'bi-linkedin',
-                    'person-badge': 'bi-person-badge',
-                    'exclamation-triangle': 'bi-exclamation-triangle',
-                    'question-circle': 'bi-question-circle'
-                }
-
-                # АДАПТАЦИЯ для компании: компанийские подсказки и плейсхолдеры
-                company_placeholders = {
-                    'email': 'vertrieb@firma.de',
-                    'phone': '+49 123 456789',
-                    'mobile': '+49 170 1234567',
-                    'fax': '+49 123 456789',
-                    'website': 'https://www.firma.de',
-                    'linkedin': 'linkedin.com/company/firmenname',
-                    'xing': 'xing.com/companies/firmenname',
-                    'emergency': '+49 170 1234567'
-                }
-
-                company_hints = {
-                    'email': 'Geben Sie eine E-Mail-Adresse ein (z.B. vertrieb@firma.de)',
-                    'phone': 'Geben Sie eine Telefonnummer ein (z.B. +49 123 456789)',
-                    'mobile': 'Geben Sie eine Mobilnummer ein (z.B. +49 170 1234567)',
-                    'fax': 'Geben Sie eine Faxnummer ein (z.B. +49 123 456789)',
-                    'website': 'Geben Sie eine Website-URL ein (z.B. https://www.firma.de)',
-                    'linkedin': 'Geben Sie das LinkedIn-Unternehmensprofil ein',
-                    'xing': 'Geben Sie das XING-Unternehmensprofil ein',
-                    'emergency': 'Geben Sie einen Notfallkontakt ein',
-                    'other': 'Geben Sie die entsprechenden Kontaktdaten ein'
-                }
-
-                config_dict[key] = {
-                    'label': comm_type,
-                    'icon_class': icon_class_mapping.get(icon, 'bi-question-circle'),
-                    'validation_pattern': validation_pattern,
-                    'placeholder': company_placeholders.get(key, placeholder or f"{comm_type} eingeben..."),
-                    'hint': company_hints.get(key, hint_de or f"Geben Sie {comm_type} ein")
-                }
-
-        logger.success(f"Конфигурация для компании загружена для {len(config_dict)} типов коммуникации")
-        return config_dict
-
-    except Exception as e:
-        logger.error(f"Ошибка загрузки конфигурации коммуникации для компании: {e}")
-        return get_default_communication_config()
-
-
-def get_default_communication_config():
-    """Возвращает статичную конфигурацию типов коммуникации как fallback для компании"""
-    return {
-        'email': {
-            'label': 'E-Mail',
-            'icon_class': 'bi-envelope',
-            'validation_pattern': '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
-            'placeholder': 'vertrieb@firma.de',
-            'hint': 'Geben Sie eine E-Mail-Adresse ein (z.B. vertrieb@firma.de)'
-        },
-        'phone': {
-            'label': 'Telefon',
-            'icon_class': 'bi-telephone',
-            'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-            'placeholder': '+49 123 456789',
-            'hint': 'Geben Sie eine Telefonnummer ein'
-        },
-        'mobile': {
-            'label': 'Mobil',
-            'icon_class': 'bi-phone',
-            'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-            'placeholder': '+49 170 1234567',
-            'hint': 'Geben Sie eine Mobilnummer ein'
-        },
-        'fax': {
-            'label': 'Fax',
-            'icon_class': 'bi-printer',
-            'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-            'placeholder': '+49 123 456789',
-            'hint': 'Geben Sie eine Faxnummer ein'
-        },
-        'website': {
-            'label': 'Website',
-            'icon_class': 'bi-globe',
-            'validation_pattern': '^https?:\\/\\/.+\\..+$|^www\\..+\\..+$',
-            'placeholder': 'https://www.firma.de',
-            'hint': 'Geben Sie eine Website-URL ein'
-        },
-        'linkedin': {
-            'label': 'LinkedIn',
-            'icon_class': 'bi-linkedin',
-            'validation_pattern': '^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/company\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
-            'placeholder': 'linkedin.com/company/firmenname',
-            'hint': 'Geben Sie das LinkedIn-Unternehmensprofil ein'
-        },
-        'xing': {
-            'label': 'XING',
-            'icon_class': 'bi-person-badge',
-            'validation_pattern': '^(https?:\\/\\/)?(www\\.)?xing\\.com\\/companies\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
-            'placeholder': 'xing.com/companies/firmenname',
-            'hint': 'Geben Sie das XING-Unternehmensprofil ein'
-        },
-        'emergency': {
-            'label': 'Notfall',
-            'icon_class': 'bi-exclamation-triangle',
-            'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-            'placeholder': '+49 170 1234567',
-            'hint': 'Geben Sie einen Notfallkontakt ein'
-        },
-        'other': {
-            'label': 'Sonstige',
-            'icon_class': 'bi-question-circle',
-            'validation_pattern': '.{3,}',
-            'placeholder': 'Kontaktdaten eingeben...',
-            'hint': 'Geben Sie die entsprechenden Kontaktdaten ein'
-        }
-    }
-
-
-# Функция для удобного доступа к choices (для компании)
-def get_contact_type_choices():
-    """Получает типы контактов из MongoDB или возвращает fallback (для компании)"""
-    return get_communication_types_from_mongodb()
 
 
 def get_countries_from_mongodb():
@@ -545,10 +277,8 @@ def get_default_industry_choices():
     ]
 
 
-# ==================== ФОРМЫ ====================
-
 class CompanyBasicDataForm(forms.Form):
-    """Шаг 1: Основные данные компании + Geschäftsführer"""
+    """Шаг 1: Основные данные компании + Geschäftsführer - UPDATED WITH DYNAMIC LOADING"""
 
     LEGAL_FORM_CHOICES = [
         ('', '-- Rechtsform auswählen --'),
@@ -593,10 +323,10 @@ class CompanyBasicDataForm(forms.Form):
         })
     )
 
-    # БЛОК GESCHÄFTSFÜHRER
+    # БЛОК GESCHÄFTSFÜHRER - UPDATED WITH DYNAMIC LOADING
     ceo_salutation = forms.ChoiceField(
         label="Anrede",
-        choices=[],  # Заполняется динамически из MongoDB
+        choices=[],  # CHANGED: Заполняется динамически из MongoDB
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-control'
@@ -605,7 +335,7 @@ class CompanyBasicDataForm(forms.Form):
 
     ceo_title = forms.ChoiceField(
         label="Titel",
-        choices=[],  # Заполняется динамически из MongoDB
+        choices=[],  # CHANGED: Заполняется динамически из MongoDB
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-control'
@@ -635,24 +365,24 @@ class CompanyBasicDataForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Динамически загружаем salutations из MongoDB
+        # НОВОЕ: Динамически загружаем salutations из MongoDB - SAME AS USERS
         salutation_choices = get_salutations_from_mongodb()
         self.fields['ceo_salutation'].choices = salutation_choices
         logger.info(f"Загружено {len(salutation_choices)} вариантов CEO salutation")
 
-        # Динамически загружаем titles из MongoDB
+        # НОВОЕ: Динамически загружаем titles из MongoDB - SAME AS USERS
         title_choices = get_titles_from_mongodb()
         self.fields['ceo_title'].choices = title_choices
         logger.info(f"Загружено {len(title_choices)} вариантов CEO title")
 
 
 class CompanyRegistrationForm(forms.Form):
-    """Шаг 2: Регистрационные данные - ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ"""
+    """Шаг 2: Регистрационные данные - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ"""
 
     commercial_register = forms.CharField(
         label="Handelsregister",
         max_length=50,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$',
@@ -671,7 +401,7 @@ class CompanyRegistrationForm(forms.Form):
     tax_number = forms.CharField(
         label="Steuernummer",
         max_length=20,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^\d{1,3}/\d{3}/\d{4,5}$',
@@ -690,7 +420,7 @@ class CompanyRegistrationForm(forms.Form):
     vat_id = forms.CharField(
         label="USt-IdNr.",
         max_length=15,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^DE\d{9}$',
@@ -709,7 +439,7 @@ class CompanyRegistrationForm(forms.Form):
     tax_id = forms.CharField(
         label="Steuer-ID",
         max_length=11,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^\d{11}$',
@@ -866,13 +596,13 @@ class CompanyContactForm(forms.Form):
 
 
 class CompanyBankingForm(forms.Form):
-    """Шаг 5 - Банковские данные"""
+    """НОВОЕ: Шаг 5 - Банковские данные"""
 
     # Основной банковский счет
     bank_name = forms.CharField(
         label="Name der Bank",
         max_length=100,
-        required=False,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'z.B. Deutsche Bank AG'
@@ -882,7 +612,7 @@ class CompanyBankingForm(forms.Form):
     iban = forms.CharField(
         label="IBAN",
         max_length=34,
-        required=False,
+        required=True,
         validators=[
             RegexValidator(
                 regex=r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$',
@@ -899,7 +629,7 @@ class CompanyBankingForm(forms.Form):
     bic = forms.CharField(
         label="BIC/SWIFT",
         max_length=11,
-        required=False,
+        required=True,
         validators=[
             RegexValidator(
                 regex=r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$',
@@ -916,7 +646,7 @@ class CompanyBankingForm(forms.Form):
     account_holder = forms.CharField(
         label="Kontoinhaber",
         max_length=100,
-        required=False,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Name des Kontoinhabers'
@@ -1063,79 +793,7 @@ class CompanyBankingForm(forms.Form):
             return False
 
 
-# Дополнительная форма для модального окна дополнительных контактов
-class AdditionalCompanyContactForm(forms.Form):
-    """Форма для дополнительных контактов компании (используется в модальном окне)"""
-
-    contact_type = forms.ChoiceField(
-        label="Kontakttyp",
-        choices=[],  # Заполняется динамически из MongoDB
-        required=True,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'id': 'contactType'
-        })
-    )
-
-    contact_value = forms.CharField(
-        label="Kontaktdaten",
-        max_length=200,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Kontaktdaten eingeben...',
-            'id': 'contactValue'
-        })
-    )
-
-    contact_department = forms.ChoiceField(
-        label="Abteilung",
-        choices=[
-            ('', '-- Abteilung auswählen --'),
-            ('management', 'Geschäftsführung'),
-            ('sales', 'Vertrieb'),
-            ('support', 'Kundensupport'),
-            ('accounting', 'Buchhaltung'),
-            ('hr', 'Personalabteilung'),
-            ('it', 'IT-Abteilung'),
-            ('marketing', 'Marketing'),
-            ('production', 'Produktion'),
-            ('logistics', 'Logistik'),
-            ('purchasing', 'Einkauf'),
-            ('quality', 'Qualitätsmanagement'),
-            ('legal', 'Rechtsabteilung'),
-            ('reception', 'Empfang/Zentrale'),
-            ('other', 'Sonstige')
-        ],
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'id': 'contactLabel'
-        })
-    )
-
-    contact_important = forms.BooleanField(
-        label="Als wichtig markieren",
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input',
-            'id': 'contactImportant'
-        })
-    )
-
-    contact_public = forms.BooleanField(
-        label="Öffentlich sichtbar",
-        required=False,
-        help_text="Kann auf der Webseite angezeigt werden",
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input',
-            'id': 'contactPublic'
-        })
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Динамически загружаем типы контактов из MongoDB
-        contact_type_choices = get_communication_types_from_mongodb()
-        self.fields['contact_type'].choices = contact_type_choices
+# Für обратной совместимости (legacy forms)
+class CompanyRegistrationFormLegacy(forms.Form):
+    """Legacy форма для совместимости со старым кодом"""
+    pass

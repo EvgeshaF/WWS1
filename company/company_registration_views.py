@@ -1,4 +1,4 @@
-# company/company_registration_views.py - ИСПРАВЛЕНО: синтаксические ошибки
+# company/company_registration_views.py - ОБНОВЛЕНО: банковский шаг 5 вместо настроек
 
 from django.shortcuts import redirect
 from loguru import logger
@@ -27,11 +27,7 @@ from loguru import logger
 from company.company_manager import CompanyManager
 from company.company_session_views import CompanySessionManager
 from company.company_utils import check_mongodb_availability, render_with_messages
-from company.forms import (
-    CompanyBasicDataForm, CompanyRegistrationForm, CompanyAddressForm,
-    CompanyContactForm, CompanyBankingForm,
-    get_contact_type_choices, get_communication_config_from_mongodb
-)
+from company.forms import CompanyBasicDataForm, CompanyRegistrationForm, CompanyAddressForm, CompanyContactForm, CompanyBankingForm
 from company.language import company_success_messages, company_error_messages, text_company_step1, text_company_step2, text_company_step3, text_company_step4, text_company_step5
 
 
@@ -78,7 +74,7 @@ def register_company_step1(request):
 
 
 def register_company_step2(request):
-    """Шаг 2: Регистрационные данные - ИСПРАВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ с улучшенной валидацией"""
+    """Шаг 2: Регистрационные данные - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ с улучшенной валидацией"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -166,7 +162,6 @@ def register_company_step2(request):
                 messages.error(request, "Alle Registrierungsfelder müssen korrekt ausgefüllt werden")
             else:
                 messages.error(request, company_error_messages['form_submission_error'])
-
     else:
         # GET запрос - предзаполняем форму данными из сессии
         form = CompanyRegistrationForm(initial=session_data)
@@ -230,7 +225,7 @@ def register_company_step3(request):
 
 
 def register_company_step4(request):
-    """Шаг 4: Контактные данные - ОБНОВЛЕНО с поддержкой дополнительных контактов как в users"""
+    """Шаг 4: Контактные данные"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -245,13 +240,6 @@ def register_company_step4(request):
     company_name = session_data.get('company_name', '')
     legal_form = session_data.get('legal_form', '')
 
-    # НОВОЕ: Получаем типы контактов для передачи в шаблон (как в users)
-    contact_type_choices = get_contact_type_choices()
-    contact_type_choices_json = json.dumps([{'value': value, 'text': text} for value, text in contact_type_choices])
-
-    # НОВОЕ: Получаем конфигурацию коммуникации для JavaScript
-    communication_config = get_communication_config_from_mongodb()
-
     # Получаем существующие дополнительные контакты из сессии
     existing_additional_contacts = session_data.get('additional_contacts_data', '[]')
     if isinstance(existing_additional_contacts, str):
@@ -262,65 +250,27 @@ def register_company_step4(request):
 
     if request.method == 'POST':
         form = CompanyContactForm(request.POST)
-
-        # НОВОЕ: Получаем и валидируем ДОПОЛНИТЕЛЬНЫЕ контакты (опциональные) - как в users
-        additional_contacts_data_raw = request.POST.get('additional_contacts_data', '[]')
-        logger.info(f"Получены дополнительные контакты компании: {additional_contacts_data_raw}")
-
-        additional_contacts_data, validation_error = validate_additional_contacts_data(additional_contacts_data_raw)
-
-        if validation_error:
-            logger.error(f"Ошибка валидации дополнительных контактов компании: {validation_error}")
-            messages.error(request, validation_error)
-            context = {
-                'form': form, 'step': 4, 'text': text_company_step4,
-                'company_name': company_name, 'legal_form': legal_form,
-                'existing_additional_contacts': additional_contacts_data_raw,
-                'contact_type_choices': contact_type_choices,
-                'contact_type_choices_json': contact_type_choices_json,
-                'communication_config': communication_config
-            }
-            return render_with_messages(request, 'register_company_step4.html', context)
-
         if form.is_valid():
             step_data = form.cleaned_data.copy()
 
-            # НОВОЕ: Теперь email и phone берутся из формы (обязательные поля)
-            primary_email = form.cleaned_data['email']
-            primary_phone = form.cleaned_data['phone']
-
-            logger.info(f"Основные контакты компании - email: {primary_email}, phone: {primary_phone}")
-
-            # Создаем список всех контактов (основные + дополнительные) - как в users
-            all_contacts = [
-                {
-                    'type': 'email',
-                    'value': primary_email,
-                    'label': 'Haupt-E-Mail',
-                    'primary': True
-                },
-                {
-                    'type': 'phone',
-                    'value': primary_phone,
-                    'label': 'Haupttelefon',
-                    'primary': True
-                }
-            ]
-
-            # Добавляем дополнительные контакты
-            if additional_contacts_data:
-                all_contacts.extend(additional_contacts_data)
-
-            # Сохраняем в сессию
-            step_data['all_contacts'] = all_contacts  # Все контакты (основные + дополнительные)
-            step_data['additional_contacts'] = additional_contacts_data  # Только дополнительные
-            step_data['additional_contacts_data'] = json.dumps(additional_contacts_data) if additional_contacts_data else '[]'
+            # Обрабатываем дополнительные контакты
+            additional_contacts_data = request.POST.get('additional_contacts_data', '[]')
+            try:
+                contacts = json.loads(additional_contacts_data) if additional_contacts_data else []
+                if isinstance(contacts, list):
+                    step_data['additional_contacts_data'] = additional_contacts_data
+                    logger.info(f"Обработано {len(contacts)} дополнительных контактов")
+                else:
+                    step_data['additional_contacts_data'] = '[]'
+            except json.JSONDecodeError:
+                logger.warning("Некорректные данные дополнительных контактов")
+                step_data['additional_contacts_data'] = '[]'
 
             CompanySessionManager.update_session_data(request, step_data)
 
             # Формируем информацию о контактах для сообщения
             main_contacts = f"{step_data.get('email', '')}, {step_data.get('phone', '')}"
-            additional_count = len(additional_contacts_data) if additional_contacts_data else 0
+            additional_count = len(contacts) if contacts else 0
 
             if additional_count > 0:
                 contact_info = f"{main_contacts} + {additional_count} zusätzliche"
@@ -338,10 +288,7 @@ def register_company_step4(request):
                 {
                     'form': form, 'step': 4, 'text': text_company_step4,
                     'company_name': company_name, 'legal_form': legal_form,
-                    'existing_additional_contacts': json.dumps(additional_contacts_data) if additional_contacts_data else '[]',
-                    'contact_type_choices': contact_type_choices,
-                    'contact_type_choices_json': contact_type_choices_json,
-                    'communication_config': communication_config
+                    'existing_additional_contacts': json.dumps(contacts) if contacts else '[]'
                 },
                 reverse('company:register_company_step5')
             )
@@ -356,10 +303,7 @@ def register_company_step4(request):
         'text': text_company_step4,
         'company_name': company_name,
         'legal_form': legal_form,
-        'existing_additional_contacts': json.dumps(existing_additional_contacts),
-        'contact_type_choices': contact_type_choices,
-        'contact_type_choices_json': contact_type_choices_json,
-        'communication_config': communication_config
+        'existing_additional_contacts': json.dumps(existing_additional_contacts)
     }
     return render(request, 'register_company_step4.html', context)
 
@@ -382,8 +326,19 @@ def register_company_step5(request):
     primary_email = session_data.get('email', '')
 
     # Подсчитываем контакты
-    all_contacts = session_data.get('all_contacts', [])
-    contact_count = len(all_contacts)
+    additional_contacts = session_data.get('additional_contacts_data', '[]')
+    if isinstance(additional_contacts, str):
+        try:
+            additional_contacts = json.loads(additional_contacts)
+        except:
+            additional_contacts = []
+
+    contact_count = 2  # email + phone
+    if session_data.get('fax'):
+        contact_count += 1
+    if session_data.get('website'):
+        contact_count += 1
+    contact_count += len(additional_contacts)
 
     if request.method == 'POST':
         form = CompanyBankingForm(request.POST)
@@ -449,62 +404,6 @@ def register_company_step5(request):
         'contact_count': contact_count
     }
     return render(request, 'register_company_step5.html', context)
-
-
-# НОВОЕ: Функция валидации дополнительных контактов (как в users)
-def validate_additional_contacts_data(additional_contacts_data_raw):
-    """Validate additional contact data for company - НОВАЯ ФУНКЦИЯ (как в users)"""
-    try:
-        additional_contacts_data = json.loads(additional_contacts_data_raw) if additional_contacts_data_raw else []
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON parsing error for company additional contacts: {e}")
-        return None, "Fehler beim Verarbeiten der zusätzlichen Firmenkontakte"
-
-    # Дополнительные контакты ОПЦИОНАЛЬНЫ, поэтому пустой список разрешен
-    if not additional_contacts_data:
-        logger.info("Нет дополнительных контактов компании - это нормально")
-        return [], None
-
-    # Валидируем каждый дополнительный контакт
-    for i, contact in enumerate(additional_contacts_data):
-        contact_type = contact.get('type', '')
-        contact_value = contact.get('value', '').strip()
-
-        if not contact_type or not contact_value:
-            return None, f"Firmenkontakt {i + 1}: Typ und Wert sind erforderlich"
-
-        # Validate email format
-        if contact_type == 'email':
-            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-            if not re.match(email_pattern, contact_value):
-                return None, f"Ungültiges E-Mail-Format: {contact_value}"
-
-        # Validate phone format
-        elif contact_type in ['phone', 'mobile', 'fax', 'emergency']:
-            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{7,20}$'
-            if not re.match(phone_pattern, contact_value):
-                return None, f"Ungültiges Telefonformat: {contact_value}"
-
-        # Validate website format
-        elif contact_type == 'website':
-            website_pattern = r'^https?:\/\/.+\..+$|^www\..+\..+$'
-            if not re.match(website_pattern, contact_value):
-                return None, f"Ungültiges Website-Format: {contact_value}"
-
-        # Validate LinkedIn format
-        elif contact_type == 'linkedin':
-            linkedin_pattern = r'^(https?:\/\/)?(www\.)?linkedin\.com\/company\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$'
-            if not re.match(linkedin_pattern, contact_value):
-                return None, f"Ungültiges LinkedIn-Format: {contact_value}"
-
-        # Validate XING format
-        elif contact_type == 'xing':
-            xing_pattern = r'^(https?:\/\/)?(www\.)?xing\.com\/companies\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$'
-            if not re.match(xing_pattern, contact_value):
-                return None, f"Ungültiges XING-Format: {contact_value}"
-
-    logger.info(f"Валидация дополнительных контактов компании прошла успешно: {len(additional_contacts_data)} контактов")
-    return additional_contacts_data, None
 
 
 @require_http_methods(["GET"])
