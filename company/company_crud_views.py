@@ -1,3 +1,5 @@
+# company/company_crud_views.py - ОБНОВЛЕНО с банковскими данными
+
 import datetime
 import json
 
@@ -169,8 +171,24 @@ def get_country_display(code):
     return countries.get(code, code)
 
 
+def get_account_type_display(code):
+    """НОВОЕ: Возвращает человекочитаемое название типа счета"""
+    if not code:
+        return ''
+
+    account_types = {
+        'geschaeft': 'Geschäftskonto',
+        'haupt': 'Hauptkonto',
+        'liquiditaet': 'Liquiditätskonto',
+        'kredit': 'Kreditkonto',
+        'tagesgeld': 'Tagesgeldkonto',
+        'sonstige': 'Sonstige',
+    }
+    return account_types.get(code, code)
+
+
 def enrich_company_data(company):
-    """Обогащает данные компании человекочитаемыми названиями"""
+    """Обогащает данные компании человекочитаемыми названиями - ОБНОВЛЕНО с банковскими данными"""
     if not company:
         return company
 
@@ -199,11 +217,32 @@ def enrich_company_data(company):
     if company.get('contact_person_salutation'):
         enriched['contact_person_salutation_display'] = get_salutation_display(company['contact_person_salutation'])
 
+    # НОВОЕ: Обогащение банковских данных
+    if company.get('account_type'):
+        enriched['account_type_display'] = get_account_type_display(company['account_type'])
+
+    # Форматируем IBAN для отображения (с пробелами)
+    if company.get('iban'):
+        iban = company['iban'].replace(' ', '').upper()
+        if len(iban) >= 4:
+            formatted_iban = ' '.join([iban[i:i + 4] for i in range(0, len(iban), 4)])
+            enriched['iban_formatted'] = formatted_iban
+        else:
+            enriched['iban_formatted'] = iban
+
+    if company.get('secondary_iban'):
+        iban = company['secondary_iban'].replace(' ', '').upper()
+        if len(iban) >= 4:
+            formatted_iban = ' '.join([iban[i:i + 4] for i in range(0, len(iban), 4)])
+            enriched['secondary_iban_formatted'] = formatted_iban
+        else:
+            enriched['secondary_iban_formatted'] = iban
+
     return enriched
 
 
 def company_info(request):
-    """Показывает информацию о компании с человекочитаемыми названиями"""
+    """Показывает информацию о компании с человекочитаемыми названиями - ОБНОВЛЕНО с банковскими данными"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -232,16 +271,26 @@ def company_info(request):
     elif isinstance(contacts_data, list):
         additional_contacts = contacts_data
 
+    # НОВОЕ: Проверяем наличие банковских данных
+    has_banking_data = any([
+        company.get('bank_name'),
+        company.get('iban'),
+        company.get('bic'),
+        company.get('secondary_bank_name'),
+        company.get('secondary_iban')
+    ])
+
     context = {
         'company': company,
         'additional_contacts': additional_contacts,
-        'stats': stats
+        'stats': stats,
+        'has_banking_data': has_banking_data  # НОВОЕ
     }
     return render(request, 'company_info.html', context)
 
 
 def edit_company(request):
-    """Редактирование компании - перенаправляет на процесс регистрации с данными"""
+    """Редактирование компании - перенаправляет на процесс регистрации с данными - ОБНОВЛЕНО с банковскими данными"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -290,7 +339,21 @@ def edit_company(request):
     session_data['website'] = company.get('website', '')
     session_data['additional_contacts_data'] = company.get('additional_contacts_data', '[]')
 
-    # Настройки (шаг 5)
+    # НОВОЕ: Банковские данные (шаг 5)
+    session_data['bank_name'] = company.get('bank_name', '')
+    session_data['iban'] = company.get('iban', '')
+    session_data['bic'] = company.get('bic', '')
+    session_data['account_holder'] = company.get('account_holder', '')
+    session_data['bank_address'] = company.get('bank_address', '')
+    session_data['account_type'] = company.get('account_type', '')
+    session_data['secondary_bank_name'] = company.get('secondary_bank_name', '')
+    session_data['secondary_iban'] = company.get('secondary_iban', '')
+    session_data['secondary_bic'] = company.get('secondary_bic', '')
+    session_data['is_primary_account'] = company.get('is_primary_account', True)
+    session_data['enable_sepa'] = company.get('enable_sepa', False)
+    session_data['banking_notes'] = company.get('banking_notes', '')
+
+    # Стандартные настройки
     session_data['is_primary'] = company.get('is_primary', True)
     session_data['enable_notifications'] = company.get('enable_notifications', True)
     session_data['enable_marketing'] = company.get('enable_marketing', False)

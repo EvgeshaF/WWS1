@@ -1,3 +1,5 @@
+# company/company_registration_views.py - ОБНОВЛЕНО: банковский шаг 5 вместо настроек
+
 from django.shortcuts import redirect
 from loguru import logger
 
@@ -10,6 +12,7 @@ def register_company(request):
     CompanySessionManager.clear_session_data(request)
     logger.info("Начало процесса регистрации компании")
     return redirect('company:register_company_step1')
+
 
 import json
 import re
@@ -24,7 +27,7 @@ from loguru import logger
 from company.company_manager import CompanyManager
 from company.company_session_views import CompanySessionManager
 from company.company_utils import check_mongodb_availability, render_with_messages
-from company.forms import CompanyBasicDataForm, CompanyRegistrationForm, CompanyAddressForm, CompanyContactForm, CompanyOptionsForm
+from company.forms import CompanyBasicDataForm, CompanyRegistrationForm, CompanyAddressForm, CompanyContactForm, CompanyBankingForm
 from company.language import company_success_messages, company_error_messages, text_company_step1, text_company_step2, text_company_step3, text_company_step4, text_company_step5
 
 
@@ -68,6 +71,7 @@ def register_company_step1(request):
         'text': text_company_step1
     }
     return render(request, 'register_company_step1.html', context)
+
 
 def register_company_step2(request):
     """Шаг 2: Регистрационные данные - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ с улучшенной валидацией"""
@@ -305,7 +309,7 @@ def register_company_step4(request):
 
 
 def register_company_step5(request):
-    """Шаг 5: Финальные настройки и создание компании"""
+    """НОВОЕ: Шаг 5 - Банковские данные и создание компании"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -337,11 +341,22 @@ def register_company_step5(request):
     contact_count += len(additional_contacts)
 
     if request.method == 'POST':
-        form = CompanyOptionsForm(request.POST)
+        form = CompanyBankingForm(request.POST)
         if form.is_valid():
+            # Сохраняем банковские данные в сессию
+            banking_data = form.cleaned_data.copy()
+            CompanySessionManager.update_session_data(request, banking_data)
+
             # Объединяем все данные из всех шагов
-            final_data = session_data.copy()
-            final_data.update(form.cleaned_data)
+            final_data = CompanySessionManager.get_session_data(request)
+
+            # Добавляем стандартные настройки компании
+            final_data.update({
+                'is_primary': True,
+                'enable_notifications': True,
+                'enable_marketing': False,
+                'data_protection_consent': True
+            })
 
             # Создаем компанию в базе данных
             company_manager = CompanyManager()
@@ -349,11 +364,17 @@ def register_company_step5(request):
                 # Очищаем сессию после успешного создания
                 CompanySessionManager.clear_session_data(request)
 
-                total_contacts = f"{contact_count} Kontakte"
-                success_message = company_success_messages['company_created'].format(
-                    company_name=company_name,
-                    contact_info=total_contacts
-                )
+                # Формируем сообщение о банковских данных
+                banking_info = ""
+                if banking_data.get('iban') or banking_data.get('bank_name'):
+                    if banking_data.get('secondary_iban'):
+                        banking_info = "mit Haupt- und Zweitbankverbindung"
+                    else:
+                        banking_info = "mit Bankverbindung"
+                else:
+                    banking_info = "ohne Bankverbindung"
+
+                success_message = f"Firma '{company_name}' wurde erfolgreich registriert ({banking_info})! Kontakte: {contact_count}"
                 messages.success(request, success_message)
 
                 return render_with_messages(
@@ -371,7 +392,7 @@ def register_company_step5(request):
         else:
             messages.error(request, company_error_messages['validation_failed'])
     else:
-        form = CompanyOptionsForm(initial=session_data)
+        form = CompanyBankingForm(initial=session_data)
 
     context = {
         'form': form,
@@ -387,7 +408,7 @@ def register_company_step5(request):
 
 @require_http_methods(["GET"])
 def company_validation_check(request):
-    """Улучшенная проверка валидности данных компании с учетом обязательных полей шага 2"""
+    """Улучшенная проверка валидности данных компании с учетом обязательных полей шага 2 и банковских данных"""
     if not check_mongodb_availability():
         return JsonResponse({'error': 'MongoDB not available'}, status=500)
 
@@ -405,10 +426,10 @@ def company_validation_check(request):
         'completeness': 0,
         'step_status': {
             'step1': {'complete': False, 'errors': []},
-            'step2': {'complete': False, 'errors': []},  # НОВОЕ: отдельная валидация шага 2
+            'step2': {'complete': False, 'errors': []},
             'step3': {'complete': False, 'errors': []},
             'step4': {'complete': False, 'errors': []},
-            'step5': {'complete': False, 'errors': []}
+            'step5': {'complete': False, 'errors': []}  # НОВОЕ: проверка банковских данных
         }
     }
 
@@ -436,6 +457,13 @@ def company_validation_check(request):
     step4_fields = {
         'email': 'E-Mail',
         'phone': 'Telefon'
+    }
+
+    # НОВОЕ: Банковские поля (все опциональны)
+    step5_fields = {
+        'bank_name': 'Bankname',
+        'iban': 'IBAN',
+        'bic': 'BIC'
     }
 
     all_required_fields = {**step1_fields, **step2_fields, **step3_fields, **step4_fields}
@@ -476,6 +504,30 @@ def company_validation_check(request):
 
         validation_results['step_status'][step]['complete'] = step_complete
         validation_results['step_status'][step]['errors'] = step_errors
+
+    # НОВАЯ: Проверяем банковские данные (шаг 5) - ВСЕ ОПЦИОНАЛЬНЫ
+    step5_complete = True
+    step5_errors = []
+    banking_data_present = False
+
+    for field, label in step5_fields.items():
+        field_value = company.get(field, '')
+        if field_value and str(field_value).strip():
+            banking_data_present = True
+            # Валидация IBAN
+            if field == 'iban':
+                if not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', field_value):
+                    step5_errors.append(f'{label}: Ungültiges Format')
+                    validation_results['warnings'].append(f'{label}: Ungültiges Format')
+            # Валидация BIC
+            elif field == 'bic':
+                if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', field_value):
+                    step5_errors.append(f'{label}: Ungültiges Format')
+                    validation_results['warnings'].append(f'{label}: Ungültiges Format')
+
+    validation_results['step_status']['step5']['complete'] = step5_complete
+    validation_results['step_status']['step5']['errors'] = step5_errors
+    validation_results['banking_data_present'] = banking_data_present
 
     # Подсчитываем полноту заполнения
     validation_results['completeness'] = round((filled_count / total_count) * 100, 1) if total_count > 0 else 0
@@ -527,4 +579,3 @@ def validate_registration_data(data):
             errors.append("Steuer-ID: 11-stellige Nummer erforderlich")
 
     return errors
-

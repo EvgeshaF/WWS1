@@ -1,3 +1,5 @@
+# company/company_session_views.py - ОБНОВЛЕНО для 5 шагов с банковскими данными
+
 class CompanySessionManager:
     """Менеджер для управления данными многошагового процесса регистрации"""
 
@@ -30,21 +32,21 @@ class CompanySessionManager:
 
     @staticmethod
     def get_completion_status(request):
-        """Возвращает статус завершения шагов (теперь 5 шагов) - ОБНОВЛЕНО для шага 2"""
+        """Возвращает статус завершения шагов (теперь 5 шагов) - ОБНОВЛЕНО для банковского шага"""
         session_data = CompanySessionManager.get_session_data(request)
         return {
             'step1_complete': 'company_name' in session_data and 'legal_form' in session_data,
             'step2_complete': (
-                    'registration_data_processed' in session_data and
-                    'all_registration_fields_complete' in session_data and
-                    all([
-                        session_data.get('commercial_register'),
-                        session_data.get('tax_number'),
-                        session_data.get('vat_id'),
-                        session_data.get('tax_id')
-                    ])
+                'registration_data_processed' in session_data and
+                'all_registration_fields_complete' in session_data and
+                all([
+                    session_data.get('commercial_register'),
+                    session_data.get('tax_number'),
+                    session_data.get('vat_id'),
+                    session_data.get('tax_id')
+                ])
             ),
             'step3_complete': 'street' in session_data and 'city' in session_data,
             'step4_complete': 'email' in session_data and 'phone' in session_data,
-            'step5_complete': 'data_protection_consent' in session_data  # Финальный шаг
+            'step5_complete': True  # ИЗМЕНЕНО: шаг 5 всегда завершен (банковские данные опциональны)
         }
