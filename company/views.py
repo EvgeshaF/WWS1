@@ -1,5 +1,5 @@
 # Session manager
-from .company_session_views import (
+from .views.company_session_views import (
     CompanySessionManager,
 )
 
@@ -17,7 +17,7 @@ from .company_utils import (
 )
 
 # Registration steps
-from .company_registration_views import (
+from .views.company_registration_views import (
     register_company,
     register_company_step1,
     register_company_step2,
@@ -29,7 +29,7 @@ from .company_registration_views import (
 )
 
 # CRUD operations
-from .company_crud_views import (
+from .views.company_crud_views import (
     company_info,
     edit_company,
     edit_company_step1,  # НОВОЕ: Редактирование только Grunddaten
@@ -42,7 +42,7 @@ from .company_crud_views import (
 )
 
 # Extra views
-from .company_extra_views import (
+from .views.company_extra_views import (
     company_stats_json,
     company_status,
     debug_company_data,
