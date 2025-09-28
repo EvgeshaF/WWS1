@@ -1,0 +1,331 @@
+/* company/static/css/company_modal_enhancements.css */
+/* Исправленные стили для модальных окон регистрации компании */
+
+/* ==================== ОСНОВНЫЕ КНОПКИ ==================== */
+
+/* Кнопка "Сохранить и закрыть" */
+.btn-outline-success {
+    border-color: #198754 !important;
+    color: #198754 !important;
+    background-color: transparent !important;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-success:hover {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
+}
+
+.btn-outline-success:focus {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+.btn-outline-success:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(25, 135, 84, 0.3) !important;
+}
+
+/* ==================== КНОПКА ЗАКРЫТИЯ ==================== */
+
+/* Улучшенная кнопка закрытия в header */
+.modal-header .btn-close {
+    opacity: 0.8;
+    transition: all 0.2s ease;
+    padding: 0.5rem;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.modal-header .btn-close:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.3);
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* ==================== КОМПОНОВКА КНОПОК ==================== */
+
+/* Основная компоновка */
+.d-flex.justify-content-between.align-items-center .btn {
+    min-width: 140px;
+    font-weight: 500;
+}
+
+.d-flex.gap-2 .btn {
+    margin-right: 0.5rem;
+}
+
+.d-flex.gap-2 .btn:last-child {
+    margin-right: 0;
+}
+
+/* ==================== АНИМАЦИИ ==================== */
+
+/* Пульсирующая анимация при фокусе */
+@keyframes pulse-success {
+    0% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+    }
+}
+
+.btn-outline-success:focus {
+    animation: pulse-success 1s;
+}
+
+/* Анимация загрузки */
+.spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-width: 0.125rem;
+}
+
+/* ==================== АДАПТИВНОСТЬ ==================== */
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .d-flex.gap-2 {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    .d-flex.gap-2 .btn {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+
+    .d-flex.gap-2 .btn:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Изменяем порядок для мобильных */
+    .d-flex.justify-content-between.align-items-center > div:last-child {
+        order: -1;
+    }
+}
+
+/* Планшетная версия */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .d-flex.justify-content-between.align-items-center .btn {
+        min-width: 120px;
+        font-size: 0.875rem;
+    }
+}
+
+/* ==================== СОСТОЯНИЯ КНОПОК ==================== */
+
+/* Состояние успешного сохранения */
+.btn-success-saved {
+    background: linear-gradient(135deg, #198754, #20c997) !important;
+    border-color: #198754 !important;
+    position: relative;
+}
+
+.btn-success-saved::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Состояние ошибки */
+.btn-error-state {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+    border-color: #dc3545 !important;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-3px);
+    }
+    75% {
+        transform: translateX(3px);
+    }
+}
+
+/* ==================== СПЕЦИАЛЬНЫЕ СТИЛИ ДЛЯ ШАГОВ ==================== */
+
+/* Шаг 2 - Регистрационные данные (желтый) */
+.step2-save-btn {
+    background: linear-gradient(135deg, #fff3e0, #ffcc80) !important;
+    border-color: #f57c00 !important;
+    color: #ef6c00 !important;
+}
+
+.step2-save-btn:hover {
+    background: linear-gradient(135deg, #f57c00, #ef6c00) !important;
+    color: white !important;
+}
+
+/* Шаг 5 - Банковские данные (синий) */
+.step5-save-btn {
+    background: linear-gradient(135deg, #e1f5fe, #b3e5fc) !important;
+    border-color: #0288d1 !important;
+    color: #01579b !important;
+}
+
+.step5-save-btn:hover {
+    background: linear-gradient(135deg, #0288d1, #0277bd) !important;
+    color: white !important;
+}
+
+/* ==================== FOOTER УВЕДОМЛЕНИЯ ==================== */
+
+.modal-footer small {
+    line-height: 1.4;
+    font-size: 0.8rem;
+}
+
+.modal-footer small:not(:first-child) {
+    border-left: 2px solid #dee2e6;
+    padding-left: 0.75rem;
+    margin-left: 0.75rem;
+}
+
+.modal-footer small .bi {
+    color: #6c757d;
+}
+
+/* Информационные блоки */
+.modal-footer small strong {
+    color: #495057;
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+
+/* Высокий контраст */
+@media (prefers-contrast: custom) {
+    .btn-outline-success {
+        border-width: 2px !important;
+        font-weight: 600 !important;
+    }
+
+    .modal-header .btn-close {
+        background: rgba(255, 255, 255, 0.3);
+        border: 2px solid white;
+        border-radius: 4px;
+    }
+}
+
+/* Уменьшенная анимация */
+@media (prefers-reduced-motion: reduce) {
+    .btn-outline-success,
+    .modal-header .btn-close {
+        transition: none;
+    }
+
+    .btn-outline-success:hover {
+        transform: none;
+    }
+
+    .btn-outline-success:focus {
+        animation: none;
+    }
+}
+
+/* Focus styles для keyboard navigation */
+.btn:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.btn-outline-success:focus-visible {
+    outline-color: #198754;
+}
+
+.modal-header .btn-close:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* ==================== ПРОГРЕСС ИНДИКАТОРЫ ==================== */
+
+/* Мини прогрессбар для кнопок */
+.btn-progress {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-progress::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.4);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.btn-progress.saving::after {
+    animation: progress-fill 2s ease-in-out infinite;
+}
+
+@keyframes progress-fill {
+    0% {
+        width: 0%;
+    }
+    50% {
+        width: 100%;
+    }
+    100% {
+        width: 0%;
+    }
+}
+
+/* ==================== ДОПОЛНИТЕЛЬНЫЕ УЛУЧШЕНИЯ ==================== */
+
+/* Плавные переходы для всех кнопок */
+.btn {
+    transition: all 0.15s ease-in-out;
+}
+
+/* Улучшенные тени */
+.btn:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Курсор для неактивных кнопок */
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Исправление z-index для модальных окон */
+.modal {
+    z-index: 1050;
+}
+
+.modal-backdrop {
+    z-index: 1040;
+}
