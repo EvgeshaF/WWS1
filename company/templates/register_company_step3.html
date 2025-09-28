@@ -1,439 +1,151 @@
 {% extends 'base.html' %}
 
-{# Подключаем CSS файлы #}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/create_admin_step1-3.css' %}">
-
-{# загружаем template tags для legal_form #}
 {% load company_extras %}
 
 {% block content %}
+<div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    {{ text.title }}
+                </h5>
+                <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
+                <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
+            </div>
 
-    <div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">
-                        <i class="bi bi-geo-alt me-2"></i>
-                        {{ text.title }}
-                    </h5>
-                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
-                    <!-- НОВОЕ: Кнопка закрытия модального окна -->
-                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    {{ text.desc }}
+                    <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
+                        {% if legal_form %}
+                            {{ legal_form|legal_form_display }}
+                        {% endif %}
+                    </strong></small>
                 </div>
 
-                <div class="modal-body">
+                <form method="post"
+                      id="company-step3-form"
+                      action="{% url 'company:register_company_step3' %}"
+                      data-url="{% url 'company:register_company_step3' %}"
+                      data-next-url="{% url 'company:register_company_step4' %}">
+                    {% csrf_token %}
 
-                    <div class="alert alert-info" role="alert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        {{ text.desc }}
-                        <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
-                            {% if legal_form %}
-                                {{ legal_form|legal_form_display }}
-                            {% endif %}
-                        </strong></small>
+                    <!-- Адрес -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-building me-2"></i> Geschäftsadresse (Pflichtfelder)</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="{{ form.street.id_for_label }}" class="form-label">
+                                            <i class="bi bi-signpost me-1"></i> {{ text.street }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.street }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="{{ form.postal_code.id_for_label }}" class="form-label">
+                                            <i class="bi bi-mailbox me-1"></i> {{ text.postal_code }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.postal_code }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.city.id_for_label }}" class="form-label">
+                                            <i class="bi bi-buildings me-1"></i> {{ text.city }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.city }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.country.id_for_label }}" class="form-label">
+                                            <i class="bi bi-globe-europe-africa me-1"></i> {{ text.country }} <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="{{ form.country.name }}"
+                                                id="country"
+                                                data-field-id="{{ form.country.id_for_label }}"
+                                                class="form-select select2-search"
+                                                data-placeholder="Land suchen oder auswählen..."
+                                                data-allow-clear="false"
+                                                required>
+                                            <option></option>
+                                            {% for value, text in form.country.field.choices %}
+                                                {% if value %}
+                                                    <option value="{{ value }}"
+                                                            {% if form.country.value == value %}selected{% endif %}>
+                                                        {{ text }}
+                                                    </option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.address_addition.id_for_label }}" class="form-label">
+                                            <i class="bi bi-building-add me-1"></i> Adresszusatz <small class="text-muted">(Optional)</small>
+                                        </label>
+                                        {{ form.address_addition }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.po_box.id_for_label }}" class="form-label">
+                                            <i class="bi bi-mailbox2 me-1"></i> Postfach <small class="text-muted">(Optional)</small>
+                                        </label>
+                                        {{ form.po_box }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <form method="post" id="company-step3-form" action="{% url 'company:register_company_step3' %}">
-                        {% csrf_token %}
-
-                        <!-- Hauptadresse -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0">
-                                    <i class="bi bi-building me-2"></i>
-                                    Geschäftsadresse (Pflichtfelder)
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="mb-3">
-                                            <label for="{{ form.street.id_for_label }}" class="form-label">
-                                                <i class="bi bi-signpost me-1"></i>
-                                                {{ text.street }}
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            {{ form.street }}
-                                            {% if form.street.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.street.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                Vollständige Geschäftsadresse
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="{{ form.postal_code.id_for_label }}" class="form-label">
-                                                <i class="bi bi-mailbox me-1"></i>
-                                                {{ text.postal_code }}
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            {{ form.postal_code }}
-                                            {% if form.postal_code.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.postal_code.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                5-stellige PLZ
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.city.id_for_label }}" class="form-label">
-                                                <i class="bi bi-buildings me-1"></i>
-                                                {{ text.city }}
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            {{ form.city }}
-                                            {% if form.city.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.city.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                Stadt der Geschäftsadresse
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.country.id_for_label }}" class="form-label">
-                                                <i class="bi bi-globe-europe-africa me-1"></i>
-                                                {{ text.country }}
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <select name="{{ form.country.name }}"
-                                                    id="{{ form.country.id_for_label }}"
-                                                    class="form-select select2-search"
-                                                    data-placeholder="Land suchen oder auswählen..."
-                                                    data-allow-clear="false"
-                                                    required>
-                                                <option></option>
-                                                {% for value, text in form.country.field.choices %}
-                                                    {% if value %}
-                                                        <option value="{{ value }}"
-                                                                {% if form.country.value == value %}selected{% endif %}>
-                                                            {{ text }}
-                                                        </option>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </select>
-                                            {% if form.country.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.country.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                Land der Geschäftsadresse
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Zusätzliche Adressfelder (Optional) -->
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.address_addition.id_for_label }}" class="form-label">
-                                                <i class="bi bi-building-add me-1"></i>
-                                                Adresszusatz
-                                                <small class="text-muted">(Optional)</small>
-                                            </label>
-                                            {{ form.address_addition }}
-                                            {% if form.address_addition.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.address_addition.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                z.B. 2. Stock, Gebäude A
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.po_box.id_for_label }}" class="form-label">
-                                                <i class="bi bi-mailbox2 me-1"></i>
-                                                Postfach
-                                                <small class="text-muted">(Optional)</small>
-                                            </label>
-                                            {{ form.po_box }}
-                                            {% if form.po_box.errors %}
-                                                <div class="invalid-feedback d-block">{{ form.po_box.errors }}</div>
-                                            {% endif %}
-                                            <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                z.B. Postfach 123456
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Info Box -->
-                        <div class="alert alert-light border" role="alert">
-                            <h6 class="alert-heading">
-                                <i class="bi bi-geo-alt me-1"></i>
-                                Wichtige Hinweise zur Geschäftsadresse
-                            </h6>
-                            <ul class="mb-0 small">
-                                <li><strong>Geschäftsadresse:</strong> Wird für offizielle Korrespondenz verwendet</li>
-                                <li><strong>Impressum:</strong> Diese Adresse kann im Impressum erscheinen</li>
-                                <li><strong>Rechnungsadresse:</strong> Kann als Standard-Rechnungsadresse verwendet werden</li>
-                                <li><strong>Änderungen:</strong> Können später in den Firmeneinstellungen angepasst werden</li>
-                            </ul>
-                        </div>
-
-                        <!-- ОБНОВЛЕННЫЕ кнопки управления -->
-                        <div class="d-flex justify-content-between align-items-center mt-4">
-                            <div class="d-flex gap-2">
-                                <a href="{% url 'company:register_company_step2' %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left me-1"></i>
-                                    {{ text.btn_back }}
-                                </a>
-                                <!-- НОВАЯ: Кнопка "Сохранить и закрыть" -->
-                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    Sichern & Schließen
-                                </button>
-                            </div>
-
-                            <!-- Оригинальная кнопка "Weiter" -->
-                            <button type="submit" class="btn btn-success" id="continue-btn">
-                                <i class="bi bi-arrow-right me-1"></i>
-                                {{ text.btn }}
+                    <!-- Кнопки -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'company:register_company_step2' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> {{ text.btn_back }}
+                            </a>
+                            <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
                             </button>
                         </div>
-                    </form>
-                </div>
+                        <button type="submit" class="btn btn-success" id="continue-btn">
+                            <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-                <div class="modal-footer">
-                    <small class="text-muted">
-                        <i class="bi bi-exclamation-circle me-1"></i>
-                        {{ text.notification }}
-                    </small>
-                    <!-- НОВОЕ: Информация о сохранении -->
-                    <small class="text-muted ms-3">
-                        <i class="bi bi-info-circle me-1"></i>
-                        <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Adressdaten und kehrt zur Übersicht zurück
-                    </small>
-                </div>
+            <div class="modal-footer">
+                <small class="text-muted">
+                    <i class="bi bi-exclamation-circle me-1"></i> {{ text.notification }}
+                </small>
+                <small class="text-muted ms-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Adressdaten
+                </small>
             </div>
         </div>
     </div>
-
-    <div class="modal-backdrop fade show"></div>
-
+</div>
+<div class="modal-backdrop fade show"></div>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        // НОВАЯ: Функция закрытия модального окна
-        function closeModal() {
-            if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
-                window.location.href = '/';
-            }
-        }
-
-        $(document).ready(function () {
-            console.log('Инициализируем Select2 для шага 3');
-
-            // Настройки локализации
-            $.fn.select2.defaults.set('language', 'de');
-
-            // Инициализация для Country (с поиском)
-            $('#{{ form.country.id_for_label }}').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Land suchen oder auswählen...',
-                allowClear: false,
-                width: '100%',
-                language: {
-                    noResults: function () {
-                        return 'Keine Ergebnisse gefunden';
-                    },
-                    searching: function () {
-                        return 'Suche läuft...';
-                    },
-                    inputTooShort: function () {
-                        return 'Bitte geben Sie mindestens 1 Zeichen ein';
-                    }
-                },
-                matcher: function (params, data) {
-                    if ($.trim(params.term) === '') {
-                        return data;
-                    }
-
-                    if (typeof data.text === 'undefined') {
-                        return null;
-                    }
-
-                    var term = params.term.toLowerCase();
-                    if (data.text.toLowerCase().indexOf(term) > -1 ||
-                        data.id.toLowerCase().indexOf(term) > -1) {
-                        return data;
-                    }
-
-                    return null;
-                }
-            });
-
-            // Обработчики событий
-            $('#{{ form.country.id_for_label }}').on('select2:select', function (e) {
-                console.log('Выбрана страна:', e.params.data.id, '-', e.params.data.text);
-                $(this).closest('.mb-3').find('.invalid-feedback').hide();
-            });
-
-            console.log('Select2 для шага 3 успешно инициализирован');
-        });
-
-        // Form submission handling - ОБНОВЛЕНО для поддержки двух действий
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('company-step3-form');
-            if (!form) return;
-
-            const continueBtn = document.getElementById('continue-btn');
-            const saveAndCloseBtn = document.getElementById('save-and-close-btn');
-
-            // НОВЫЙ: Обработчик для "Сохранить и закрыть"
-            if (saveAndCloseBtn) {
-                saveAndCloseBtn.addEventListener('click', function() {
-                    submitForm('save_and_close');
-                });
-            }
-
-            // Обработчик для обычной отправки формы (продолжить)
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                submitForm('continue');
-            });
-
-            function submitForm(action) {
-                const activeBtn = action === 'save_and_close' ? saveAndCloseBtn : continueBtn;
-
-                // Показываем прогресс
-                if (activeBtn) {
-                    activeBtn.disabled = true;
-                    if (action === 'save_and_close') {
-                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird gesichert...';
-                    } else {
-                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird validiert...';
-                    }
-                }
-
-                // Создаем FormData для отправки
-                const formData = new FormData(form);
-                formData.append('action', action);  // НОВОЕ: Добавляем информацию о действии
-
-                fetch('{% url "company:register_company_step3" %}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'HX-Request': 'true'
-                    }
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Скрываем прогресс
-                        if (activeBtn) {
-                            activeBtn.disabled = false;
-                            if (action === 'save_and_close') {
-                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
-                            } else {
-                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                            }
-                        }
-
-                        // Обрабатываем ответ
-                        if (data.success !== undefined) {
-                            // НОВЫЙ: Специальная обработка для "сохранить и закрыть"
-                            if (data.action === 'save_and_close') {
-                                if (data.success) {
-                                    if (data.messages) {
-                                        data.messages.forEach(message => {
-                                            showToast(message.text, message.tags, message.delay);
-                                        });
-                                    }
-                                    // Перенаправляем на указанную страницу
-                                    setTimeout(() => {
-                                        window.location.href = data.redirect_url || '/';
-                                    }, 1500);
-                                } else {
-                                    if (data.messages) {
-                                        data.messages.forEach(message => {
-                                            showToast(message.text, message.tags, message.delay);
-                                        });
-                                    }
-                                }
-                                return;
-                            }
-                        }
-
-                        // Обычная обработка сообщений (для продолжения)
-                        if (data.messages && data.messages.length > 0) {
-                            data.messages.forEach(message => {
-                                showToast(message.text, message.tags, message.delay);
-                            });
-
-                            // Если есть успешное сообщение, перенаправляем через короткое время
-                            const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                            if (hasSuccess && action === 'continue') {
-                                setTimeout(() => {
-                                    window.location.href = '{% url "company:register_company_step4" %}';
-                                }, 1500);
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Ошибка отправки формы:', error);
-
-                        // Скрываем прогресс
-                        if (activeBtn) {
-                            activeBtn.disabled = false;
-                            if (action === 'save_and_close') {
-                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
-                            } else {
-                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                            }
-                        }
-
-                        showToast('Fehler beim Senden des Formulars', 'error');
-                    });
-            }
-        });
-
-        // Глобальная функция для показа тостов (если не определена)
-        if (typeof window.showToast === 'undefined') {
-            window.showToast = function (message, type = 'info', delay = 5000) {
-                const toast = document.createElement('div');
-                toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
-                toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                toast.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-
-                document.body.appendChild(toast);
-
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.remove();
-                    }
-                }, delay);
-            };
-        }
-    </script>
+<script src="{% static 'js/register_company_step3.js' %}"></script>
 {% endblock %}

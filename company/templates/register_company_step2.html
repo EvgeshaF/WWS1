@@ -1,511 +1,130 @@
 {% extends 'base.html' %}
 
-{# Подключаем CSS файлы #}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/create_admin_step1-3.css' %}">
-
-{# НОВОЕ: загружаем template tags для legal_form #}
 {% load company_extras %}
 
 {% block content %}
+<div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    {{ text.title }}
+                </h5>
+                <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
+                <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
+            </div>
 
-    <div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title">
-                        <i class="bi bi-file-earmark-text me-2"></i>
-                        {{ text.title }}
-                    </h5>
-                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
-                    <!-- НОВОЕ: Кнопка закрытия модального окна -->
-                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
+            <div class="modal-body">
+
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    {{ text.desc }}
+                    <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
+                        {% if legal_form %}
+                            {{ legal_form|legal_form_display }}
+                        {% endif %}
+                    </strong></small>
                 </div>
 
-                <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Wichtig:</strong> Alle Registrierungsfelder sind jetzt Pflichtfelder.
+                </div>
 
-                    <div class="alert alert-info" role="alert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        {{ text.desc }}
-                        <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
-                            {% if legal_form %}
-                                {{ legal_form|legal_form_display }}
-                            {% endif %}
-                        </strong></small>
+                <form method="post"
+                      id="company-step2-form"
+                      action="{% url 'company:register_company_step2' %}"
+                      data-url="{% url 'company:register_company_step2' %}"
+                      data-next-url="{% url 'company:register_company_step3' %}">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.commercial_register.id_for_label }}" class="form-label">
+                                    <i class="bi bi-building-check me-1"></i>
+                                    {{ text.commercial_register }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.commercial_register }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.tax_number.id_for_label }}" class="form-label">
+                                    <i class="bi bi-receipt me-1"></i>
+                                    {{ text.tax_number }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.tax_number }}
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- НОВОЕ: Alert о том, что все поля обязательны -->
-                    <div class="alert alert-warning" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Wichtig:</strong> Alle Registrierungsfelder sind jetzt Pflichtfelder und müssen ausgefüllt werden.
-                        <br><small class="text-muted">Diese Angaben sind für die vollständige Firmenregistrierung erforderlich.</small>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.vat_id.id_for_label }}" class="form-label">
+                                    <i class="bi bi-currency-euro me-1"></i>
+                                    {{ text.vat_id }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.vat_id }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.tax_id.id_for_label }}" class="form-label">
+                                    <i class="bi bi-person-vcard me-1"></i>
+                                    {{ text.tax_id }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.tax_id }}
+                            </div>
+                        </div>
                     </div>
 
-                    <form method="post" id="company-step2-form" action="{% url 'company:register_company_step2' %}">
-                        {% csrf_token %}
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.commercial_register.id_for_label }}" class="form-label">
-                                        <i class="bi bi-building-check me-1"></i>
-                                        {{ text.commercial_register }}
-                                        <span class="text-danger">*</span> <!-- ДОБАВЛЕНО: звездочка обязательности -->
-                                    </label>
-                                    {{ form.commercial_register }}
-                                    {% if form.commercial_register.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.commercial_register.errors }}</div>
-                                    {% endif %}
-                                    <div class="form-text">
-                                        <i class="bi bi-lightbulb me-1"></i>
-                                        Format: HRA12345 oder HRB12345
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.tax_number.id_for_label }}" class="form-label">
-                                        <i class="bi bi-receipt me-1"></i>
-                                        {{ text.tax_number }}
-                                        <span class="text-danger">*</span> <!-- ДОБАВЛЕНО: звездочка обязательности -->
-                                    </label>
-                                    {{ form.tax_number }}
-                                    {% if form.tax_number.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.tax_number.errors }}</div>
-                                    {% endif %}
-                                    <div class="form-text">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        Format: 12/345/67890 - Steuernummer vom Finanzamt
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="validation-status mb-3" style="display: none;" id="validationStatus">
+                        <div class="alert alert-success" role="alert" id="validationSuccess" style="display: none;">
+                            <i class="bi bi-check-circle me-2"></i> Alle Registrierungsdaten sind korrekt ausgefüllt!
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.vat_id.id_for_label }}" class="form-label">
-                                        <i class="bi bi-currency-euro me-1"></i>
-                                        {{ text.vat_id }}
-                                        <span class="text-danger">*</span> <!-- ДОБАВЛЕНО: звездочка обязательности -->
-                                    </label>
-                                    {{ form.vat_id }}
-                                    {% if form.vat_id.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.vat_id.errors }}</div>
-                                    {% endif %}
-                                    <div class="form-text">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        Format: DE123456789 (für EU-Geschäfte)
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.tax_id.id_for_label }}" class="form-label">
-                                        <i class="bi bi-person-vcard me-1"></i>
-                                        {{ text.tax_id }}
-                                        <span class="text-danger">*</span> <!-- ДОБАВЛЕНО: звездочка обязательности -->
-                                    </label>
-                                    {{ form.tax_id }}
-                                    {% if form.tax_id.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.tax_id.errors }}</div>
-                                    {% endif %}
-                                    <div class="form-text">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        11-stellige Steuer-Identifikationsnummer (erforderlich)
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="alert alert-danger" role="alert" id="validationErrors" style="display: none;">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <span id="validationErrorText">Bitte korrigieren Sie die Eingaben</span>
                         </div>
+                    </div>
 
-                        <!-- ОБНОВЛЕННЫЙ Info Box с информацией о обязательности -->
-                        <div class="alert alert-light border" role="alert">
-                            <h6 class="alert-heading">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Wichtige Hinweise zu Registrierungsdaten
-                            </h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p class="mb-2"><strong>Alle Felder sind jetzt erforderlich:</strong></p>
-                                    <ul class="mb-0 small">
-                                        <li><strong>Handelsregister:</strong> Offizieller Eintrag (HRA/HRB)</li>
-                                        <li><strong>Steuernummer:</strong> Für steuerliche Belange</li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="mb-2"><strong>Vorteile der vollständigen Registrierung:</strong></p>
-                                    <ul class="mb-0 small">
-                                        <li><strong>USt-IdNr.:</strong> Für EU-weite Geschäfte</li>
-                                        <li><strong>Steuer-ID:</strong> Eindeutige Identifikation</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <hr class="my-2">
-                            <p class="mb-0 small text-info">
-                                <i class="bi bi-lightbulb me-1"></i>
-                                <strong>Tipp:</strong> Diese Daten erhöhen die Glaubwürdigkeit und ermöglichen vollständige Geschäftstätigkeit.
-                            </p>
-                        </div>
-
-                        <!-- Validation Status Indicator -->
-                        <div class="validation-status mb-3" style="display: none;" id="validationStatus">
-                            <div class="alert alert-success" role="alert" id="validationSuccess" style="display: none;">
-                                <i class="bi bi-check-circle me-2"></i>
-                                Alle Registrierungsdaten sind korrekt ausgefüllt!
-                            </div>
-                            <div class="alert alert-danger" role="alert" id="validationErrors" style="display: none;">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <span id="validationErrorText">Bitte korrigieren Sie die Eingaben</span>
-                            </div>
-                        </div>
-
-                        <!-- ОБНОВЛЕННЫЕ кнопки управления -->
-                        <div class="d-flex justify-content-between align-items-center mt-4">
-                            <div class="d-flex gap-2">
-                                <a href="{% url 'company:register_company_step1' %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left me-1"></i>
-                                    {{ text.btn_back }}
-                                </a>
-                                <!-- НОВАЯ: Кнопка "Сохранить и закрыть" -->
-                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    Sichern & Schließen
-                                </button>
-                            </div>
-
-                            <!-- Оригинальная кнопка "Weiter" -->
-                            <button type="submit" class="btn btn-success" id="continue-btn">
-                                <i class="bi bi-arrow-right me-1"></i>
-                                {{ text.btn }}
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'company:register_company_step1' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
+                            </a>
+                            <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
                             </button>
                         </div>
-                    </form>
-                </div>
+                        <button type="submit" class="btn btn-success" id="continue-btn">
+                            <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-                <div class="modal-footer">
-                    <small class="text-muted">
-                        <i class="bi bi-exclamation-circle me-1"></i>
-                        Alle Registrierungsfelder sind Pflichtfelder und werden validiert
-                    </small>
-                    <!-- НОВОЕ: Информация о сохранении -->
-                    <small class="text-muted ms-3">
-                        <i class="bi bi-info-circle me-1"></i>
-                        <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre vollständigen Registrierungsdaten
-                    </small>
-                </div>
+            <div class="modal-footer">
+                <small class="text-muted">
+                    <i class="bi bi-exclamation-circle me-1"></i> Alle Registrierungsfelder sind Pflichtfelder
+                </small>
+                <small class="text-muted ms-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Eingaben
+                </small>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="modal-backdrop fade show"></div>
-
+<div class="modal-backdrop fade show"></div>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        // НОВАЯ: Функция закрытия модального окна
-        function closeModal() {
-            if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
-                window.location.href = '/';
-            }
-        }
-
-        // Enhanced form validation for required fields - ОБНОВЛЕНО для поддержки двух действий
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('company-step2-form');
-            if (!form) return;
-
-            const continueBtn = document.getElementById('continue-btn');
-            const saveAndCloseBtn = document.getElementById('save-and-close-btn');
-            const validationStatus = document.getElementById('validationStatus');
-            const validationSuccess = document.getElementById('validationSuccess');
-            const validationErrors = document.getElementById('validationErrors');
-            const validationErrorText = document.getElementById('validationErrorText');
-
-            // Real-time validation for required fields
-            const requiredFields = [
-                'id_{{ form.commercial_register.id_for_label }}',
-                'id_{{ form.tax_number.id_for_label }}',
-                'id_{{ form.vat_id.id_for_label }}',
-                'id_{{ form.tax_id.id_for_label }}'
-            ];
-
-            // Add real-time validation
-            requiredFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('input', function() {
-                        validateField(field);
-                        updateValidationStatus();
-                    });
-                    field.addEventListener('blur', function() {
-                        validateField(field);
-                        updateValidationStatus();
-                    });
-                }
-            });
-
-            // НОВЫЙ: Обработчик для "Сохранить и закрыть"
-            if (saveAndCloseBtn) {
-                saveAndCloseBtn.addEventListener('click', function() {
-                    submitForm('save_and_close');
-                });
-            }
-
-            function validateField(field) {
-                const value = field.value.trim();
-                const fieldName = field.name;
-                let isValid = true;
-                let errorMessage = '';
-
-                // Clear previous validation
-                field.classList.remove('is-valid', 'is-invalid');
-                const existingError = field.closest('.mb-3').querySelector('.field-error');
-                if (existingError) existingError.remove();
-
-                // Required field check
-                if (!value) {
-                    isValid = false;
-                    errorMessage = 'Dieses Feld ist erforderlich';
-                } else {
-                    // Specific validation based on field
-                    switch (fieldName) {
-                        case 'commercial_register':
-                            if (!/^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$/i.test(value)) {
-                                isValid = false;
-                                errorMessage = 'Format: HRA12345 oder HRB12345';
-                            }
-                            break;
-                        case 'tax_number':
-                            if (!/^\d{1,3}\/\d{3}\/\d{4,5}$/.test(value)) {
-                                isValid = false;
-                                errorMessage = 'Format: 12/345/67890';
-                            }
-                            break;
-                        case 'vat_id':
-                            if (!/^DE\d{9}$/.test(value)) {
-                                isValid = false;
-                                errorMessage = 'Format: DE123456789';
-                            }
-                            break;
-                        case 'tax_id':
-                            if (!/^\d{11}$/.test(value)) {
-                                isValid = false;
-                                errorMessage = '11-stellige Nummer erforderlich';
-                            }
-                            break;
-                    }
-                }
-
-                // Apply validation styling
-                if (isValid) {
-                    field.classList.add('is-valid');
-                } else {
-                    field.classList.add('is-invalid');
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'field-error text-danger small mt-1';
-                    errorDiv.textContent = errorMessage;
-                    field.closest('.mb-3').appendChild(errorDiv);
-                }
-
-                return isValid;
-            }
-
-            function updateValidationStatus() {
-                let allValid = true;
-                let errorCount = 0;
-
-                requiredFields.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    if (field) {
-                        if (field.classList.contains('is-invalid') || !field.value.trim()) {
-                            allValid = false;
-                            errorCount++;
-                        }
-                    }
-                });
-
-                // Show/hide validation status
-                if (validationStatus) {
-                    if (allValid && requiredFields.every(fieldId => {
-                        const field = document.getElementById(fieldId);
-                        return field && field.value.trim();
-                    })) {
-                        validationStatus.style.display = 'block';
-                        validationSuccess.style.display = 'block';
-                        validationErrors.style.display = 'none';
-                    } else if (errorCount > 0) {
-                        validationStatus.style.display = 'block';
-                        validationSuccess.style.display = 'none';
-                        validationErrors.style.display = 'block';
-                        validationErrorText.textContent = `${errorCount} Feld(er) müssen korrigiert werden`;
-                    } else {
-                        validationStatus.style.display = 'none';
-                    }
-                }
-
-                // Enable/disable submit button
-                if (continueBtn) {
-                    continueBtn.disabled = !allValid;
-                    if (allValid) {
-                        continueBtn.classList.remove('btn-outline-success');
-                        continueBtn.classList.add('btn-success');
-                    } else {
-                        continueBtn.classList.remove('btn-success');
-                        continueBtn.classList.add('btn-outline-success');
-                    }
-                }
-
-                // Enable/disable save and close button based on validation
-                if (saveAndCloseBtn) {
-                    saveAndCloseBtn.disabled = !allValid;
-                }
-            }
-
-            // Initial validation check
-            setTimeout(updateValidationStatus, 100);
-
-            // Form submission handling - ОБНОВЛЕНО для поддержки двух действий
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                submitForm('continue');
-            });
-
-            function submitForm(action) {
-                // Final validation before submit
-                let allValid = true;
-                requiredFields.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    if (field && !validateField(field)) {
-                        allValid = false;
-                    }
-                });
-
-                if (!allValid) {
-                    showToast('Bitte füllen Sie alle Pflichtfelder korrekt aus', 'error');
-                    return;
-                }
-
-                const activeBtn = action === 'save_and_close' ? saveAndCloseBtn : continueBtn;
-
-                // Show progress
-                if (activeBtn) {
-                    activeBtn.disabled = true;
-                    if (action === 'save_and_close') {
-                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird gesichert...';
-                    } else {
-                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird validiert...';
-                    }
-                }
-
-                // Create FormData for submission
-                const formData = new FormData(form);
-                formData.append('action', action);  // НОВОЕ: Добавляем информацию о действии
-
-                fetch('{% url "company:register_company_step2" %}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'HX-Request': 'true'
-                    }
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Hide progress
-                        if (activeBtn) {
-                            activeBtn.disabled = false;
-                            if (action === 'save_and_close') {
-                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
-                            } else {
-                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                            }
-                        }
-
-                        // Обрабатываем ответ
-                        if (data.success !== undefined) {
-                            // НОВЫЙ: Специальная обработка для "сохранить и закрыть"
-                            if (data.action === 'save_and_close') {
-                                if (data.success) {
-                                    if (data.messages) {
-                                        data.messages.forEach(message => {
-                                            showToast(message.text, message.tags, message.delay);
-                                        });
-                                    }
-                                    // Перенаправляем на указанную страницу
-                                    setTimeout(() => {
-                                        window.location.href = data.redirect_url || '/';
-                                    }, 1500);
-                                } else {
-                                    if (data.messages) {
-                                        data.messages.forEach(message => {
-                                            showToast(message.text, message.tags, message.delay);
-                                        });
-                                    }
-                                }
-                                return;
-                            }
-                        }
-
-                        // Обычная обработка сообщений (для продолжения)
-                        if (data.messages && data.messages.length > 0) {
-                            data.messages.forEach(message => {
-                                showToast(message.text, message.tags, message.delay);
-                            });
-
-                            // Redirect on success
-                            const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                            if (hasSuccess && action === 'continue') {
-                                setTimeout(() => {
-                                    window.location.href = '{% url "company:register_company_step3" %}';
-                                }, 1500);
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Form submission error:', error);
-
-                        // Hide progress
-                        if (activeBtn) {
-                            activeBtn.disabled = false;
-                            if (action === 'save_and_close') {
-                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
-                            } else {
-                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
-                            }
-                        }
-
-                        showToast('Fehler beim Senden des Formulars', 'error');
-                    });
-            }
-        });
-
-        // Global toast function (if not defined)
-        if (typeof window.showToast === 'undefined') {
-            window.showToast = function (message, type = 'info', delay = 5000) {
-                const toast = document.createElement('div');
-                toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
-                toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                toast.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-
-                document.body.appendChild(toast);
-
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.remove();
-                    }
-                }, delay);
-            };
-        }
-    </script>
+<script src="{% static 'js/register_company_step2.js' %}"></script>
 {% endblock %}
