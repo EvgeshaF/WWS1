@@ -1,28 +1,31 @@
 # company/forms/step5.py
-# Шаг 5: Банковские данные
+# Шаг 5: Банковские данные - ОБНОВЛЕНО: Hauptbankverbindung обязательны
 
 from django import forms
 from django.core.validators import RegexValidator
 
 
 class CompanyBankingForm(forms.Form):
-    """НОВОЕ: Шаг 5 - Банковские данные"""
+    """ОБНОВЛЕНО: Шаг 5 - Банковские данные с обязательными основными полями"""
 
-    # Основной банковский счет
+    # ==================== HAUPTBANKVERBINDUNG (ОБЯЗАТЕЛЬНЫ) ====================
     bank_name = forms.CharField(
         label="Name der Bank",
         max_length=100,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: Теперь обязательно
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'z.B. Deutsche Bank AG'
-        })
+        }),
+        error_messages={
+            'required': 'Name der Bank ist erforderlich'
+        }
     )
 
     iban = forms.CharField(
         label="IBAN",
         max_length=34,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: Теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$',
@@ -33,13 +36,16 @@ class CompanyBankingForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'DE89370400440532013000',
             'style': 'text-transform: uppercase;'
-        })
+        }),
+        error_messages={
+            'required': 'IBAN ist erforderlich'
+        }
     )
 
     bic = forms.CharField(
         label="BIC/SWIFT",
         max_length=11,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: Теперь обязательно
         validators=[
             RegexValidator(
                 regex=r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$',
@@ -50,24 +56,30 @@ class CompanyBankingForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'DEUTDEFF',
             'style': 'text-transform: uppercase;'
-        })
+        }),
+        error_messages={
+            'required': 'BIC/SWIFT ist erforderlich'
+        }
     )
 
     account_holder = forms.CharField(
         label="Kontoinhaber",
         max_length=100,
-        required=True,
+        required=True,  # ИЗМЕНЕНО: Теперь обязательно
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Name des Kontoinhabers'
-        })
+        }),
+        error_messages={
+            'required': 'Kontoinhaber ist erforderlich'
+        }
     )
 
-    # Zusätzliche Informationen
+    # ==================== ZUSÄTZLICHE INFORMATIONEN (OPTIONAL) ====================
     bank_address = forms.CharField(
         label="Adresse der Bank",
         max_length=200,
-        required=False,
+        required=False,  # Остается опциональным
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Straße, PLZ Stadt (optional)'
@@ -85,17 +97,17 @@ class CompanyBankingForm(forms.Form):
             ('tagesgeld', 'Tagesgeldkonto'),
             ('sonstige', 'Sonstige'),
         ],
-        required=False,
+        required=False,  # Остается опциональным
         widget=forms.Select(attrs={
             'class': 'form-control'
         })
     )
 
-    # Sekundäre Bankverbindung (falls vorhanden)
+    # ==================== SEKUNDÄRE BANKVERBINDUNG (OPTIONAL) ====================
     secondary_bank_name = forms.CharField(
         label="Zweitbank (optional)",
         max_length=100,
-        required=False,
+        required=False,  # Остается опциональным
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'z.B. Commerzbank AG'
@@ -105,7 +117,7 @@ class CompanyBankingForm(forms.Form):
     secondary_iban = forms.CharField(
         label="IBAN (Zweitbank)",
         max_length=34,
-        required=False,
+        required=False,  # Остается опциональным
         validators=[
             RegexValidator(
                 regex=r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$',
@@ -122,7 +134,7 @@ class CompanyBankingForm(forms.Form):
     secondary_bic = forms.CharField(
         label="BIC/SWIFT (Zweitbank)",
         max_length=11,
-        required=False,
+        required=False,  # Остается опциональным
         validators=[
             RegexValidator(
                 regex=r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$',
@@ -136,7 +148,7 @@ class CompanyBankingForm(forms.Form):
         })
     )
 
-    # Einstellungen
+    # ==================== EINSTELLUNGEN (OPTIONAL) ====================
     is_primary_account = forms.BooleanField(
         label="Als Hauptkonto für Rechnungen verwenden",
         required=False,
@@ -160,7 +172,7 @@ class CompanyBankingForm(forms.Form):
     banking_notes = forms.CharField(
         label="Notizen zu Bankverbindungen",
         max_length=500,
-        required=False,
+        required=False,  # Остается опциональным
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,

@@ -14,6 +14,7 @@ from ..company_utils import check_mongodb_availability, render_with_messages
 from ..forms import CompanyBasicDataForm, CompanyRegistrationForm, CompanyAddressForm, CompanyContactForm, CompanyBankingForm
 from ..language import company_success_messages, company_error_messages, text_company_step1, text_company_step2, text_company_step3, text_company_step4, text_company_step5
 
+
 def register_company(request):
     """Стартовая страница регистрации - перенаправляет на шаг 1"""
     # Очищаем предыдущие данные сессии
@@ -415,7 +416,7 @@ def register_company_step4(request):
 
 
 def register_company_step5(request):
-    """ОБНОВЛЕНО: Шаг 5 - Банковские данные и создание компании с возможностью сохранения"""
+    """ОБНОВЛЕНО: Шаг 5 - Банковские данные и создание компании с обязательными основными полями"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -452,7 +453,44 @@ def register_company_step5(request):
         # НОВОЕ: Определяем действие пользователя
         action = request.POST.get('action', 'complete')  # 'complete' или 'save_and_close'
 
-        if form.is_valid():
+        # НОВОЕ: Дополнительная валидация обязательных банковских полей
+        additional_errors = []
+        required_banking_fields = {
+            'bank_name': 'Name der Bank',
+            'iban': 'IBAN',
+            'bic': 'BIC/SWIFT',
+            'account_holder': 'Kontoinhaber'
+        }
+
+        for field_name, field_label in required_banking_fields.items():
+            field_value = request.POST.get(field_name, '').strip()
+            if not field_value:
+                additional_errors.append(f"{field_label} ist erforderlich")
+
+        # Дополнительная валидация IBAN и BIC форматов
+        iban = request.POST.get('iban', '').strip().upper().replace(' ', '')
+        if iban and not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', iban):
+            additional_errors.append("IBAN: Ungültiges Format (z.B. DE89370400440532013000)")
+
+        bic = request.POST.get('bic', '').strip().upper()
+        if bic and not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', bic):
+            additional_errors.append("BIC/SWIFT: Ungültiges Format (z.B. DEUTDEFF)")
+
+        # Валидация вторичной IBAN, если она указана
+        secondary_iban = request.POST.get('secondary_iban', '').strip().upper().replace(' ', '')
+        if secondary_iban and not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', secondary_iban):
+            additional_errors.append("IBAN (Zweitbank): Ungültiges Format")
+
+        secondary_bic = request.POST.get('secondary_bic', '').strip().upper()
+        if secondary_bic and not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', secondary_bic):
+            additional_errors.append("BIC/SWIFT (Zweitbank): Ungültiges Format")
+
+        if additional_errors:
+            for error in additional_errors:
+                messages.error(request, error)
+            logger.warning(f"Валидационные ошибки банковских данных шага 5: {additional_errors}")
+
+        if form.is_valid() and not additional_errors:
             # Сохраняем банковские данные в сессию
             banking_data = form.cleaned_data.copy()
             CompanySessionManager.update_session_data(request, banking_data)
@@ -472,20 +510,11 @@ def register_company_step5(request):
             if action == 'save_and_close':
                 success = save_partial_company_data(request, final_data, step=5)
                 if success:
-                    banking_info = ""
-                    if banking_data.get('iban') or banking_data.get('bank_name'):
-                        if banking_data.get('secondary_iban'):
-                            banking_info = "mit Haupt- und Zweitbankverbindung"
-                        else:
-                            banking_info = "mit Bankverbindung"
-                    else:
-                        banking_info = "ohne Bankverbindung"
-
                     return JsonResponse({
                         'success': True,
                         'action': 'save_and_close',
                         'messages': [{
-                            'text': f"Bankdaten für '{company_name}' erfolgreich gespeichert ({banking_info})",
+                            'text': f"Bankdaten für '{company_name}' erfolgreich gespeichert",
                             'tags': 'success',
                             'delay': 3000
                         }],
@@ -508,14 +537,9 @@ def register_company_step5(request):
                 CompanySessionManager.clear_session_data(request)
 
                 # Формируем сообщение о банковских данных
-                banking_info = ""
-                if banking_data.get('iban') or banking_data.get('bank_name'):
-                    if banking_data.get('secondary_iban'):
-                        banking_info = "mit Haupt- und Zweitbankverbindung"
-                    else:
-                        banking_info = "mit Bankverbindung"
-                else:
-                    banking_info = "ohne Bankverbindung"
+                banking_info = "mit vollständiger Bankverbindung"
+                if banking_data.get('secondary_iban'):
+                    banking_info = "mit Haupt- und Zweitbankverbindung"
 
                 success_message = f"Firma '{company_name}' wurde erfolgreich registriert ({banking_info})! Kontakte: {contact_count}"
                 messages.success(request, success_message)
@@ -533,7 +557,17 @@ def register_company_step5(request):
             else:
                 messages.error(request, company_error_messages['company_creation_error'])
         else:
-            messages.error(request, company_error_messages['validation_failed'])
+            # Логируем конкретные ошибки формы
+            if form.errors:
+                for field, errors in form.errors.items():
+                    logger.error(f"Ошибка поля {field}: {errors}")
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
+
+            if additional_errors:
+                messages.error(request, "Alle Hauptbankverbindungsfelder müssen korrekt ausgefüllt werden")
+            else:
+                messages.error(request, company_error_messages['validation_failed'])
     else:
         form = CompanyBankingForm(initial=session_data)
 
@@ -606,7 +640,7 @@ def save_partial_company_data(request, data, step):
 
 @require_http_methods(["GET"])
 def company_validation_check(request):
-    """Улучшенная проверка валидности данных компании с учетом обязательных полей шага 2 и банковских данных"""
+    """ОБНОВЛЕНО: Улучшенная проверка валидности данных компании с обязательными банковскими полями"""
     if not check_mongodb_availability():
         return JsonResponse({'error': 'MongoDB not available'}, status=500)
 
@@ -627,7 +661,7 @@ def company_validation_check(request):
             'step2': {'complete': False, 'errors': []},
             'step3': {'complete': False, 'errors': []},
             'step4': {'complete': False, 'errors': []},
-            'step5': {'complete': False, 'errors': []}
+            'step5': {'complete': False, 'errors': []}  # ИЗМЕНЕНО: теперь может быть incomplete
         }
     }
 
@@ -657,21 +691,34 @@ def company_validation_check(request):
         'phone': 'Telefon'
     }
 
-    # Банковские поля (все опциональны)
-    step5_fields = {
-        'bank_name': 'Bankname',
+    # ОБНОВЛЕНО: Банковские поля теперь обязательны (основные)
+    step5_required_fields = {
+        'bank_name': 'Name der Bank',
         'iban': 'IBAN',
-        'bic': 'BIC'
+        'bic': 'BIC/SWIFT',
+        'account_holder': 'Kontoinhaber'
     }
 
-    all_required_fields = {**step1_fields, **step2_fields, **step3_fields, **step4_fields}
+    # Опциональные банковские поля
+    step5_optional_fields = {
+        'bank_address': 'Adresse der Bank',
+        'account_type': 'Kontotyp',
+        'secondary_bank_name': 'Zweitbank',
+        'secondary_iban': 'IBAN (Zweitbank)',
+        'secondary_bic': 'BIC/SWIFT (Zweitbank)',
+        'banking_notes': 'Notizen'
+    }
+
+    # ОБНОВЛЕНО: Включаем обязательные банковские поля в общий список
+    all_required_fields = {**step1_fields, **step2_fields, **step3_fields, **step4_fields, **step5_required_fields}
 
     filled_count = 0
     total_count = len(all_required_fields)
 
-    # Валидируем каждый шаг отдельно
+    # Валидируем каждый шаг отдельно (включая шаг 5)
     for step, fields in [('step1', step1_fields), ('step2', step2_fields),
-                         ('step3', step3_fields), ('step4', step4_fields)]:
+                         ('step3', step3_fields), ('step4', step4_fields),
+                         ('step5', step5_required_fields)]:  # ДОБАВЛЕНО: step5
         step_complete = True
         step_errors = []
 
@@ -700,32 +747,47 @@ def company_validation_check(request):
                         step_errors.append(f'{label}: 11-stellige Nummer erforderlich')
                         validation_results['warnings'].append(f'{label}: Ungültiges Format')
 
+                # НОВОЕ: Дополнительная валидация банковских форматов для шага 5
+                elif step == 'step5':
+                    field_value = str(company.get(field, '')).strip()
+                    if field == 'iban':
+                        iban_clean = field_value.replace(' ', '').upper()
+                        if not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', iban_clean):
+                            step_errors.append(f'{label}: Ungültiges Format')
+                            validation_results['warnings'].append(f'{label}: Ungültiges Format')
+                    elif field == 'bic':
+                        bic_clean = field_value.upper()
+                        if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', bic_clean):
+                            step_errors.append(f'{label}: Ungültiges Format')
+                            validation_results['warnings'].append(f'{label}: Ungültiges Format')
+
         validation_results['step_status'][step]['complete'] = step_complete
         validation_results['step_status'][step]['errors'] = step_errors
 
-    # Проверяем банковские данные (шаг 5) - ВСЕ ОПЦИОНАЛЬНЫ
-    step5_complete = True
-    step5_errors = []
-    banking_data_present = False
+    # ОБНОВЛЕНО: Проверяем опциональные банковские данные (вторичные)
+    secondary_banking_data_present = False
+    secondary_banking_errors = []
 
-    for field, label in step5_fields.items():
+    for field, label in step5_optional_fields.items():
         field_value = company.get(field, '')
         if field_value and str(field_value).strip():
-            banking_data_present = True
-            # Валидация IBAN
-            if field == 'iban':
-                if not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', field_value):
-                    step5_errors.append(f'{label}: Ungültiges Format')
+            secondary_banking_data_present = True
+
+            # Валидация вторичных банковских данных
+            if field == 'secondary_iban':
+                iban_clean = str(field_value).replace(' ', '').upper()
+                if not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', iban_clean):
+                    secondary_banking_errors.append(f'{label}: Ungültiges Format')
                     validation_results['warnings'].append(f'{label}: Ungültiges Format')
-            # Валидация BIC
-            elif field == 'bic':
-                if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', field_value):
-                    step5_errors.append(f'{label}: Ungültiges Format')
+            elif field == 'secondary_bic':
+                bic_clean = str(field_value).upper()
+                if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', bic_clean):
+                    secondary_banking_errors.append(f'{label}: Ungültiges Format')
                     validation_results['warnings'].append(f'{label}: Ungültiges Format')
 
-    validation_results['step_status']['step5']['complete'] = step5_complete
-    validation_results['step_status']['step5']['errors'] = step5_errors
-    validation_results['banking_data_present'] = banking_data_present
+    # Добавляем информацию о вторичных банковских данных
+    validation_results['secondary_banking_data_present'] = secondary_banking_data_present
+    validation_results['secondary_banking_errors'] = secondary_banking_errors
 
     # Подсчитываем полноту заполнения
     validation_results['completeness'] = round((filled_count / total_count) * 100, 1) if total_count > 0 else 0
@@ -740,26 +802,47 @@ def company_validation_check(request):
         if not re.match(r'^[0-9]{5}$', company.get('postal_code', '')):
             validation_results['warnings'].append('PLZ-Format möglicherweise ungültig')
 
+    # НОВОЕ: Общая информация о статусе банковских данных
+    main_banking_complete = validation_results['step_status']['step5']['complete']
+    validation_results['main_banking_complete'] = main_banking_complete
+    validation_results['banking_status'] = {
+        'main_required_complete': main_banking_complete,
+        'secondary_optional_present': secondary_banking_data_present,
+        'overall_banking_status': 'complete' if main_banking_complete else 'incomplete'
+    }
+
     return JsonResponse(validation_results)
 
 
 def validate_registration_data(data):
-    """Валидирует регистрационные данные компании"""
+    """ОБНОВЛЕНО: Валидирует регистрационные данные компании включая банковские поля"""
     errors = []
 
     # Проверяем обязательные поля шага 2
-    required_fields = {
+    step2_required_fields = {
         'commercial_register': 'Handelsregister',
         'tax_number': 'Steuernummer',
         'vat_id': 'USt-IdNr.',
         'tax_id': 'Steuer-ID'
     }
 
-    for field, label in required_fields.items():
+    for field, label in step2_required_fields.items():
         if not data.get(field) or not str(data[field]).strip():
             errors.append(f"{label} ist erforderlich")
 
-    # Проверяем форматы
+    # НОВОЕ: Проверяем обязательные банковские поля
+    banking_required_fields = {
+        'bank_name': 'Name der Bank',
+        'iban': 'IBAN',
+        'bic': 'BIC/SWIFT',
+        'account_holder': 'Kontoinhaber'
+    }
+
+    for field, label in banking_required_fields.items():
+        if not data.get(field) or not str(data[field]).strip():
+            errors.append(f"{label} ist erforderlich")
+
+    # Проверяем форматы шага 2
     if data.get('commercial_register'):
         if not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$', data['commercial_register']):
             errors.append("Handelsregister: Format HRA12345 oder HRB12345 erforderlich")
@@ -775,5 +858,27 @@ def validate_registration_data(data):
     if data.get('tax_id'):
         if not re.match(r'^\d{11}$', data['tax_id']):
             errors.append("Steuer-ID: 11-stellige Nummer erforderlich")
+
+    # НОВОЕ: Проверяем форматы банковских данных
+    if data.get('iban'):
+        iban_clean = data['iban'].replace(' ', '').upper()
+        if not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', iban_clean):
+            errors.append("IBAN: Ungültiges Format (z.B. DE89370400440532013000)")
+
+    if data.get('bic'):
+        bic_clean = data['bic'].upper()
+        if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', bic_clean):
+            errors.append("BIC/SWIFT: Ungültiges Format (z.B. DEUTDEFF)")
+
+    # Проверяем опциональные вторичные банковские данные, если они указаны
+    if data.get('secondary_iban'):
+        iban_clean = data['secondary_iban'].replace(' ', '').upper()
+        if not re.match(r'^[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}$', iban_clean):
+            errors.append("IBAN (Zweitbank): Ungültiges Format")
+
+    if data.get('secondary_bic'):
+        bic_clean = data['secondary_bic'].upper()
+        if not re.match(r'^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$', bic_clean):
+            errors.append("BIC/SWIFT (Zweitbank): Ungültiges Format")
 
     return errors
