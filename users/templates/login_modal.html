@@ -1,260 +1,81 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Anmeldung - WWS1{% endblock %}
-
-{% block content %}
-<div class="container-fluid d-flex align-items-center justify-content-center min-vh-100" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
-    <div class="row w-100">
-        <div class="col-md-6 col-lg-4 mx-auto">
-            <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
-                <!-- Заголовок -->
-                <div class="card-header bg-primary text-white text-center py-4">
-                    <h3 class="mb-0">
-                        <i class="bi bi-shield-lock me-2"></i>
-                        Systemanmeldung
-                    </h3>
-                    <small class="opacity-75">WWS1 Warehouse Management</small>
-                </div>
-
-                <!-- Форма -->
-                <div class="card-body p-4">
-                    <!-- Системная информация -->
-                    <div class="alert alert-info d-flex align-items-center mb-4">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <div>
-                            <strong>System bereit</strong><br>
-                            <small>MongoDB verbunden • Administratoren verfügbar</small>
-                        </div>
-                    </div>
-
-                    <!-- Сообщения Django -->
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {% if message.tags == 'error' %}
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                {% elif message.tags == 'success' %}
-                                    <i class="bi bi-check-circle me-2"></i>
-                                {% elif message.tags == 'warning' %}
-                                    <i class="bi bi-exclamation-circle me-2"></i>
-                                {% else %}
-                                    <i class="bi bi-info-circle me-2"></i>
-                                {% endif %}
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <!-- Форма входа -->
-                    <form method="post" action="{% url 'users:login' %}" id="loginPageForm">
-                        {% csrf_token %}
-
-                        <!-- Поле имени пользователя -->
-                        <div class="mb-3">
-                            <label for="id_username" class="form-label">
-                                <i class="bi bi-person me-1"></i>
-                                Benutzername
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bi bi-person"></i>
-                                </span>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="id_username" 
-                                       name="username" 
-                                       placeholder="Benutzername eingeben"
-                                       autocomplete="username"
-                                       required
-                                       autofocus>
-                            </div>
-                        </div>
-
-                        <!-- Поле пароля -->
-                        <div class="mb-3">
-                            <label for="id_password" class="form-label">
-                                <i class="bi bi-key me-1"></i>
-                                Passwort
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bi bi-key"></i>
-                                </span>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="id_password" 
-                                       name="password" 
-                                       placeholder="Passwort eingeben"
-                                       autocomplete="current-password"
-                                       required>
-                            </div>
-                        </div>
-
-                        <!-- Запомнить меня -->
-                        <div class="form-check mb-4">
-                            <input type="checkbox" 
-                                   class="form-check-input" 
-                                   id="id_remember_me" 
-                                   name="remember_me">
-                            <label class="form-check-label" for="id_remember_me">
-                                Angemeldet bleiben
-                            </label>
-                        </div>
-
-                        <!-- Кнопка входа -->
-                        <button type="submit" class="btn btn-primary w-100 py-2" id="loginPageSubmitBtn">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>
-                            Anmelden
-                        </button>
-                    </form>
-
-                    <!-- Дополнительные ссылки -->
-                    <div class="text-center mt-3">
-                        <small class="text-muted">
-                            <a href="{% url 'home' %}" class="text-decoration-none">
-                                <i class="bi bi-house me-1"></i>
-                                Zurück zur Startseite
-                            </a>
-                        </small>
-                    </div>
-                </div>
-
-                <!-- Футер -->
-                <div class="card-footer bg-light text-center py-3">
-                    <small class="text-muted">
-                        <i class="bi bi-shield-check me-1"></i>
-                        Sichere Verbindung • Version {{ system_version|default:"1.0" }}
-                    </small>
-                </div>
+<!-- Модальное окно входа -->
+<div class="modal fade login-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loginModalLabel">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    Systemanmeldung
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <div class="modal-body">
+                <!-- Системная информация -->
+                <div class="login-security-notice">
+                    <i class="bi bi-info-circle"></i>
+                    <div class="notice-content">
+                        <strong>System bereit für Anmeldung</strong>
+                        <small>Administratoren verfügbar • MongoDB verbunden</small>
+                    </div>
+                </div>
 
-            <!-- Дополнительная информация -->
-            <div class="text-center mt-4">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Bei Problemen wenden Sie sich an Ihren Systemadministrator
-                </small>
+                <!-- Форма входа -->
+                <form id="loginForm" class="login-form">
+                    {% csrf_token %}
+
+                    <div class="form-floating mb-3">
+                        <input type="text"
+                               class="form-control"
+                               id="loginUsername"
+                               name="username"
+                               placeholder="Benutzername"
+                               required
+                               autocomplete="username">
+                        <label for="loginUsername">
+                            <i class="bi bi-person me-1"></i>
+                            Benutzername
+                        </label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="password"
+                               class="form-control"
+                               id="loginPassword"
+                               name="password"
+                               placeholder="Passwort"
+                               required
+                               autocomplete="current-password">
+                        <label for="loginPassword">
+                            <i class="bi bi-key me-1"></i>
+                            Passwort
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="loginRememberMe"
+                               name="remember_me">
+                        <label class="form-check-label" for="loginRememberMe">
+                            Angemeldet bleiben
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-login" id="loginSubmitBtn">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        Anmelden
+                    </button>
+                </form>
+
+                <!-- Информация о попытках -->
+                <div class="attempts-info mt-3" style="display: none;"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- JavaScript для обработки формы -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('loginPageForm');
-    const submitBtn = document.getElementById('loginPageSubmitBtn');
-    
-    if (form && submitBtn) {
-        form.addEventListener('submit', function(e) {
-            // Валидация
-            const username = form.querySelector('input[name="username"]').value.trim();
-            const password = form.querySelector('input[name="password"]').value;
-            
-            if (!username) {
-                alert('Benutzername ist erforderlich');
-                e.preventDefault();
-                return;
-            }
-            
-            if (!password) {
-                alert('Passwort ist erforderlich');
-                e.preventDefault();
-                return;
-            }
-            
-            // Показываем загрузку
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Anmeldung...';
-        });
-    }
-    
-    // Автофокус на первое поле
-    const usernameField = document.getElementById('id_username');
-    if (usernameField) {
-        usernameField.focus();
-    }
-});
-</script>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-.min-vh-100 {
-    min-height: 100vh;
-}
-
-.card {
-    transition: transform 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-}
-
-.input-group-text {
-    background-color: #f8f9fa;
-    border-color: #ced4da;
-}
-
-.form-control:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
-    border: none;
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
-}
-
-.btn-primary:disabled {
-    opacity: 0.8;
-    transform: none;
-}
-
-.alert-info {
-    background: linear-gradient(135deg, rgba(13, 202, 240, 0.1) 0%, rgba(13, 110, 253, 0.1) 100%);
-    border-left: 4px solid #0dcaf0;
-    border-radius: 8px;
-}
-
-.alert-danger {
-    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
-    border-left: 4px solid #dc3545;
-}
-
-.alert-success {
-    background: linear-gradient(135deg, rgba(25, 135, 84, 0.1) 0%, rgba(25, 135, 84, 0.05) 100%);
-    border-left: 4px solid #198754;
-}
-
-.card-header {
-    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%) !important;
-}
-
-/* Анимация для загрузки */
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
-    }
-}
-
-.btn-primary:disabled {
-    animation: pulse 2s infinite;
-}
-</style>
-{% endblock %}
+<!-- Loader для модального окна -->
+<div class="login-loader">
+    <div class="spinner"></div>
+    <div class="loading-text">Anmeldung...</div>
+</div>

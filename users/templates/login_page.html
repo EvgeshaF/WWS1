@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Anmeldung - WWS1{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'users/css/login_modal.css' %}">
+<style>
+.login-page-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.login-page-card {
+    max-width: 450px;
+    width: 100%;
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    border: none;
+}
+
+.login-page-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+}
+
+.login-page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>');
+    pointer-events: none;
+}
+
+.login-page-title {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.login-page-subtitle {
+    position: relative;
+    z-index: 1;
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.login-page-body {
+    padding: 2rem;
+}
+
+.login-page-footer {
+    background: #f8f9fa;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Адаптация стилей формы для страницы */
+.login-page-body .login-form {
+    margin-top: 0;
+}
+
+.login-page-body .login-security-notice {
+    margin-bottom: 1.5rem;
+}
+
+.login-page-body .login-links {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.login-page-body .login-system-info {
+    margin-top: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .login-page-container {
+        padding: 1rem;
+    }
+    
+    .login-page-header,
+    .login-page-body,
+    .login-page-footer {
+        padding: 1.5rem;
+    }
+    
+    .login-page-title {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-page-container">
+    <div class="card login-page-card">
+        <!-- Заголовок -->
+        <div class="login-page-header">
+            <h1 class="login-page-title">
+                <i class="bi bi-shield-lock me-2"></i>
+                Systemanmeldung
+            </h1>
+            <p class="login-page-subtitle">WWS1 Warehouse Management System</p>
+        </div>
+
+        <!-- Содержимое -->
+        <div class="login-page-body">
+            <!-- Системная информация -->
+            <div class="login-security-notice">
+                <i class="bi bi-info-circle"></i>
+                <div class="notice-content">
+                    <strong>System bereit</strong>
+                    <small>MongoDB verbunden • {{ admin_count|default:0 }} Administrator(en) verfügbar</small>
+                </div>
+            </div>
+
+            <!-- Сообщения Django -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {% if message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Форма входа -->
+            <form class="login-form" method="post" action="{% url 'users:login' %}" id="loginPageForm">
+                {% csrf_token %}
+
+                <!-- Поле имени пользователя -->
+                <div class="form-floating mb-3">
+                    <input type="text" 
+                           class="form-control" 
+                           id="username" 
+                           name="username" 
+                           placeholder="Benutzername"
+                           autocomplete="username"
+                           value="{{ form.username.value|default:'' }}"
+                           required
+                           autofocus>
+                    <label for="username">
+                        <i class="bi bi-person me-2"></i>Benutzername
+                    </label>
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Поле пароля -->
+                <div class="form-floating mb-3">
+                    <input type="password" 
+                           class="form-control" 
+                           id="password" 
+                           name="password" 
+                           placeholder="Passwort"
+                           autocomplete="current-password"
+                           required>
+                    <label for="password">
+                        <i class="bi bi-key me-2"></i>Passwort
+                    </label>
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback d-block">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Чекбокс "Запомнить меня" -->
+                <div class="form-check mb-3">
+                    <input type="checkbox" 
+                           class="form-check-input" 
+                           id="remember_me" 
+                           name="remember_me"
+                           {% if form.remember_me.value %}checked{% endif %}>
+                    <label class="form-check-label" for="remember_me">
+                        Angemeldet bleiben (14 Tage)
+                    </label>
+                </div>
+
+                <!-- Кнопка входа -->
+                <button type="submit" class="btn btn-login" id="loginPageSubmitBtn">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Anmelden
+                </button>
+            </form>
+
+            <!-- Дополнительные ссылки -->
+            <div class="login-links">
+                <a href="{% url 'home' %}">
+                    <i class="bi bi-house me-1"></i>Zurück zur Startseite
+                </a>
+                <span class="link-separator">•</span>
+                <a href="{% url 'users:create_admin_step1' %}">
+                    <i class="bi bi-person-plus me-1"></i>Administrator erstellen
+                </a>
+            </div>
+
+            <!-- Системная информация -->
+            <div class="login-system-info">
+                <div class="system-status">
+                    <i class="bi bi-check-circle"></i>
+                    <span>System online</span>
+                </div>
+                <div class="system-details">
+                    <strong>Version:</strong> {{ system_version|default:"1.0.0" }}<br>
+                    <strong>Status:</strong> Einsatzbereit<br>
+                    <strong>Sicherheit:</strong> SSL verschlüsselt
+                </div>
+            </div>
+        </div>
+
+        <!-- Футер -->
+        <div class="login-page-footer">
+            <small class="text-muted">
+                <i class="bi bi-shield-check me-1"></i>
+                Sichere Verbindung • Bei Problemen wenden Sie sich an Ihren Systemadministrator
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Loader overlay (скрыт по умолчанию) -->
+<div class="login-loader" id="loginPageLoader">
+    <div class="spinner"></div>
+    <div class="loading-text">Anmeldung wird verarbeitet...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('loginPageForm');
+    const submitBtn = document.getElementById('loginPageSubmitBtn');
+    const loader = document.getElementById('loginPageLoader');
+    
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            // Базовая валидация
+            const username = form.querySelector('input[name="username"]').value.trim();
+            const password = form.querySelector('input[name="password"]').value;
+            
+            if (!username) {
+                alert('Benutzername ist erforderlich');
+                e.preventDefault();
+                return;
+            }
+            
+            if (!password) {
+                alert('Passwort ist erforderlich');
+                e.preventDefault();
+                return;
+            }
+            
+            // Показываем загрузку
+            showLoader();
+        });
+    }
+    
+    function showLoader() {
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Anmeldung...';
+        }
+        
+        if (loader) {
+            loader.style.display = 'flex';
+        }
+    }
+    
+    // Автофокус на поле username
+    const usernameField = document.getElementById('username');
+    if (usernameField && !usernameField.value) {
+        usernameField.focus();
+    }
+});
+</script>
+{% endblock %}

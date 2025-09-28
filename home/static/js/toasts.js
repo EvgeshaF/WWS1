@@ -1,18 +1,10 @@
-// Глобальная система тостов для приложения
+// Обновление home/static/js/toasts.js для интеграции с модальным окном
+
+// Глобальная система тостов для приложения - ОБНОВЛЕНО
 (function() {
     'use strict';
 
-    // Отладка - удалить после исправления
-console.log('Toast система загружена');
-
-// Перехватываем все HTMX события для отладки
-document.body.addEventListener('htmx:afterRequest', function(event) {
-    console.log('HTMX afterRequest:', {
-        status: event.detail.xhr.status,
-        contentType: event.detail.xhr.getResponseHeader('Content-Type'),
-        response: event.detail.xhr.response
-    });
-});
+    console.log('🍞 Toast система загружена');
 
     // Создаем контейнер для тостов если его нет
     function ensureToastContainer() {
@@ -20,8 +12,13 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         if (!container) {
             container = document.createElement('div');
             container.id = 'toast-container';
-            container.className = 'toast-container position-fixed top-0 end-0 p-3';
-            container.style.zIndex = '9999';
+            container.className = 'toast-container position-fixed';
+            container.style.cssText = `
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                max-width: 400px;
+            `;
             document.body.appendChild(container);
         }
         return container;
@@ -34,34 +31,34 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         // Определяем стили для разных типов
         const typeConfig = {
             'success': {
-                bgClass: 'bg-success',
-                textClass: 'text-white',
+                bgClass: 'toast-success',
                 icon: 'bi-check-circle-fill',
                 title: 'Erfolg'
             },
             'error': {
-                bgClass: 'bg-danger',
-                textClass: 'text-white',
+                bgClass: 'toast-danger',
                 icon: 'bi-x-circle-fill',
                 title: 'Fehler'
             },
             'danger': {  // Алиас для error
-                bgClass: 'bg-danger',
-                textClass: 'text-white',
+                bgClass: 'toast-danger',
                 icon: 'bi-x-circle-fill',
                 title: 'Fehler'
             },
             'warning': {
-                bgClass: 'bg-warning',
-                textClass: 'text-dark',
+                bgClass: 'toast-warning',
                 icon: 'bi-exclamation-triangle-fill',
                 title: 'Warnung'
             },
             'info': {
-                bgClass: 'bg-info',
-                textClass: 'text-white',
+                bgClass: 'toast-info',
                 icon: 'bi-info-circle-fill',
                 title: 'Info'
+            },
+            'primary': {
+                bgClass: 'toast-primary',
+                icon: 'bi-info-circle-fill',
+                title: 'Hinweis'
             }
         };
 
@@ -72,11 +69,13 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
 
         // Создаем HTML для toast
         const toastHTML = `
-            <div class="toast" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${delay}">
-                <div class="toast-header ${config.bgClass} ${config.textClass}">
+            <div class="toast ${config.bgClass}" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true" style="--toast-delay: ${delay}ms;">
+                <div class="toast-header">
                     <i class="bi ${config.icon} me-2"></i>
                     <strong class="me-auto">${config.title}</strong>
-                    <button type="button" class="btn-close ${config.textClass === 'text-white' ? 'btn-close-white' : ''}" data-bs-dismiss="toast" aria-label="Schließen"></button>
+                    <button type="button" class="toast-close-btn" data-bs-dismiss="toast" aria-label="Schließen">
+                        <i class="bi bi-x"></i>
+                    </button>
                 </div>
                 <div class="toast-body">
                     ${message}
@@ -91,37 +90,47 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         const toastElement = document.getElementById(toastId);
 
         if (toastElement) {
-            // Инициализируем Bootstrap toast
-            let bsToast;
-            if (window.bootstrap && window.bootstrap.Toast) {
-                bsToast = new window.bootstrap.Toast(toastElement, {
-                    delay: delay,
-                    autohide: true
-                });
-                bsToast.show();
-            } else {
-                // Fallback если Bootstrap не загружен
+            // Показываем toast
+            setTimeout(() => {
                 toastElement.classList.add('show');
+            }, 10);
+
+            // Автоматически скрываем через delay
+            setTimeout(() => {
+                if (toastElement && toastElement.parentNode) {
+                    toastElement.classList.add('hiding');
+                    setTimeout(() => {
+                        if (toastElement.parentNode) {
+                            toastElement.remove();
+                        }
+                    }, 300);
+                }
+            }, delay);
+
+            // Обработчик кнопки закрытия
+            const closeBtn = toastElement.querySelector('.toast-close-btn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    toastElement.classList.add('hiding');
+                    setTimeout(() => {
+                        if (toastElement.parentNode) {
+                            toastElement.remove();
+                        }
+                    }, 300);
+                });
+            }
+
+            // Автозакрытие при клике на toast
+            toastElement.addEventListener('click', () => {
+                toastElement.classList.add('hiding');
                 setTimeout(() => {
                     if (toastElement.parentNode) {
                         toastElement.remove();
                     }
-                }, delay);
-            }
-
-            // Удаляем toast после скрытия
-            toastElement.addEventListener('hidden.bs.toast', function() {
-                if (this.parentNode) {
-                    this.remove();
-                }
+                }, 300);
             });
 
-            // Fallback удаление через timeout
-            setTimeout(() => {
-                if (toastElement && toastElement.parentNode) {
-                    toastElement.remove();
-                }
-            }, delay + 1000);
+            console.log(`🍞 Toast показан: ${type} - ${message.substring(0, 50)}...`);
         }
     };
 
@@ -145,26 +154,26 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         messagesContainer.innerHTML = '';
     }
 
-// Обработчик для HTMX событий
-document.body.addEventListener('htmx:afterRequest', function(event) {
-    // Если ответ содержит JSON с сообщениями
-    try {
-        const response = JSON.parse(event.detail.xhr.response);
-        if (response.messages && Array.isArray(response.messages)) {
-            response.messages.forEach(function(message) {
-                showToast(message.text, message.tags, message.delay || 5000);
-            });
+    // Обработчик для HTMX событий
+    document.body.addEventListener('htmx:afterRequest', function(event) {
+        // Если ответ содержит JSON с сообщениями
+        try {
+            const response = JSON.parse(event.detail.xhr.response);
+            if (response.messages && Array.isArray(response.messages)) {
+                response.messages.forEach(function(message) {
+                    showToast(message.text, message.tags, message.delay || 5000);
+                });
+            }
+        } catch (e) {
+            // Не JSON ответ или другая ошибка - проверяем заголовки
+            const contentType = event.detail.xhr.getResponseHeader('Content-Type');
+            if (contentType && contentType.includes('application/json')) {
+                console.error('Ошибка парсинга JSON ответа:', e);
+                console.log('Сырой ответ:', event.detail.xhr.response);
+            }
+            // Если это не JSON, игнорируем
         }
-    } catch (e) {
-        // Не JSON ответ или другая ошибка - проверяем заголовки
-        const contentType = event.detail.xhr.getResponseHeader('Content-Type');
-        if (contentType && contentType.includes('application/json')) {
-            console.error('Ошибка парсинга JSON ответа:', e);
-            console.log('Сырой ответ:', event.detail.xhr.response);
-        }
-        // Если это не JSON, игнорируем
-    }
-});
+    });
 
     // Обработчик ошибок HTMX
     document.body.addEventListener('htmx:responseError', function(event) {
@@ -231,14 +240,12 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         if (container) {
             const toasts = container.querySelectorAll('.toast');
             toasts.forEach(function(toast) {
-                if (window.bootstrap && window.bootstrap.Toast) {
-                    const bsToast = window.bootstrap.Toast.getInstance(toast);
-                    if (bsToast) {
-                        bsToast.hide();
+                toast.classList.add('hiding');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
                     }
-                } else {
-                    toast.remove();
-                }
+                }, 300);
             });
         }
     };
@@ -260,6 +267,30 @@ document.body.addEventListener('htmx:afterRequest', function(event) {
         }
     });
 
-    console.log('✅ Toast система инициализирована');
+    // Интеграция с модальным окном входа
+    window.addEventListener('loginSuccess', function(event) {
+        const data = event.detail;
+        showToast(data.message || 'Erfolgreich angemeldet', 'success');
+
+        // Закрываем модальное окно через короткое время
+        setTimeout(() => {
+            if (window.hideLoginModal) {
+                window.hideLoginModal();
+            }
+            // Перенаправляем или перезагружаем страницу
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                window.location.reload();
+            }
+        }, 1500);
+    });
+
+    window.addEventListener('loginError', function(event) {
+        const data = event.detail;
+        showToast(data.message || 'Anmeldung fehlgeschlagen', 'error');
+    });
+
+    console.log('✅ Toast система инициализирована и готова к работе');
 
 })();

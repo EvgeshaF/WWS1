@@ -32,18 +32,9 @@
 </head>
 <body class="modern-body"{% if show_login_modal %} data-show-login="true"{% endif %}>
 
-<!-- НОВОЕ: Модальное окно аутентификации (показывается при необходимости) -->
-{% if show_login_modal or requires_auth %}
-    {% include 'users/login_modal.html' %}
-{% endif %}
-
 <!-- Верхняя навигация -->
 {% block navbar %}
-    {% if is_authenticated %}
-        {% include 'navbar.html' %}
-    {% else %}
-        {% include 'navbar.html' %}
-    {% endif %}
+    {% include 'navbar.html' %}
 {% endblock %}
 
 <!-- Основной контейнер с боковой панелью и контентом -->
@@ -92,6 +83,16 @@
 <!-- Контейнер тостов -->
 <div id="toast-container"></div>
 
+<!-- Модальное окно аутентификации -->
+{#{% if show_login_modal %}#}
+{#    {% include 'login_modal.html' %}#}
+{#{% endif %}#}
+
+<!-- НОВОЕ: Модальное окно аутентификации (показывается при необходимости) -->
+{% if show_login_modal or requires_auth %}
+    {% include 'login_modal.html' %}
+{% endif %}
+
 <!-- Скрытые Django сообщения -->
 <div id="django-messages" style="display: none;">
     {% for message in messages %}
@@ -120,13 +121,26 @@
 <script src="{% static 'js/sidebar.js' %}"></script>
 {% endif %}
 
-<!-- НОВОЕ: Глобальные переменные для JavaScript -->
+{% if show_login_modal or requires_auth %}
+<script src="{% static 'js/login_modal.js' %}"></script>
+{% endif %}
+
 <script>
     // Информация о текущем пользователе
     window.currentUser = {% if current_user %}{{ current_user|safe }}{% else %}null{% endif %};
     window.isAuthenticated = {{ is_authenticated|yesno:"true,false" }};
     window.requiresAuth = {{ requires_auth|yesno:"true,false" }};
     window.systemInfo = {{ system_info|safe }};
+    window.showLoginModal = {{ show_login_modal|yesno:"true,false" }};
+
+    // Глобальная функция для показа модального окна
+    function showLoginModal() {
+        if (window.loginModal) {
+            window.loginModal.showModal();
+        } else {
+            console.error('Login modal не инициализирован');
+        }
+    }
 </script>
 
 {% block extra_js %}{% endblock %}

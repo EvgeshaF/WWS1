@@ -97,28 +97,28 @@
         <div class="row g-4 mb-4">
             <!-- Firmenregistrierung (nur wenn keine Firma) -->
             {% if not has_company %}
-            <div class="col-lg-4 col-md-6">
-                <div class="action-card border-warning">
-                    <div class="action-header">
-                        <i class="bi bi-building-add text-warning"></i>
-                        <h5>Firma registrieren</h5>
+                <div class="col-lg-4 col-md-6">
+                    <div class="action-card border-warning">
+                        <div class="action-header">
+                            <i class="bi bi-building-add text-warning"></i>
+                            <h5>Firma registrieren</h5>
+                        </div>
+                        <p class="action-text">
+                            Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration abzuschließen.
+                        </p>
+                        {% if is_authenticated %}
+                            <a href="{% url 'company:register_company' %}" class="action-btn btn btn-warning">
+                                <i class="bi bi-building-add me-1"></i>
+                                Firma registrieren
+                            </a>
+                        {% else %}
+                            <button type="button" class="btn btn-outline-primary" onclick="showLoginModal()">
+                                <i class="bi bi-lock me-1"></i>
+                                Anmeldung erforderlich1
+                            </button>
+                        {% endif %}
                     </div>
-                    <p class="action-text">
-                        Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration abzuschließen.
-                    </p>
-                    {% if is_authenticated %}
-                        <a href="{% url 'company:register_company' %}" class="action-btn btn btn-warning">
-                            <i class="bi bi-building-add me-1"></i>
-                            Firma registrieren
-                        </a>
-                    {% else %}
-                        <button type="button" class="action-btn btn btn-outline-warning" onclick="window.showLoginModal && window.showLoginModal()">
-                            <i class="bi bi-lock me-1"></i>
-                            Anmeldung erforderlich
-                        </button>
-                    {% endif %}
                 </div>
-            </div>
             {% endif %}
 
             <!-- Lagerverwaltung -->
@@ -137,4 +137,175 @@
                             Lager öffnen
                         </a>
                     {% else %}
-                        <button type="button" class="
+                        <button type="button" class="action-btn btn btn-outline-primary" onclick="window.showLoginModal && window.showLoginModal()">
+                            <i class="bi bi-lock me-1"></i>
+                            Anmeldung erforderlich
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Benutzerverwaltung -->
+            <div class="col-lg-4 col-md-6">
+                <div class="action-card {% if not is_authenticated %}auth-required{% endif %}">
+                    <div class="action-header">
+                        <i class="bi bi-people"></i>
+                        <h5>Benutzerverwaltung</h5>
+                    </div>
+                    <p class="action-text">
+                        Verwalten Sie Benutzerkonten, Berechtigungen und Zugriffe im System.
+                    </p>
+                    {% if is_authenticated %}
+                        <a href="{% url 'users:create_admin_step1' %}" class="action-btn btn btn-primary">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            Benutzer verwalten
+                        </a>
+                    {% else %}
+                        <button type="button" class="action-btn btn btn-outline-primary" onclick="window.showLoginModal && window.showLoginModal()">
+                            <i class="bi bi-lock me-1"></i>
+                            Anmeldung erforderlich
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Berichte -->
+            <div class="col-lg-4 col-md-6">
+                <div class="action-card {% if not is_authenticated %}auth-required{% endif %}">
+                    <div class="action-header">
+                        <i class="bi bi-graph-up"></i>
+                        <h5>Berichte</h5>
+                    </div>
+                    <p class="action-text">
+                        Erstellen Sie detaillierte Berichte über Lagerbestände, Bewegungen und Trends.
+                    </p>
+                    {% if is_authenticated %}
+                        <a href="#" class="action-btn btn btn-primary">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            Berichte öffnen
+                        </a>
+                    {% else %}
+                        <button type="button" class="action-btn btn btn-outline-primary" onclick="window.showLoginModal && window.showLoginModal()">
+                            <i class="bi bi-lock me-1"></i>
+                            Anmeldung erforderlich
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Systemeinstellungen -->
+            <div class="col-lg-4 col-md-6">
+                <div class="action-card {% if not is_authenticated %}auth-required{% endif %}">
+                    <div class="action-header">
+                        <i class="bi bi-gear"></i>
+                        <h5>Systemeinstellungen</h5>
+                    </div>
+                    <p class="action-text">
+                        Konfigurieren Sie Systemparameter, Sicherheitseinstellungen und Preferences.
+                    </p>
+                    {% if is_authenticated %}
+                        <a href="#" class="action-btn btn btn-primary">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            Einstellungen öffnen
+                        </a>
+                    {% else %}
+                        <button type="button" class="action-btn btn btn-outline-primary" onclick="window.showLoginModal && window.showLoginModal()">
+                            <i class="bi bi-lock me-1"></i>
+                            Anmeldung erforderlich
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="row g-4">
+            <!-- Systemstatus -->
+            <div class="col-lg-4 col-md-6">
+                <div class="info-card">
+                    <div class="info-header">
+                        <i class="bi bi-activity text-success"></i>
+                        <h5>Systemstatus</h5>
+                    </div>
+                    <div class="status-item">
+                        <i class="bi bi-database text-success"></i>
+                        <span>MongoDB</span>
+                        <span class="text-success">{{ mongodb_status|default:"Aktiv" }}</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="bi bi-people text-success"></i>
+                        <span>Benutzer</span>
+                        <span class="text-success">{{ total_users|default:0 }} aktiv</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="bi bi-building text-{% if has_company %}success{% else %}warning{% endif %}"></i>
+                        <span>Firma</span>
+                        <span class="text-{% if has_company %}success{% else %}warning{% endif %}">
+                            {% if has_company %}Registriert{% else %}Nicht registriert{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-lg-4 col-md-6">
+                <div class="info-card">
+                    <div class="info-header">
+                        <i class="bi bi-lightning text-primary"></i>
+                        <h5>Quick Links</h5>
+                    </div>
+                    <a href="{% url 'create_database_step1' %}" class="quick-link">
+                        <i class="bi bi-database-gear"></i>
+                        <span>Datenbank konfigurieren</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'users:create_admin_step1' %}" class="quick-link">
+                        <i class="bi bi-person-plus"></i>
+                        <span>Administrator erstellen</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'company:register_company' %}" class="quick-link">
+                        <i class="bi bi-building-add"></i>
+                        <span>Firma registrieren</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'company:company_info' %}" class="quick-link">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Firmeninfo anzeigen</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Hilfe und Support -->
+            <div class="col-lg-4 col-md-6">
+                <div class="info-card">
+                    <div class="info-header">
+                        <i class="bi bi-question-circle text-info"></i>
+                        <h5>Hilfe & Support</h5>
+                    </div>
+                    <a href="#" class="quick-link">
+                        <i class="bi bi-book"></i>
+                        <span>Dokumentation</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="#" class="quick-link">
+                        <i class="bi bi-chat-dots"></i>
+                        <span>Support kontaktieren</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="#" class="quick-link">
+                        <i class="bi bi-question-circle"></i>
+                        <span>FAQ</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="#" class="quick-link">
+                        <i class="bi bi-tools"></i>
+                        <span>System-Diagnose</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,6 +1,4 @@
-// users/static/js/login_modal.js - JavaScript для модального окна аутентификации - ИСПРАВЛЕНО
-
-(function() {
+(function () {
     'use strict';
 
     console.log('🔐 Login Modal System загружен');
@@ -14,7 +12,7 @@
             this.isSubmitting = false;
             this.maxAttempts = 5;
             this.currentAttempts = 0;
-            this.lockoutTime = 15 * 60 * 1000; // 15 минут
+            this.lockoutTime = 1 * 60 * 1000; // 15 минут
 
             this.init();
         }
@@ -52,6 +50,15 @@
             console.log('✅ Login Modal инициализирован');
         }
 
+        checkAuthStatus() {
+            // Проверяем, нужно ли показать модальное окно при загрузке
+            if (window.isAuthenticated === false && window.requiresAuth === true) {
+                setTimeout(() => {
+                    this.showModal();
+                }, 1000);
+            }
+        }
+
         bindEvents() {
             // Обработка отправки формы
             this.form.addEventListener('submit', (e) => this.handleSubmit(e));
@@ -72,8 +79,10 @@
 
             // Автофокус при открытии модального окна
             this.modal.addEventListener('shown.bs.modal', () => {
-                if (usernameInput) {
+                if (usernameInput && !usernameInput.value.trim()) {
                     usernameInput.focus();
+                } else if (passwordInput) {
+                    passwordInput.focus();
                 }
                 this.currentAttempts = this.getStoredAttempts();
                 this.updateAttemptsDisplay();
@@ -119,7 +128,6 @@
             try {
                 const formData = new FormData(this.form);
 
-                // ИСПРАВЛЕНО: правильный URL
                 const response = await fetch('/users/login/', {
                     method: 'POST',
                     body: formData,
@@ -135,7 +143,6 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                // ИСПРАВЛЕНО: проверка Content-Type
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     const text = await response.text();
@@ -375,7 +382,7 @@
         // Система попыток и блокировки
         getStoredAttempts() {
             const stored = localStorage.getItem('login_attempts');
-            const data = stored ? JSON.parse(stored) : { count: 0, timestamp: 0 };
+            const data = stored ? JSON.parse(stored) : {count: 0, timestamp: 0};
 
             if (Date.now() - data.timestamp > this.lockoutTime) {
                 this.clearAttempts();
@@ -518,6 +525,7 @@
         }
 
         checkAuthStatus() {
+            // Проверяем, нужно ли показать модальное окно при загрузке
             const showLogin = document.body.dataset.showLogin === 'true';
             if (showLogin) {
                 setTimeout(() => {
@@ -531,13 +539,13 @@
     window.loginModal = new LoginModal();
 
     // Экспортируем функции для внешнего использования
-    window.showLoginModal = function() {
+    window.showLoginModal = function () {
         if (window.loginModal) {
             window.loginModal.showModal();
         }
     };
 
-    window.hideLoginModal = function() {
+    window.hideLoginModal = function () {
         if (window.loginModal) {
             window.loginModal.hideModal();
         }

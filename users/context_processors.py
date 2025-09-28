@@ -8,9 +8,6 @@ from mongodb.mongodb_config import MongoConfig
 def auth_context(request):
     """Context processor для передачи информации об аутентификации"""
     try:
-        # ИСПРАВЛЕНО: импортируем функцию из views
-        from .views import is_user_authenticated, should_show_login_modal
-
         # Проверяем, аутентифицирован ли пользователь
         is_auth, user_data = is_user_authenticated(request)
 
@@ -53,6 +50,42 @@ def auth_context(request):
             'system_info': {'status': 'error'},
             'system_version': '1.0.0'
         }
+
+
+def is_user_authenticated(request):
+    """Проверяет, авторизован ли пользователь"""
+    try:
+        user_authenticated = request.session.get('user_authenticated', False)
+        if user_authenticated:
+            username = request.session.get('username')
+            if username:
+                from .user_utils import UserManager
+                user_manager = UserManager()
+                user_data = user_manager.find_user_by_username(username)
+                if user_data and user_data.get('is_active', False):
+                    return True, user_data
+                else:
+                    # Очищаем недействительную сессию
+                    session_keys = ['user_authenticated', 'user_id', 'username', 'is_admin', 'user_data']
+                    for key in session_keys:
+                        if key in request.session:
+                            del request.session[key]
+                    request.session.modified = True
+                    return False, None
+        return False, None
+    except Exception as e:
+        logger.error(f"Ошибка проверки авторизации: {e}")
+        return False, None
+
+def should_show_login_modal():
+    """Определяет, нужно ли показывать модальное окно входа"""
+    try:
+        user_manager = UserManager()
+        admin_count = user_manager.get_admin_count()
+        return admin_count > 0
+    except Exception as e:
+        logger.error(f"Ошибка проверки необходимости показа модального окна: {e}")
+        return False
 
 
 def get_user_display_name(user_data):
