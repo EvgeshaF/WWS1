@@ -9,6 +9,7 @@ from loguru import logger
 import datetime
 import json
 import re
+from django.contrib.auth.hashers import check_password
 
 from .forms import CreateAdminUserForm, AdminProfileForm, AdminPermissionsForm, get_contact_type_choices
 from mongodb.mongodb_config import MongoConfig
@@ -510,3 +511,53 @@ def create_admin_step3(request):
         logger.error(f"Error in create_admin_step3: {e}")
         messages.error(request, "Ein unerwarteter Fehler ist aufgetreten")
         return redirect('users:create_admin_step2')
+
+
+# Функции для проверки авторизации (если нужны)
+def is_user_authenticated(request):
+    """Проверяет, авторизован ли пользователь"""
+    # Здесь должна быть ваша логика проверки авторизации
+    # Например, проверка сессии или токена
+    return request.session.get('user_authenticated', False)
+
+
+def should_show_login_modal(request):
+    """Определяет, нужно ли показывать модальное окно входа"""
+    # Здесь ваша логика определения необходимости показа модального окна
+    return not is_user_authenticated(request) and request.path != '/login/'
+
+
+@require_http_methods(["GET", "POST"])
+def login_view(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user_manager = UserManager()
+        user = user_manager.find_user_by_username(username)
+
+        if user:
+            stored_password = user.get("password")
+            if stored_password and check_password(password, stored_password):
+                # успешный вход
+                request.session["user_authenticated"] = True
+                request.session["user_id"] = str(user["_id"])
+                request.session["username"] = user["username"]
+                request.session["is_admin"] = user.get("is_admin", False)
+                request.session.modified = True
+
+                messages.success(request, f"Willkommen, {user['username']}!")
+                return redirect("home")
+            else:
+                messages.error(request, "Ungültiger Benutzername oder Passwort")
+        else:
+            messages.error(request, "Benutzer nicht gefunden")
+
+    # GET или ошибка → показать форму
+    return render(request, "users/login.html", {})
+
+
+def logout_view(request):
+    request.session.flush()  # очистить всю сессию
+    messages.info(request, "Sie wurden abgemeldet")
+    return redirect("users:login")
