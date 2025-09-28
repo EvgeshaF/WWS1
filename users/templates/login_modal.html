@@ -1,267 +1,260 @@
-<!-- users/templates/login_modal.html - Модальное окно аутентификации -->
+{% extends 'base.html' %}
+{% load static %}
 
-<!-- Модальное окно входа -->
-<div class="modal fade login-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <!-- Заголовок модального окна -->
-            <div class="modal-header">
-                <h5 class="modal-title" id="loginModalLabel">
-                    <i class="bi bi-shield-lock"></i>
-                    Systemzugang erforderlich
-                </h5>
-                <!-- Кнопка закрытия скрыта для обязательной аутентификации -->
-                <!-- <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button> -->
-            </div>
+{% block title %}Anmeldung - WWS1{% endblock %}
 
-            <!-- Тело модального окна -->
-            <div class="modal-body">
-                <!-- Уведомление о безопасности -->
-                <div class="login-security-notice">
-                    <i class="bi bi-info-circle"></i>
-                    <div class="notice-content">
-                        <strong>Authentifizierung erforderlich</strong>
-                        <small>
-                            Das System ist konfiguriert und bereit. Bitte melden Sie sich mit Ihren Administrator-Zugangsdaten an, um fortzufahren.
+{% block content %}
+<div class="container-fluid d-flex align-items-center justify-content-center min-vh-100" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+    <div class="row w-100">
+        <div class="col-md-6 col-lg-4 mx-auto">
+            <div class="card shadow-lg border-0" style="border-radius: 15px; overflow: hidden;">
+                <!-- Заголовок -->
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="bi bi-shield-lock me-2"></i>
+                        Systemanmeldung
+                    </h3>
+                    <small class="opacity-75">WWS1 Warehouse Management</small>
+                </div>
+
+                <!-- Форма -->
+                <div class="card-body p-4">
+                    <!-- Системная информация -->
+                    <div class="alert alert-info d-flex align-items-center mb-4">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <div>
+                            <strong>System bereit</strong><br>
+                            <small>MongoDB verbunden • Administratoren verfügbar</small>
+                        </div>
+                    </div>
+
+                    <!-- Сообщения Django -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'error' %}
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                {% elif message.tags == 'success' %}
+                                    <i class="bi bi-check-circle me-2"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="bi bi-exclamation-circle me-2"></i>
+                                {% else %}
+                                    <i class="bi bi-info-circle me-2"></i>
+                                {% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Форма входа -->
+                    <form method="post" action="{% url 'users:login' %}" id="loginPageForm">
+                        {% csrf_token %}
+
+                        <!-- Поле имени пользователя -->
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">
+                                <i class="bi bi-person me-1"></i>
+                                Benutzername
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="id_username" 
+                                       name="username" 
+                                       placeholder="Benutzername eingeben"
+                                       autocomplete="username"
+                                       required
+                                       autofocus>
+                            </div>
+                        </div>
+
+                        <!-- Поле пароля -->
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">
+                                <i class="bi bi-key me-1"></i>
+                                Passwort
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-key"></i>
+                                </span>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="id_password" 
+                                       name="password" 
+                                       placeholder="Passwort eingeben"
+                                       autocomplete="current-password"
+                                       required>
+                            </div>
+                        </div>
+
+                        <!-- Запомнить меня -->
+                        <div class="form-check mb-4">
+                            <input type="checkbox" 
+                                   class="form-check-input" 
+                                   id="id_remember_me" 
+                                   name="remember_me">
+                            <label class="form-check-label" for="id_remember_me">
+                                Angemeldet bleiben
+                            </label>
+                        </div>
+
+                        <!-- Кнопка входа -->
+                        <button type="submit" class="btn btn-primary w-100 py-2" id="loginPageSubmitBtn">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Anmelden
+                        </button>
+                    </form>
+
+                    <!-- Дополнительные ссылки -->
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <a href="{% url 'home' %}" class="text-decoration-none">
+                                <i class="bi bi-house me-1"></i>
+                                Zurück zur Startseite
+                            </a>
                         </small>
                     </div>
                 </div>
 
-                <!-- Системная информация -->
-                <div class="login-system-info">
-                    <div class="system-status">
-                        <i class="bi bi-check-circle"></i>
-                        <span>System bereit</span>
-                    </div>
-                    <div class="system-details">
-                        MongoDB verbunden • Administratoren vorhanden • Sichere Verbindung aktiv
-                    </div>
-                </div>
-
-                <!-- Форма входа -->
-                <form id="loginForm" method="post" action="{% url 'users:login' %}" class="login-form">
-                    {% csrf_token %}
-
-                    <!-- Поле имени пользователя -->
-                    <div class="form-floating mb-3">
-                        <input type="text"
-                               class="form-control with-icon"
-                               id="id_username"
-                               name="username"
-                               placeholder="Benutzername"
-                               autocomplete="username"
-                               required>
-                        <label for="id_username">
-                            <i class="bi bi-person me-2"></i>
-                            Benutzername
-                        </label>
-                        <div class="input-icon">
-                            <i class="bi bi-person"></i>
-                        </div>
-                    </div>
-
-                    <!-- Поле пароля -->
-                    <div class="form-floating mb-3">
-                        <input type="password"
-                               class="form-control with-icon"
-                               id="id_password"
-                               name="password"
-                               placeholder="Passwort"
-                               autocomplete="current-password"
-                               required>
-                        <label for="id_password">
-                            <i class="bi bi-key me-2"></i>
-                            Passwort
-                        </label>
-                        <div class="input-icon">
-                            <i class="bi bi-key"></i>
-                        </div>
-                    </div>
-
-                    <!-- Запомнить меня -->
-                    <div class="form-check mb-3">
-                        <input type="checkbox"
-                               class="form-check-input"
-                               id="id_remember_me"
-                               name="remember_me">
-                        <label class="form-check-label" for="id_remember_me">
-                            Angemeldet bleiben
-                        </label>
-                    </div>
-
-                    <!-- Информация о попытках входа -->
-                    <div class="attempts-info text-center small mb-3" style="display: none;">
-                        <!-- Заполняется JavaScript -->
-                    </div>
-
-                    <!-- Кнопка входа -->
-                    <button type="submit" class="btn btn-login" id="loginSubmitBtn">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>
-                        Anmelden
-                    </button>
-
-                    <!-- Дополнительные ссылки (опционально) -->
-                    <div class="login-links">
-                        <a href="#" class="forgot-password" onclick="showForgotPasswordModal(); return false;">
-                            Passwort vergessen?
-                        </a>
-                        <span class="link-separator">•</span>
-                        <a href="#" class="system-help" onclick="showSystemHelp(); return false;">
-                            Systemhilfe
-                        </a>
-                    </div>
-                </form>
-
-                <!-- Индикатор загрузки -->
-                <div class="login-loader">
-                    <div class="spinner"></div>
-                    <div class="loading-text">Anmeldung läuft...</div>
+                <!-- Футер -->
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Sichere Verbindung • Version {{ system_version|default:"1.0" }}
+                    </small>
                 </div>
             </div>
 
-            <!-- Футер модального окна -->
-            <div class="modal-footer">
-                <small class="text-muted w-100 text-center">
-                    <i class="bi bi-shield-check me-1"></i>
-                    Sichere Verbindung • WWS1 {{ system_version|default:"1.0" }}
-                    <span class="d-block mt-1">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Bei Problemen wenden Sie sich an Ihren Systemadministrator
-                    </span>
+            <!-- Дополнительная информация -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Bei Problemen wenden Sie sich an Ihren Systemadministrator
                 </small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Модальное окно "Забыли пароль" (опционально) -->
-<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="forgotPasswordModalLabel">
-                    <i class="bi bi-question-circle me-2"></i>
-                    Passwort vergessen
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <strong>Passwort-Wiederherstellung</strong>
-                </div>
-
-                <p>Als Administrator-System können Sie Ihr Passwort auf folgende Weise wiederherstellen:</p>
-
-                <ul class="list-unstyled">
-                    <li class="mb-2">
-                        <i class="bi bi-1-circle text-primary me-2"></i>
-                        <strong>Systemadministrator kontaktieren:</strong><br>
-                        <small class="text-muted ms-4">Wenden Sie sich an einen anderen Administrator oder den Systemverantwortlichen</small>
-                    </li>
-                    <li class="mb-2">
-                        <i class="bi bi-2-circle text-primary me-2"></i>
-                        <strong>Datenbank-Zugriff:</strong><br>
-                        <small class="text-muted ms-4">Direkte Passwort-Zurücksetzung über MongoDB-Admin-Tools</small>
-                    </li>
-                    <li class="mb-2">
-                        <i class="bi bi-3-circle text-primary me-2"></i>
-                        <strong>Notfall-Zugang:</strong><br>
-                        <small class="text-muted ms-4">Konsultieren Sie die Systemdokumentation für Notfall-Verfahren</small>
-                    </li>
-                </ul>
-
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <small>
-                        <strong>Sicherheitshinweis:</strong>
-                        Aus Sicherheitsgründen ist eine automatische Passwort-Wiederherstellung nicht aktiviert.
-                    </small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>
-                    Schließen
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно системной помощи (опционально) -->
-<div class="modal fade" id="systemHelpModal" tabindex="-1" aria-labelledby="systemHelpModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="systemHelpModalLabel">
-                    <i class="bi bi-question-circle me-2"></i>
-                    Systemhilfe
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-person-check me-2"></i>Anmeldung</h6>
-                        <ul class="list-unstyled small">
-                            <li>• Verwenden Sie Ihren Administrator-Benutzernamen</li>
-                            <li>• Geben Sie das korrekte Passwort ein</li>
-                            <li>• Beachten Sie Groß-/Kleinschreibung</li>
-                            <li>• Nach 5 Fehlversuchen: 15 Min Sperre</li>
-                        </ul>
-
-                        <h6><i class="bi bi-shield-check me-2"></i>Sicherheit</h6>
-                        <ul class="list-unstyled small">
-                            <li>• Verwenden Sie nur sichere Netzwerke</li>
-                            <li>• Melden Sie sich nach der Arbeit ab</li>
-                            <li>• Teilen Sie Zugangsdaten niemals</li>
-                            <li>• Verwenden Sie starke Passwörter</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-gear me-2"></i>Systemstatus</h6>
-                        <ul class="list-unstyled small">
-                            <li>• MongoDB: <span class="text-success">Verbunden</span></li>
-                            <li>• Benutzer: <span class="text-success">Aktiv</span></li>
-                            <li>• Verbindung: <span class="text-success">Sicher (SSL)</span></li>
-                            <li>• Version: <span class="text-info">WWS1 v{{ system_version|default:"1.0" }}</span></li>
-                        </ul>
-
-                        <h6><i class="bi bi-telephone me-2"></i>Support</h6>
-                        <ul class="list-unstyled small">
-                            <li>• E-Mail: admin@efsoft.local</li>
-                            <li>• Dokumentation: /docs</li>
-                            <li>• Logs: Systemadministrator</li>
-                            <li>• Notfall: siehe Handbuch</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="alert alert-primary mt-3">
-                    <i class="bi bi-lightbulb me-2"></i>
-                    <strong>Tipp:</strong> Verwenden Sie Strg+Enter für eine schnelle Anmeldung.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>
-                    Schließen
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- JavaScript для дополнительных модальных окон -->
+<!-- JavaScript для обработки формы -->
 <script>
-function showForgotPasswordModal() {
-    const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
-    modal.show();
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('loginPageForm');
+    const submitBtn = document.getElementById('loginPageSubmitBtn');
+    
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            // Валидация
+            const username = form.querySelector('input[name="username"]').value.trim();
+            const password = form.querySelector('input[name="password"]').value;
+            
+            if (!username) {
+                alert('Benutzername ist erforderlich');
+                e.preventDefault();
+                return;
+            }
+            
+            if (!password) {
+                alert('Passwort ist erforderlich');
+                e.preventDefault();
+                return;
+            }
+            
+            // Показываем загрузку
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Anmeldung...';
+        });
+    }
+    
+    // Автофокус на первое поле
+    const usernameField = document.getElementById('id_username');
+    if (usernameField) {
+        usernameField.focus();
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.min-vh-100 {
+    min-height: 100vh;
 }
 
-function showSystemHelp() {
-    const modal = new bootstrap.Modal(document.getElementById('systemHelpModal'));
-    modal.show();
+.card {
+    transition: transform 0.3s ease;
 }
-</script>
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-primary:disabled {
+    opacity: 0.8;
+    transform: none;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(13, 202, 240, 0.1) 0%, rgba(13, 110, 253, 0.1) 100%);
+    border-left: 4px solid #0dcaf0;
+    border-radius: 8px;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
+    border-left: 4px solid #dc3545;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.1) 0%, rgba(25, 135, 84, 0.05) 100%);
+    border-left: 4px solid #198754;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%) !important;
+}
+
+/* Анимация для загрузки */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+    }
+}
+
+.btn-primary:disabled {
+    animation: pulse 2s infinite;
+}
+</style>
+{% endblock %}

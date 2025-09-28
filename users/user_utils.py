@@ -1,4 +1,4 @@
-# users/user_utils.py - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
+# users/user_utils.py - ИСПРАВЛЕНО: убрано дублирование authenticate_user
 
 import datetime
 from typing import Optional, Dict, Any, List
@@ -252,73 +252,10 @@ class UserManager:
             return None
 
     def authenticate_user(self, username: str, password: str) -> Optional[Dict[str, Any]]:
-        """Аутентифицирует пользователя"""
+        """Аутентифицирует пользователя - ЕДИНСТВЕННАЯ ВЕРСИЯ"""
         try:
-            user = self.find_user_by_username(username)
-            if not user:
-                logger.warning(f"Пользователь '{username}' не найден")
-                return None
+            logger.info(f"🔑 Попытка аутентификации пользователя: {username}")
 
-            if not user.get('is_active', False):
-                logger.warning(f"Пользователь '{username}' заблокирован")
-                return None
-
-            # Проверяем блокировку
-            locked_until = user.get('locked_until')
-            if locked_until and locked_until > datetime.datetime.now():
-                logger.warning(f"Пользователь '{username}' временно заблокирован до {locked_until}")
-                return None
-
-            # Проверяем пароль
-            if check_password(password, user['password']):
-                self._update_login_success(username)
-                logger.success(f"Пользователь '{username}' успешно авторизован")
-                return user
-            else:
-                self._update_login_failure(username)
-                logger.warning(f"Неверный пароль для пользователя '{username}'")
-                return None
-
-        except Exception as e:
-            logger.error(f"Ошибка аутентификации пользователя '{username}': {e}")
-            return None
-
-    def get_admin_count(self) -> int:
-        """Возвращает количество администраторов с диагностикой"""
-        try:
-            logger.debug("Подсчет администраторов...")
-
-            collection = self.get_collection()
-            if collection is None:
-                logger.error("Коллекция недоступна для подсчета")
-                return 0
-
-            # Подсчитываем активных администраторов
-            admin_query = {
-                'is_admin': True,
-                'deleted': {'$ne': True},
-                'is_active': True
-            }
-
-            count = collection.count_documents(admin_query)
-            logger.info(f"Найдено активных администраторов: {count}")
-
-            # Дополнительная диагностика
-            total_count = collection.count_documents({})
-            admin_all_count = collection.count_documents({'is_admin': True})
-            active_count = collection.count_documents({'is_active': True, 'deleted': {'$ne': True}})
-
-            logger.debug(f"Статистика: всего={total_count}, админов_всего={admin_all_count}, активных={active_count}")
-
-            return count
-
-        except Exception as e:
-            logger.error(f"Ошибка подсчета администраторов: {e}")
-            return 0
-
-    def authenticate_user(self, username: str, password: str) -> Optional[Dict[str, Any]]:
-        """Аутентифицирует пользователя"""
-        try:
             user = self.find_user_by_username(username)
             if not user:
                 logger.warning(f"❌ Пользователь '{username}' не найден")
@@ -335,7 +272,12 @@ class UserManager:
                 return None
 
             # Проверяем пароль
-            if check_password(password, user['password']):
+            stored_password = user.get('password')
+            if not stored_password:
+                logger.error(f"❌ У пользователя '{username}' отсутствует пароль")
+                return None
+
+            if check_password(password, stored_password):
                 self._update_login_success(username)
                 logger.success(f"✅ Пользователь '{username}' успешно авторизован")
                 return user
@@ -450,6 +392,7 @@ class UserManager:
                         }
                     }
                 )
+                logger.debug(f"✅ Обновлены данные успешного входа для '{username}'")
         except Exception as e:
             logger.error(f"❌ Ошибка обновления данных входа для '{username}': {e}")
 

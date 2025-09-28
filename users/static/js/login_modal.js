@@ -1,4 +1,4 @@
-// users/static/js/login_modal.js - JavaScript для модального окна аутентификации
+// users/static/js/login_modal.js - JavaScript для модального окна аутентификации - ИСПРАВЛЕНО
 
 (function() {
     'use strict';
@@ -14,13 +14,12 @@
             this.isSubmitting = false;
             this.maxAttempts = 5;
             this.currentAttempts = 0;
-            this.lockoutTime = 15 * 60 * 1000; // 15 минут в миллисекундах
+            this.lockoutTime = 15 * 60 * 1000; // 15 минут
 
             this.init();
         }
 
         init() {
-            // Ждем полной загрузки DOM
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => this.setup());
             } else {
@@ -31,7 +30,6 @@
         setup() {
             console.log('🔧 Инициализация Login Modal');
 
-            // Ищем модальное окно
             this.modal = document.getElementById('loginModal');
             if (!this.modal) {
                 console.warn('⚠️ Модальное окно #loginModal не найдено');
@@ -50,7 +48,6 @@
             this.bindEvents();
             this.checkAuthStatus();
             this.restoreFormData();
-            this.setupKeyboardShortcuts();
 
             console.log('✅ Login Modal инициализирован');
         }
@@ -73,7 +70,7 @@
                 passwordInput.addEventListener('blur', () => this.validateField(passwordInput));
             }
 
-            // Автофокус на поле имени пользователя при открытии модального окна
+            // Автофокус при открытии модального окна
             this.modal.addEventListener('shown.bs.modal', () => {
                 if (usernameInput) {
                     usernameInput.focus();
@@ -82,28 +79,11 @@
                 this.updateAttemptsDisplay();
             });
 
-            // Сохранение данных при закрытии (если разрешено)
+            // Сохранение данных при закрытии
             this.modal.addEventListener('hidden.bs.modal', () => {
                 this.saveFormData();
             });
 
-            // Обработка нажатия Escape
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.modal.classList.contains('show')) {
-                    this.hideModal();
-                }
-            });
-
-            // Предотвращение закрытия модального окна по клику вне его
-            this.modal.addEventListener('click', (e) => {
-                if (e.target === this.modal) {
-                    e.stopPropagation();
-                    this.showSecurityMessage();
-                }
-            });
-        }
-
-        setupKeyboardShortcuts() {
             // Ctrl+Enter для быстрой отправки
             this.form.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -121,7 +101,6 @@
                 return;
             }
 
-            // Проверяем блокировку
             if (this.isLockedOut()) {
                 this.showLockoutMessage();
                 return;
@@ -129,7 +108,6 @@
 
             console.log('📤 Отправка формы входа');
 
-            // Валидируем форму
             if (!this.validateForm()) {
                 console.warn('⚠️ Форма не прошла валидацию');
                 return;
@@ -141,6 +119,7 @@
             try {
                 const formData = new FormData(this.form);
 
+                // ИСПРАВЛЕНО: правильный URL
                 const response = await fetch('/users/login/', {
                     method: 'POST',
                     body: formData,
@@ -154,6 +133,14 @@
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // ИСПРАВЛЕНО: проверка Content-Type
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Получен не-JSON ответ:', text);
+                    throw new Error('Server returned non-JSON response');
                 }
 
                 const data = await response.json();
@@ -177,19 +164,15 @@
         handleLoginSuccess(data) {
             console.log('✅ Успешный вход');
 
-            // Очищаем счетчик попыток
             this.clearAttempts();
             this.clearFormData();
 
-            // Показываем успешное сообщение
             if (typeof window.showToast === 'function') {
                 window.showToast(data.message || 'Erfolgreich angemeldet', 'success');
             }
 
-            // Скрываем модальное окно с анимацией
             this.hideModalWithSuccess();
 
-            // Перенаправляем или перезагружаем страницу
             setTimeout(() => {
                 if (data.redirect_url) {
                     window.location.href = data.redirect_url;
@@ -206,7 +189,6 @@
             this.storeAttempts();
             this.updateAttemptsDisplay();
 
-            // Показываем ошибку
             const message = data.message || 'Ungültiger Benutzername oder Passwort';
             this.showFieldError('password', message);
 
@@ -214,7 +196,6 @@
                 window.showToast(message, 'error');
             }
 
-            // Проверяем блокировку
             if (this.currentAttempts >= this.maxAttempts) {
                 this.setLockout();
                 this.showLockoutMessage();
@@ -234,7 +215,14 @@
         handleNetworkError(error) {
             console.error('🌐 Сетевая ошибка:', error);
 
-            const message = 'Verbindungsfehler. Bitte versuchen Sie es später erneut.';
+            let message = 'Verbindungsfehler. Bitte versuchen Sie es später erneut.';
+
+            if (error.message.includes('non-JSON')) {
+                message = 'Server hat eine ungültige Antwort gesendet. Bitte versuchen Sie es erneut.';
+            } else if (error.message.includes('Network')) {
+                message = 'Netzwerkfehler. Überprüfen Sie Ihre Internetverbindung.';
+            }
+
             this.showFieldError('password', message);
 
             if (typeof window.showToast === 'function') {
@@ -248,12 +236,10 @@
 
             let isValid = true;
 
-            // Валидируем имя пользователя
             if (!this.validateField(usernameInput)) {
                 isValid = false;
             }
 
-            // Валидируем пароль
             if (!this.validateField(passwordInput)) {
                 isValid = false;
             }
@@ -301,13 +287,11 @@
             field.classList.remove('is-valid');
             field.classList.add('is-invalid');
 
-            // Удаляем старые сообщения
             const existingFeedback = field.parentNode.querySelector('.invalid-feedback');
             if (existingFeedback) {
                 existingFeedback.remove();
             }
 
-            // Добавляем новое сообщение
             const feedback = document.createElement('div');
             feedback.className = 'invalid-feedback';
             feedback.textContent = message;
@@ -382,21 +366,17 @@
         }
 
         hideModalWithSuccess() {
-            // Добавляем класс успеха для анимации
             this.modal.classList.add('login-success');
-
             setTimeout(() => {
                 this.hideModal();
             }, 500);
         }
 
-        // ==================== СИСТЕМА ПОПЫТОК И БЛОКИРОВКИ ====================
-
+        // Система попыток и блокировки
         getStoredAttempts() {
             const stored = localStorage.getItem('login_attempts');
             const data = stored ? JSON.parse(stored) : { count: 0, timestamp: 0 };
 
-            // Сбрасываем попытки если прошло достаточно времени
             if (Date.now() - data.timestamp > this.lockoutTime) {
                 this.clearAttempts();
                 return 0;
@@ -428,7 +408,6 @@
                 return true;
             }
 
-            // Блокировка истекла
             localStorage.removeItem('login_lockout');
             this.clearAttempts();
             return false;
@@ -465,11 +444,8 @@
                 window.showToast(message, 'error', 10000);
             }
 
-            // Блокируем форму
             this.form.style.pointerEvents = 'none';
             this.form.style.opacity = '0.5';
-
-            // Показываем таймер разблокировки
             this.showLockoutTimer();
         }
 
@@ -488,7 +464,6 @@
             const updateTimer = () => {
                 const remaining = lockoutUntil - Date.now();
                 if (remaining <= 0) {
-                    // Разблокировка
                     timerElement.remove();
                     this.form.style.pointerEvents = '';
                     this.form.style.opacity = '';
@@ -507,14 +482,7 @@
             updateTimer();
         }
 
-        showSecurityMessage() {
-            if (typeof window.showToast === 'function') {
-                window.showToast('Aus Sicherheitsgründen müssen Sie sich anmelden', 'info');
-            }
-        }
-
-        // ==================== СОХРАНЕНИЕ ДАННЫХ ФОРМЫ ====================
-
+        // Сохранение данных формы
         saveFormData() {
             const rememberMe = this.form.querySelector('input[name="remember_me"]');
             if (!rememberMe || !rememberMe.checked) return;
@@ -544,26 +512,20 @@
             localStorage.removeItem('login_username');
         }
 
-        // ==================== УТИЛИТЫ ====================
-
         getCSRFToken() {
             const token = document.querySelector('[name=csrfmiddlewaretoken]');
             return token ? token.value : '';
         }
 
         checkAuthStatus() {
-            // Проверяем, нужно ли показывать модальное окно
             const showLogin = document.body.dataset.showLogin === 'true';
             if (showLogin) {
-                // Показываем с небольшой задержкой для лучшего UX
                 setTimeout(() => {
                     this.showModal();
                 }, 500);
             }
         }
     }
-
-    // ==================== АВТОИНИЦИАЛИЗАЦИЯ ====================
 
     // Создаем глобальный экземпляр
     window.loginModal = new LoginModal();

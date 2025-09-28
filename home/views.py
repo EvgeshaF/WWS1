@@ -1,4 +1,4 @@
-# home/views.py - ИСПРАВЛЕНО: убрана неправильная логика перенаправления
+# home/views.py - ИСПРАВЛЕНО: добавлена поддержка авторизации
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -10,14 +10,29 @@ from users.user_utils import UserManager
 
 def home(request):
     """
-    Главная страница с проверкой состояния системы
+    Главная страница с проверкой состояния системы и авторизации
     Проверяет:
     1. MongoDB конфигурацию
     2. Наличие администраторов
     3. Наличие зарегистрированной компании
+    4. Статус авторизации пользователя
     """
     try:
         logger.info("🏠 Загрузка главной страницы")
+
+        # НОВОЕ: Проверяем авторизацию пользователя
+        try:
+            from users.views import is_user_authenticated
+            is_auth, user_data = is_user_authenticated(request)
+            logger.info(f"👤 Пользователь авторизован: {is_auth}")
+
+            if user_data:
+                username = user_data.get('username', 'Unknown')
+                is_admin = user_data.get('is_admin', False)
+                logger.info(f"👤 Данные пользователя: {username} (admin: {is_admin})")
+        except Exception as e:
+            logger.error(f"Ошибка проверки авторизации: {e}")
+            is_auth, user_data = False, None
 
         # Шаг 1: Проверяем MongoDB конфигурацию
         logger.info("1️⃣ Проверяем конфигурацию MongoDB...")
@@ -45,7 +60,9 @@ def home(request):
             messages.error(request, "Unbekannter MongoDB-Konfigurationsstatus")
             return render(request, 'home.html', {
                 'setup_complete': False,
-                'error': 'Unbekannte MongoDB-Konfiguration'
+                'error': 'Unbekannte MongoDB-Konfiguration',
+                'is_authenticated': is_auth,
+                'current_user': user_data
             })
 
         # Шаг 2: Проверяем наличие администраторов в системе
@@ -54,11 +71,6 @@ def home(request):
             user_manager = UserManager()
             admin_count = user_manager.get_admin_count()
             logger.info(f"👥 Найдено администраторов: {admin_count}")
-
-            if admin_count == 0:
-                logger.warning("❌ Нет администраторов в системе")
-                messages.warning(request, "Kein Administrator im System gefunden")
-                return redirect('users:create_admin_step1')
 
         except Exception as e:
             logger.error(f"❌ Ошибка проверки администраторов: {e}")
@@ -71,52 +83,33 @@ def home(request):
             from company.company_manager import CompanyManager
             company_manager = CompanyManager()
 
-            # Детальная диагностика
-            logger.info(f"🔍 CompanyManager создан")
-            logger.info(f"🔍 Database доступна: {company_manager.db is not None}")
-            logger.info(f"🔍 Collection name: {company_manager.company_collection_name}")
-
-            # Проверяем has_company() с дополнительной диагностикой
-            logger.info("🔍 Вызываем has_company()...")
             has_company = company_manager.has_company()
-            logger.info(f"🏢 has_company() результат: {has_company}")
-
-            # Проверяем get_company() независимо от has_company()
-            logger.info("🔍 Вызываем get_company()...")
             company_data = company_manager.get_company()
-            logger.info(f"🏢 get_company() результат: {company_data is not None}")
 
-            # ДИАГНОСТИКА: Проверяем данные в коллекции напрямую
+            # Дополнительная проверка через прямой запрос
             if not has_company and company_data is None:
-                logger.info("🔍 Прямая проверка коллекции...")
                 collection = company_manager.get_collection()
                 if collection is not None:
                     direct_count = collection.count_documents({'type': 'company_info'})
-                    logger.info(f"🔍 Прямой подсчет документов компании: {direct_count}")
-
                     if direct_count > 0:
                         direct_company = collection.find_one({'type': 'company_info'})
-                        logger.info(f"🔍 Прямой поиск компании: {direct_company is not None}")
                         if direct_company is not None:
-                            logger.warning("⚠️ НАЙДЕНА КОМПАНИЯ ПРЯМЫМ ЗАПРОСОМ! Принудительно устанавливаем результаты")
+                            logger.warning("⚠️ Найдена компания прямым запросом")
                             has_company = True
                             company_data = direct_company
 
             # Анализируем результаты
             if company_data is not None and not has_company:
                 logger.error("🚨 НЕСООТВЕТСТВИЕ: get_company() возвращает данные, но has_company() = False")
-                logger.warning("⚠️ Принудительно устанавливаем has_company = True")
                 has_company = True
             elif company_data is None and has_company:
                 logger.error("🚨 ОБРАТНОЕ НЕСООТВЕТСТВИЕ: has_company() = True, но get_company() = None")
                 has_company = False
 
-            # ИСПРАВЛЕНО: НЕ ПЕРЕНАПРАВЛЯЕМ НА РЕГИСТРАЦИЮ, ЕСЛИ КОМПАНИЯ ЕСТЬ
             if not has_company:
                 logger.warning("❌ Компания не зарегистрирована")
                 company_name = 'Не зарегистрирована'
             else:
-                # Получаем название компании для отображения
                 company_name = company_data.get('company_name', 'Неизвестно') if company_data is not None else 'Не настроено'
                 logger.success(f"✅ Компания найдена: {company_name}")
 
@@ -129,14 +122,36 @@ def home(request):
 
         except Exception as e:
             logger.error(f"❌ Ошибка проверки компании: {e}")
-            logger.exception("Полная трассировка ошибки:")
             messages.error(request, "Fehler beim Überprüfen der Firmeninformationen")
             has_company = False
             company_name = 'Fehler beim Laden'
             company_data = None
 
-        # Все проверки пройдены - показываем главную страницу
-        logger.success("✅ Все проверки системы пройдены успешно")
+        # Определяем приоритеты для сообщений
+        warnings_to_show = []
+
+        if admin_count == 0:
+            warnings_to_show.append({
+                'type': 'warning',
+                'message': "Kein Administrator im System gefunden",
+                'action': 'Erstellen Sie einen Administrator',
+                'link': 'users:create_admin_step1'
+            })
+
+        if not has_company:
+            warnings_to_show.append({
+                'type': 'warning',
+                'message': "Keine Firma registriert",
+                'action': 'Registrieren Sie Ihre Firma',
+                'link': 'company:register_company'
+            })
+
+        # Показываем только первое предупреждение (по приоритету)
+        if warnings_to_show:
+            warning = warnings_to_show[0]
+            messages.warning(request, warning['message'])
+
+        logger.success("✅ Главная страница загружена")
 
         # Подготавливаем контекст для шаблона
         context = {
@@ -146,32 +161,90 @@ def home(request):
             'company_name': company_name,
             'company_data': company_data,
 
+            # Информация об авторизации
+            'is_authenticated': is_auth,
+            'current_user': user_data,
+
             # Дополнительная информация для шаблона
             'mongodb_status': 'Aktiv',
             'database_status': 'Bereit',
             'system_status': 'Online',
 
-            # Статистика (можно расширить)
+            # Статистика
             'total_users': admin_count,
             'system_version': '1.0.0',
+
+            # Флаги для отображения предупреждений
+            'show_no_admin_warning': admin_count == 0,
+            'show_no_company_warning': not has_company,
+            'show_login_suggestion': not is_auth and admin_count > 0,
+
+            # Рекомендации для следующих шагов
+            'next_steps': get_next_steps(is_auth, admin_count, has_company),
         }
 
-        logger.info(f"📊 Финальный контекст: has_company={has_company}, company_name={company_name}")
         return render(request, 'home.html', context)
 
     except Exception as e:
-        # Критическая ошибка - логируем и показываем страницу с ошибкой
         logger.exception(f"💥 КРИТИЧЕСКАЯ ОШИБКА в home view: {e}")
         messages.error(request, "Ein kritischer Systemfehler ist aufgetreten")
 
-        # Возвращаем минимальную страницу с информацией об ошибкой
         error_context = {
             'setup_complete': False,
             'error': 'Kritischer Systemfehler',
-            'error_details': str(e) if hasattr(request, 'user') and request.user.is_superuser else None,
+            'error_details': str(e),
             'admin_count': 0,
             'has_company': False,
-            'company_name': 'Fehler'
+            'company_name': 'Fehler',
+            'is_authenticated': False,
+            'current_user': None
         }
 
         return render(request, 'home.html', error_context)
+
+
+def get_next_steps(is_authenticated, admin_count, has_company):
+    """Определяет следующие шаги для пользователя"""
+    steps = []
+
+    # Если не авторизован, но есть админы
+    if not is_authenticated and admin_count > 0:
+        steps.append({
+            'title': 'Anmelden',
+            'description': 'Melden Sie sich an, um das System zu verwalten',
+            'icon': 'bi-box-arrow-in-right',
+            'priority': 'high',
+            'action': 'login'
+        })
+
+    # Если нет администраторов
+    if admin_count == 0:
+        steps.append({
+            'title': 'Administrator erstellen',
+            'description': 'Erstellen Sie den ersten Administrator',
+            'icon': 'bi-person-plus',
+            'priority': 'critical',
+            'action': 'create_admin'
+        })
+
+    # Если нет компании
+    if not has_company:
+        steps.append({
+            'title': 'Firma registrieren',
+            'description': 'Registrieren Sie Ihre Firma im System',
+            'icon': 'bi-building-add',
+            'priority': 'high' if is_authenticated else 'medium',
+            'action': 'register_company'
+        })
+
+    # Если все настроено
+    if is_authenticated and admin_count > 0 and has_company:
+        steps.append({
+            'title': 'System nutzen',
+            'description': 'Das System ist vollständig konfiguriert',
+            'icon': 'bi-check-circle',
+            'priority': 'info',
+            'action': 'use_system'
+        })
+
+    return steps

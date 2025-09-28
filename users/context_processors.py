@@ -1,7 +1,6 @@
-# users/context_processors.py - Context processor для аутентификации
+# users/context_processors.py - Context processor для аутентификации - ИСПРАВЛЕНО
 
 from loguru import logger
-from .views import should_show_login_modal, is_user_authenticated
 from .user_utils import UserManager
 from mongodb.mongodb_config import MongoConfig
 
@@ -9,6 +8,9 @@ from mongodb.mongodb_config import MongoConfig
 def auth_context(request):
     """Context processor для передачи информации об аутентификации"""
     try:
+        # ИСПРАВЛЕНО: импортируем функцию из views
+        from .views import is_user_authenticated, should_show_login_modal
+
         # Проверяем, аутентифицирован ли пользователь
         is_auth, user_data = is_user_authenticated(request)
 
@@ -35,7 +37,7 @@ def auth_context(request):
             'system_version': '1.0.0',
 
             # Статистика пользователей (для администраторов)
-            'user_stats': get_user_stats() if is_auth and user_data.get('is_admin') else None
+            'user_stats': get_user_stats() if is_auth and user_data and user_data.get('is_admin') else None
         }
 
         logger.debug(f"Auth context: is_auth={is_auth}, show_login={show_login}")
