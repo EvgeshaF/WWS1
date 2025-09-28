@@ -1,18 +1,4 @@
-# company/company_registration_views.py - ОБНОВЛЕНО: банковский шаг 5 вместо настроек
-
-from django.shortcuts import redirect
-from loguru import logger
-
-from company.company_session_views import CompanySessionManager
-
-
-def register_company(request):
-    """Стартовая страница регистрации - перенаправляет на шаг 1"""
-    # Очищаем предыдущие данные сессии
-    CompanySessionManager.clear_session_data(request)
-    logger.info("Начало процесса регистрации компании")
-    return redirect('company:register_company_step1')
-
+# company/company_registration_views.py - ОБНОВЛЕНО: возможность сохранения каждого шага
 
 import json
 import re
@@ -31,8 +17,16 @@ from company.forms import CompanyBasicDataForm, CompanyRegistrationForm, Company
 from company.language import company_success_messages, company_error_messages, text_company_step1, text_company_step2, text_company_step3, text_company_step4, text_company_step5
 
 
+def register_company(request):
+    """Стартовая страница регистрации - перенаправляет на шаг 1"""
+    # Очищаем предыдущие данные сессии
+    CompanySessionManager.clear_session_data(request)
+    logger.info("Начало процесса регистрации компании")
+    return redirect('company:register_company_step1')
+
+
 def register_company_step1(request):
-    """Шаг 1: Основные данные компании"""
+    """Шаг 1: Основные данные компании - ОБНОВЛЕНО с возможностью сохранения"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -42,12 +36,42 @@ def register_company_step1(request):
 
     if request.method == 'POST':
         form = CompanyBasicDataForm(request.POST)
+
+        # НОВОЕ: Определяем действие пользователя
+        action = request.POST.get('action', 'continue')  # 'continue' или 'save_and_close'
+
         if form.is_valid():
             # Сохраняем данные шага в сессию
             step_data = form.cleaned_data.copy()
             CompanySessionManager.update_session_data(request, step_data)
 
             company_name = step_data.get('company_name', '')
+
+            # НОВОЕ: Если действие "сохранить и закрыть"
+            if action == 'save_and_close':
+                success = save_partial_company_data(request, step_data, step=1)
+                if success:
+                    return JsonResponse({
+                        'success': True,
+                        'action': 'save_and_close',
+                        'messages': [{
+                            'text': f"Grunddaten für '{company_name}' erfolgreich gespeichert",
+                            'tags': 'success',
+                            'delay': 3000
+                        }],
+                        'redirect_url': reverse('company:company_info')
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'messages': [{
+                            'text': "Fehler beim Speichern der Grunddaten",
+                            'tags': 'error',
+                            'delay': 5000
+                        }]
+                    })
+
+            # Обычное продолжение к следующему шагу
             messages.success(
                 request,
                 company_success_messages['step1_completed'].format(company_name=company_name)
@@ -74,7 +98,7 @@ def register_company_step1(request):
 
 
 def register_company_step2(request):
-    """Шаг 2: Регистрационные данные - ОБНОВЛЕНО: ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ с улучшенной валидацией"""
+    """Шаг 2: Регистрационные данные - ОБНОВЛЕНО с возможностью сохранения"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -92,10 +116,11 @@ def register_company_step2(request):
     if request.method == 'POST':
         form = CompanyRegistrationForm(request.POST)
 
-        # НОВАЯ: Дополнительная валидация для обязательных полей
-        additional_errors = []
+        # НОВОЕ: Определяем действие пользователя
+        action = request.POST.get('action', 'continue')
 
-        # Проверяем, что все обязательные поля заполнены
+        # Дополнительная валидация для обязательных полей
+        additional_errors = []
         required_fields = {
             'commercial_register': 'Handelsregister',
             'tax_number': 'Steuernummer',
@@ -125,7 +150,6 @@ def register_company_step2(request):
         if tax_id and not re.match(r'^\d{11}$', tax_id):
             additional_errors.append("Steuer-ID: 11-stellige Nummer erforderlich")
 
-        # Если есть дополнительные ошибки, добавляем их в форму
         if additional_errors:
             for error in additional_errors:
                 messages.error(request, error)
@@ -135,8 +159,34 @@ def register_company_step2(request):
             # Сохраняем данные шага в сессию
             step_data = form.cleaned_data.copy()
             step_data['registration_data_processed'] = True
-            step_data['all_registration_fields_complete'] = True  # НОВОЕ: флаг полноты
+            step_data['all_registration_fields_complete'] = True
             CompanySessionManager.update_session_data(request, step_data)
+
+            # НОВОЕ: Если действие "сохранить и закрыть"
+            if action == 'save_and_close':
+                # Получаем полные данные из сессии для сохранения
+                full_data = CompanySessionManager.get_session_data(request)
+                success = save_partial_company_data(request, full_data, step=2)
+                if success:
+                    return JsonResponse({
+                        'success': True,
+                        'action': 'save_and_close',
+                        'messages': [{
+                            'text': f"Registrierungsdaten für '{company_name}' erfolgreich gespeichert",
+                            'tags': 'success',
+                            'delay': 3000
+                        }],
+                        'redirect_url': reverse('company:company_info')
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'messages': [{
+                            'text': "Fehler beim Speichern der Registrierungsdaten",
+                            'tags': 'error',
+                            'delay': 5000
+                        }]
+                    })
 
             logger.success(f"Шаг 2 завершен для компании '{company_name}': все регистрационные данные валидны")
             messages.success(request, company_success_messages['step2_completed'])
@@ -177,7 +227,7 @@ def register_company_step2(request):
 
 
 def register_company_step3(request):
-    """Шаг 3: Адресные данные"""
+    """Шаг 3: Адресные данные - ОБНОВЛЕНО с возможностью сохранения"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -194,9 +244,38 @@ def register_company_step3(request):
 
     if request.method == 'POST':
         form = CompanyAddressForm(request.POST)
+
+        # НОВОЕ: Определяем действие пользователя
+        action = request.POST.get('action', 'continue')
+
         if form.is_valid():
             step_data = form.cleaned_data.copy()
             CompanySessionManager.update_session_data(request, step_data)
+
+            # НОВОЕ: Если действие "сохранить и закрыть"
+            if action == 'save_and_close':
+                full_data = CompanySessionManager.get_session_data(request)
+                success = save_partial_company_data(request, full_data, step=3)
+                if success:
+                    return JsonResponse({
+                        'success': True,
+                        'action': 'save_and_close',
+                        'messages': [{
+                            'text': f"Adressdaten für '{company_name}' erfolgreich gespeichert",
+                            'tags': 'success',
+                            'delay': 3000
+                        }],
+                        'redirect_url': reverse('company:company_info')
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'messages': [{
+                            'text': "Fehler beim Speichern der Adressdaten",
+                            'tags': 'error',
+                            'delay': 5000
+                        }]
+                    })
 
             messages.success(request, company_success_messages['step3_completed'])
 
@@ -225,7 +304,7 @@ def register_company_step3(request):
 
 
 def register_company_step4(request):
-    """Шаг 4: Контактные данные"""
+    """Шаг 4: Контактные данные - ОБНОВЛЕНО с возможностью сохранения"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -250,6 +329,10 @@ def register_company_step4(request):
 
     if request.method == 'POST':
         form = CompanyContactForm(request.POST)
+
+        # НОВОЕ: Определяем действие пользователя
+        action = request.POST.get('action', 'continue')
+
         if form.is_valid():
             step_data = form.cleaned_data.copy()
 
@@ -267,6 +350,32 @@ def register_company_step4(request):
                 step_data['additional_contacts_data'] = '[]'
 
             CompanySessionManager.update_session_data(request, step_data)
+
+            # НОВОЕ: Если действие "сохранить и закрыть"
+            if action == 'save_and_close':
+                full_data = CompanySessionManager.get_session_data(request)
+                success = save_partial_company_data(request, full_data, step=4)
+                if success:
+                    additional_count = len(contacts) if contacts else 0
+                    return JsonResponse({
+                        'success': True,
+                        'action': 'save_and_close',
+                        'messages': [{
+                            'text': f"Kontaktdaten für '{company_name}' erfolgreich gespeichert ({additional_count} zusätzliche Kontakte)",
+                            'tags': 'success',
+                            'delay': 3000
+                        }],
+                        'redirect_url': reverse('company:company_info')
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'messages': [{
+                            'text': "Fehler beim Speichern der Kontaktdaten",
+                            'tags': 'error',
+                            'delay': 5000
+                        }]
+                    })
 
             # Формируем информацию о контактах для сообщения
             main_contacts = f"{step_data.get('email', '')}, {step_data.get('phone', '')}"
@@ -309,7 +418,7 @@ def register_company_step4(request):
 
 
 def register_company_step5(request):
-    """НОВОЕ: Шаг 5 - Банковские данные и создание компании"""
+    """ОБНОВЛЕНО: Шаг 5 - Банковские данные и создание компании с возможностью сохранения"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -342,6 +451,10 @@ def register_company_step5(request):
 
     if request.method == 'POST':
         form = CompanyBankingForm(request.POST)
+
+        # НОВОЕ: Определяем действие пользователя
+        action = request.POST.get('action', 'complete')  # 'complete' или 'save_and_close'
+
         if form.is_valid():
             # Сохраняем банковские данные в сессию
             banking_data = form.cleaned_data.copy()
@@ -358,7 +471,40 @@ def register_company_step5(request):
                 'data_protection_consent': True
             })
 
-            # Создаем компанию в базе данных
+            # НОВОЕ: Если действие "сохранить и закрыть" - только сохраняем банковские данные
+            if action == 'save_and_close':
+                success = save_partial_company_data(request, final_data, step=5)
+                if success:
+                    banking_info = ""
+                    if banking_data.get('iban') or banking_data.get('bank_name'):
+                        if banking_data.get('secondary_iban'):
+                            banking_info = "mit Haupt- und Zweitbankverbindung"
+                        else:
+                            banking_info = "mit Bankverbindung"
+                    else:
+                        banking_info = "ohne Bankverbindung"
+
+                    return JsonResponse({
+                        'success': True,
+                        'action': 'save_and_close',
+                        'messages': [{
+                            'text': f"Bankdaten für '{company_name}' erfolgreich gespeichert ({banking_info})",
+                            'tags': 'success',
+                            'delay': 3000
+                        }],
+                        'redirect_url': reverse('company:company_info')
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'messages': [{
+                            'text': "Fehler beim Speichern der Bankdaten",
+                            'tags': 'error',
+                            'delay': 5000
+                        }]
+                    })
+
+            # Обычное завершение - создаем компанию в базе данных
             company_manager = CompanyManager()
             if company_manager.create_or_update_company(final_data):
                 # Очищаем сессию после успешного создания
@@ -406,6 +552,61 @@ def register_company_step5(request):
     return render(request, 'register_company_step5.html', context)
 
 
+def save_partial_company_data(request, data, step):
+    """
+    НОВАЯ ФУНКЦИЯ: Сохраняет частичные данные компании в базу данных
+    Args:
+        request: HTTP запрос
+        data: Данные для сохранения
+        step: Номер шага (1-5)
+    Returns:
+        bool: True если сохранение успешно
+    """
+    try:
+        company_manager = CompanyManager()
+
+        # Проверяем, существует ли уже компания
+        existing_company = company_manager.get_company()
+
+        if existing_company:
+            # Обновляем существующую компанию, объединяя данные
+            updated_data = existing_company.copy()
+            updated_data.update(data)
+
+            # Добавляем информацию о частичном сохранении
+            updated_data['partial_save'] = True
+            updated_data['last_saved_step'] = step
+
+            # Убираем служебные поля MongoDB
+            if '_id' in updated_data:
+                del updated_data['_id']
+
+            success = company_manager.create_or_update_company(updated_data)
+        else:
+            # Создаем новую частичную запись
+            partial_data = data.copy()
+            partial_data.update({
+                'partial_save': True,
+                'last_saved_step': step,
+                'is_primary': True,
+                'enable_notifications': True,
+                'enable_marketing': False,
+                'data_protection_consent': True
+            })
+            success = company_manager.create_or_update_company(partial_data)
+
+        if success:
+            logger.success(f"Частичные данные компании сохранены (шаг {step})")
+            return True
+        else:
+            logger.error(f"Ошибка сохранения частичных данных компании (шаг {step})")
+            return False
+
+    except Exception as e:
+        logger.error(f"Критическая ошибка сохранения частичных данных: {e}")
+        return False
+
+
 @require_http_methods(["GET"])
 def company_validation_check(request):
     """Улучшенная проверка валидности данных компании с учетом обязательных полей шага 2 и банковских данных"""
@@ -429,7 +630,7 @@ def company_validation_check(request):
             'step2': {'complete': False, 'errors': []},
             'step3': {'complete': False, 'errors': []},
             'step4': {'complete': False, 'errors': []},
-            'step5': {'complete': False, 'errors': []}  # НОВОЕ: проверка банковских данных
+            'step5': {'complete': False, 'errors': []}
         }
     }
 
@@ -439,7 +640,7 @@ def company_validation_check(request):
         'legal_form': 'Rechtsform'
     }
 
-    # ОБНОВЛЕНО: Все поля шага 2 теперь обязательны
+    # Все поля шага 2 теперь обязательны
     step2_fields = {
         'commercial_register': 'Handelsregister',
         'tax_number': 'Steuernummer',
@@ -459,7 +660,7 @@ def company_validation_check(request):
         'phone': 'Telefon'
     }
 
-    # НОВОЕ: Банковские поля (все опциональны)
+    # Банковские поля (все опциональны)
     step5_fields = {
         'bank_name': 'Bankname',
         'iban': 'IBAN',
@@ -486,7 +687,7 @@ def company_validation_check(request):
             else:
                 filled_count += 1
 
-                # НОВАЯ: Дополнительная валидация форматов для шага 2
+                # Дополнительная валидация форматов для шага 2
                 if step == 'step2':
                     field_value = str(company.get(field, '')).strip()
                     if field == 'commercial_register' and not re.match(r'^(HR[AB]\s*\d+|HRA\s*\d+|HRB\s*\d+)$', field_value):
@@ -505,7 +706,7 @@ def company_validation_check(request):
         validation_results['step_status'][step]['complete'] = step_complete
         validation_results['step_status'][step]['errors'] = step_errors
 
-    # НОВАЯ: Проверяем банковские данные (шаг 5) - ВСЕ ОПЦИОНАЛЬНЫ
+    # Проверяем банковские данные (шаг 5) - ВСЕ ОПЦИОНАЛЬНЫ
     step5_complete = True
     step5_errors = []
     banking_data_present = False
@@ -532,7 +733,7 @@ def company_validation_check(request):
     # Подсчитываем полноту заполнения
     validation_results['completeness'] = round((filled_count / total_count) * 100, 1) if total_count > 0 else 0
 
-    # Дополнительные проверки форматов (существующий код)
+    # Дополнительные проверки форматов
     if company.get('email'):
         email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
         if not re.match(email_pattern, company.get('email', '')):

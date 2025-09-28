@@ -18,6 +18,8 @@
                         {{ text.title }}
                     </h5>
                     <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
+                    <!-- НОВОЕ: Кнопка закрытия модального окна -->
+                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
                 </div>
 
                 <div class="modal-body">
@@ -159,12 +161,22 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'company:register_company_step1' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>
-                                {{ text.btn_back }}
-                            </a>
-                            <button type="submit" class="btn btn-success" id="submit-btn">
+                        <!-- ОБНОВЛЕННЫЕ кнопки управления -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'company:register_company_step1' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>
+                                    {{ text.btn_back }}
+                                </a>
+                                <!-- НОВАЯ: Кнопка "Сохранить и закрыть" -->
+                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Sichern & Schließen
+                                </button>
+                            </div>
+
+                            <!-- Оригинальная кнопка "Weiter" -->
+                            <button type="submit" class="btn btn-success" id="continue-btn">
                                 <i class="bi bi-arrow-right me-1"></i>
                                 {{ text.btn }}
                             </button>
@@ -177,6 +189,11 @@
                         <i class="bi bi-exclamation-circle me-1"></i>
                         Alle Registrierungsfelder sind Pflichtfelder und werden validiert
                     </small>
+                    <!-- НОВОЕ: Информация о сохранении -->
+                    <small class="text-muted ms-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre vollständigen Registrierungsdaten
+                    </small>
                 </div>
             </div>
         </div>
@@ -188,12 +205,20 @@
 
 {% block extra_js %}
     <script>
-        // Enhanced form validation for required fields
+        // НОВАЯ: Функция закрытия модального окна
+        function closeModal() {
+            if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
+                window.location.href = '/';
+            }
+        }
+
+        // Enhanced form validation for required fields - ОБНОВЛЕНО для поддержки двух действий
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('company-step2-form');
             if (!form) return;
 
-            const submitBtn = document.getElementById('submit-btn');
+            const continueBtn = document.getElementById('continue-btn');
+            const saveAndCloseBtn = document.getElementById('save-and-close-btn');
             const validationStatus = document.getElementById('validationStatus');
             const validationSuccess = document.getElementById('validationSuccess');
             const validationErrors = document.getElementById('validationErrors');
@@ -221,6 +246,13 @@
                     });
                 }
             });
+
+            // НОВЫЙ: Обработчик для "Сохранить и закрыть"
+            if (saveAndCloseBtn) {
+                saveAndCloseBtn.addEventListener('click', function() {
+                    submitForm('save_and_close');
+                });
+            }
 
             function validateField(field) {
                 const value = field.value.trim();
@@ -315,25 +347,33 @@
                 }
 
                 // Enable/disable submit button
-                if (submitBtn) {
-                    submitBtn.disabled = !allValid;
+                if (continueBtn) {
+                    continueBtn.disabled = !allValid;
                     if (allValid) {
-                        submitBtn.classList.remove('btn-outline-success');
-                        submitBtn.classList.add('btn-success');
+                        continueBtn.classList.remove('btn-outline-success');
+                        continueBtn.classList.add('btn-success');
                     } else {
-                        submitBtn.classList.remove('btn-success');
-                        submitBtn.classList.add('btn-outline-success');
+                        continueBtn.classList.remove('btn-success');
+                        continueBtn.classList.add('btn-outline-success');
                     }
+                }
+
+                // Enable/disable save and close button based on validation
+                if (saveAndCloseBtn) {
+                    saveAndCloseBtn.disabled = !allValid;
                 }
             }
 
             // Initial validation check
             setTimeout(updateValidationStatus, 100);
 
-            // Form submission handling
+            // Form submission handling - ОБНОВЛЕНО для поддержки двух действий
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
+                submitForm('continue');
+            });
 
+            function submitForm(action) {
                 // Final validation before submit
                 let allValid = true;
                 requiredFields.forEach(fieldId => {
@@ -348,14 +388,21 @@
                     return;
                 }
 
+                const activeBtn = action === 'save_and_close' ? saveAndCloseBtn : continueBtn;
+
                 // Show progress
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird validiert...';
+                if (activeBtn) {
+                    activeBtn.disabled = true;
+                    if (action === 'save_and_close') {
+                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird gesichert...';
+                    } else {
+                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird validiert...';
+                    }
                 }
 
                 // Create FormData for submission
                 const formData = new FormData(form);
+                formData.append('action', action);  // НОВОЕ: Добавляем информацию о действии
 
                 fetch('{% url "company:register_company_step2" %}', {
                     method: 'POST',
@@ -373,12 +420,41 @@
                     })
                     .then(data => {
                         // Hide progress
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                        if (activeBtn) {
+                            activeBtn.disabled = false;
+                            if (action === 'save_and_close') {
+                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
+                            } else {
+                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                            }
                         }
 
-                        // Handle messages
+                        // Обрабатываем ответ
+                        if (data.success !== undefined) {
+                            // НОВЫЙ: Специальная обработка для "сохранить и закрыть"
+                            if (data.action === 'save_and_close') {
+                                if (data.success) {
+                                    if (data.messages) {
+                                        data.messages.forEach(message => {
+                                            showToast(message.text, message.tags, message.delay);
+                                        });
+                                    }
+                                    // Перенаправляем на указанную страницу
+                                    setTimeout(() => {
+                                        window.location.href = data.redirect_url || '/';
+                                    }, 1500);
+                                } else {
+                                    if (data.messages) {
+                                        data.messages.forEach(message => {
+                                            showToast(message.text, message.tags, message.delay);
+                                        });
+                                    }
+                                }
+                                return;
+                            }
+                        }
+
+                        // Обычная обработка сообщений (для продолжения)
                         if (data.messages && data.messages.length > 0) {
                             data.messages.forEach(message => {
                                 showToast(message.text, message.tags, message.delay);
@@ -386,7 +462,7 @@
 
                             // Redirect on success
                             const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                            if (hasSuccess) {
+                            if (hasSuccess && action === 'continue') {
                                 setTimeout(() => {
                                     window.location.href = '{% url "company:register_company_step3" %}';
                                 }, 1500);
@@ -397,14 +473,18 @@
                         console.error('Form submission error:', error);
 
                         // Hide progress
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                        if (activeBtn) {
+                            activeBtn.disabled = false;
+                            if (action === 'save_and_close') {
+                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
+                            } else {
+                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                            }
                         }
 
                         showToast('Fehler beim Senden des Formulars', 'error');
                     });
-            });
+            }
         });
 
         // Global toast function (if not defined)

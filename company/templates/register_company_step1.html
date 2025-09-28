@@ -15,6 +15,8 @@
                         {{ text.title }}
                     </h5>
                     <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
+                    <!-- НОВОЕ: Кнопка закрытия модального окна -->
+                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
                 </div>
 
                 <div class="modal-body">
@@ -188,11 +190,23 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end mt-4">
-                            <button type="submit" class="btn btn-success" id="submit-btn">
-                                <i class="bi bi-arrow-right me-1"></i>
-                                {{ text.btn }}
-                            </button>
+                        <!-- ОБНОВЛЕННЫЕ кнопки управления -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div>
+                                <!-- НОВАЯ: Кнопка "Сохранить и закрыть" -->
+                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Sichern & Schließen
+                                </button>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <!-- Оригинальная кнопка "Weiter" -->
+                                <button type="submit" class="btn btn-success" id="continue-btn">
+                                    <i class="bi bi-arrow-right me-1"></i>
+                                    {{ text.btn }}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -201,6 +215,11 @@
                     <small class="text-muted">
                         <i class="bi bi-exclamation-circle me-1"></i>
                         {{ text.notification }}
+                    </small>
+                    <!-- НОВОЕ: Информация о сохранении -->
+                    <small class="text-muted ms-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Eingaben, ohne zum nächsten Schritt zu gehen
                     </small>
                 </div>
             </div>
@@ -281,24 +300,50 @@
             console.log('Select2 для шага 1 компании успешно инициализирован');
         });
 
-        // Form submission handling
+        // НОВАЯ: Функция закрытия модального окна
+        function closeModal() {
+            if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
+                window.location.href = '/';
+            }
+        }
+
+        // Form submission handling - ОБНОВЛЕНО для поддержки двух действий
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('company-step1-form');
             if (!form) return;
 
-            const submitBtn = document.getElementById('submit-btn');
+            const continueBtn = document.getElementById('continue-btn');
+            const saveAndCloseBtn = document.getElementById('save-and-close-btn');
 
+            // НОВЫЙ: Обработчик для "Сохранить и закрыть"
+            if (saveAndCloseBtn) {
+                saveAndCloseBtn.addEventListener('click', function() {
+                    submitForm('save_and_close');
+                });
+            }
+
+            // Обработчик для обычной отправки формы (продолжить)
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
+                submitForm('continue');
+            });
+
+            function submitForm(action) {
+                const activeBtn = action === 'save_and_close' ? saveAndCloseBtn : continueBtn;
 
                 // Показываем прогресс
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird validiert...';
+                if (activeBtn) {
+                    activeBtn.disabled = true;
+                    if (action === 'save_and_close') {
+                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird gesichert...';
+                    } else {
+                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird validiert...';
+                    }
                 }
 
                 // Создаем FormData для отправки
                 const formData = new FormData(form);
+                formData.append('action', action);  // НОВОЕ: Добавляем информацию о действии
 
                 fetch('{% url "company:register_company_step1" %}', {
                     method: 'POST',
@@ -316,12 +361,41 @@
                     })
                     .then(data => {
                         // Скрываем прогресс
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                        if (activeBtn) {
+                            activeBtn.disabled = false;
+                            if (action === 'save_and_close') {
+                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
+                            } else {
+                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                            }
                         }
 
-                        // Обрабатываем сообщения
+                        // Обрабатываем ответ
+                        if (data.success !== undefined) {
+                            // НОВЫЙ: Специальная обработка для "сохранить и закрыть"
+                            if (data.action === 'save_and_close') {
+                                if (data.success) {
+                                    if (data.messages) {
+                                        data.messages.forEach(message => {
+                                            showToast(message.text, message.tags, message.delay);
+                                        });
+                                    }
+                                    // Перенаправляем на указанную страницу
+                                    setTimeout(() => {
+                                        window.location.href = data.redirect_url || '/';
+                                    }, 1500);
+                                } else {
+                                    if (data.messages) {
+                                        data.messages.forEach(message => {
+                                            showToast(message.text, message.tags, message.delay);
+                                        });
+                                    }
+                                }
+                                return;
+                            }
+                        }
+
+                        // Обычная обработка сообщений (для продолжения)
                         if (data.messages && data.messages.length > 0) {
                             data.messages.forEach(message => {
                                 showToast(message.text, message.tags, message.delay);
@@ -329,7 +403,7 @@
 
                             // Если есть успешное сообщение, перенаправляем через короткое время
                             const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                            if (hasSuccess) {
+                            if (hasSuccess && action === 'continue') {
                                 setTimeout(() => {
                                     window.location.href = '{% url "company:register_company_step2" %}';
                                 }, 1500);
@@ -340,14 +414,18 @@
                         console.error('Ошибка отправки формы:', error);
 
                         // Скрываем прогресс
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                        if (activeBtn) {
+                            activeBtn.disabled = false;
+                            if (action === 'save_and_close') {
+                                activeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen';
+                            } else {
+                                activeBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>{{ text.btn }}';
+                            }
                         }
 
                         showToast('Fehler beim Senden des Formulars', 'error');
                     });
-            });
+            }
         });
 
         // Глобальная функция для показа тостов (если не определена)

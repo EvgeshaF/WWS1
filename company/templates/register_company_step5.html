@@ -19,6 +19,8 @@
                         {{ text.title }}
                     </h5>
                     <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
+                    <!-- НОВОЕ: Кнопка закрытия модального окна -->
+                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
                 </div>
                 <div class="modal-body">
 
@@ -292,12 +294,22 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'company:register_company_step4' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>
-                                {{ text.btn_back }}
-                            </a>
-                            <button type="submit" class="btn btn-success" id="create-company-btn">
+                        <!-- ОБНОВЛЕННЫЕ кнопки управления -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'company:register_company_step4' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>
+                                    {{ text.btn_back }}
+                                </a>
+                                <!-- НОВАЯ: Кнопка "Только банковские данные сохранить и закрыть" -->
+                                <button type="button" class="btn btn-outline-success" id="save-banking-and-close-btn">
+                                    <i class="bi bi-bank me-1"></i>
+                                    Bankdaten sichern & Schließen
+                                </button>
+                            </div>
+
+                            <!-- Оригинальная кнопка "Komplett registrieren" -->
+                            <button type="submit" class="btn btn-success" id="complete-registration-btn">
                                 <i class="bi bi-building me-1"></i>
                                 {{ text.btn }}
                             </button>
@@ -309,6 +321,11 @@
                     <small class="text-muted">
                         <i class="bi bi-exclamation-circle me-1"></i>
                         {{ text.notification }}
+                    </small>
+                    <!-- НОВОЕ: Информация о вариантах завершения -->
+                    <small class="text-muted ms-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Optionen:</strong> "Bankdaten sichern" - nur Bankdaten | "{{ text.btn }}" - Vollständige Registrierung
                     </small>
                 </div>
             </div>
@@ -322,11 +339,19 @@
 
 {% block extra_js %}
     <script>
+        // НОВАЯ: Функция закрытия модального окна
+        function closeModal() {
+            if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
+                window.location.href = '/';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('company-step5-form');
             if (!form) return;
 
-            const submitBtn = document.getElementById('create-company-btn');
+            const completeRegistrationBtn = document.getElementById('complete-registration-btn');
+            const saveBankingAndCloseBtn = document.getElementById('save-banking-and-close-btn');
             const progressContainer = document.getElementById('create-company-progress-container');
             const progressLabel = document.getElementById('company-progress-label');
             const progressBar = document.getElementById('company-progress');
@@ -363,6 +388,13 @@
                 });
                 secondaryIbanField.addEventListener('blur', function() {
                     validateIBAN(this);
+                });
+            }
+
+            // НОВЫЙ: Обработчик для "Только банковские данные сохранить и закрыть"
+            if (saveBankingAndCloseBtn) {
+                saveBankingAndCloseBtn.addEventListener('click', function() {
+                    submitForm('save_and_close');
                 });
             }
 
@@ -443,15 +475,29 @@
                 field.closest('.mb-3').appendChild(feedbackDiv);
             }
 
-            // Обработчик отправки формы
+            // Обработчик отправки формы - ОБНОВЛЕНО для поддержки двух действий
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
+                submitForm('complete');
+            });
 
-                // Показываем прогресс и блокируем форму
-                showProgress();
+            function submitForm(action) {
+                const activeBtn = action === 'save_and_close' ? saveBankingAndCloseBtn : completeRegistrationBtn;
+
+                // Показываем прогресс в зависимости от действия
+                if (action === 'complete') {
+                    showProgress();
+                } else {
+                    // Простой прогресс для сохранения банковских данных
+                    if (activeBtn) {
+                        activeBtn.disabled = true;
+                        activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird gesichert...';
+                    }
+                }
 
                 // Создаем FormData для отправки
                 const formData = new FormData(form);
+                formData.append('action', action);  // НОВОЕ: Добавляем информацию о действии
 
                 fetch(form.action, {
                     method: 'POST',
@@ -468,9 +514,42 @@
                         return response.json();
                     })
                     .then(data => {
-                        hideProgress();
+                        if (action === 'complete') {
+                            hideProgress();
+                        } else {
+                            // Простое скрытие прогресса для сохранения банковских данных
+                            if (activeBtn) {
+                                activeBtn.disabled = false;
+                                activeBtn.innerHTML = '<i class="bi bi-bank me-1"></i>Bankdaten sichern & Schließen';
+                            }
+                        }
 
-                        // Обрабатываем сообщения
+                        // Обрабатываем ответ
+                        if (data.success !== undefined) {
+                            // НОВЫЙ: Специальная обработка для "сохранить банковские данные и закрыть"
+                            if (data.action === 'save_and_close') {
+                                if (data.success) {
+                                    if (data.messages) {
+                                        data.messages.forEach(message => {
+                                            showToast(message.text, message.tags, message.delay);
+                                        });
+                                    }
+                                    // Перенаправляем на указанную страницу
+                                    setTimeout(() => {
+                                        window.location.href = data.redirect_url || '/';
+                                    }, 1500);
+                                } else {
+                                    if (data.messages) {
+                                        data.messages.forEach(message => {
+                                            showToast(message.text, message.tags, message.delay);
+                                        });
+                                    }
+                                }
+                                return;
+                            }
+                        }
+
+                        // Обычная обработка сообщений (для полной регистрации)
                         if (data.messages && data.messages.length > 0) {
                             data.messages.forEach(message => {
                                 showToast(message.text, message.tags, message.delay);
@@ -478,7 +557,7 @@
 
                             // Если есть успешное сообщение, перенаправляем на главную
                             const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                            if (hasSuccess) {
+                            if (hasSuccess && action === 'complete') {
                                 // Показываем финальный шаг
                                 if (currentStep) {
                                     currentStep.textContent = 'Firma erfolgreich registriert!';
@@ -492,16 +571,23 @@
                     })
                     .catch(error => {
                         console.error('Ошибка регистрации фирмы:', error);
-                        hideProgress();
+                        if (action === 'complete') {
+                            hideProgress();
+                        } else {
+                            if (activeBtn) {
+                                activeBtn.disabled = false;
+                                activeBtn.innerHTML = '<i class="bi bi-bank me-1"></i>Bankdaten sichern & Schließen';
+                            }
+                        }
                         showToast('Kritischer Fehler beim Registrieren der Firma', 'error');
                     });
-            });
+            }
 
             function showProgress() {
-                if (!submitBtn) return;
+                if (!completeRegistrationBtn) return;
 
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird registriert...';
+                completeRegistrationBtn.disabled = true;
+                completeRegistrationBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird registriert...';
 
                 if (progressContainer) {
                     progressContainer.style.display = 'block';
@@ -542,9 +628,9 @@
                     progressInterval = null;
                 }
 
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-building me-1"></i>{{ text.btn }}';
+                if (completeRegistrationBtn) {
+                    completeRegistrationBtn.disabled = false;
+                    completeRegistrationBtn.innerHTML = '<i class="bi bi-building me-1"></i>{{ text.btn }}';
                 }
 
                 // Завершаем прогресс-бар
