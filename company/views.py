@@ -1,14 +1,19 @@
+# company/views.py - ОБНОВЛЕНО: импорты из нового каталога views/
+# Основной файл для импорта всех view функций
+
+# Импортируем все из подкаталога views
+from .views import *
+
+# Для совместимости можно оставить прямые импорты (опционально)
+# Это позволит не ломать существующие импорты из других частей системы
+
 # Session manager
-from .company_session_views import (
-    CompanySessionManager,
-)
+from .views.session import CompanySessionManager
 
-# Company manager
-from .company_manager import (
-    CompanyManager,
-)
+# Company manager (остается в корне)
+from .company_manager import CompanyManager
 
-# Utils
+# Utils (остаются в корне)
 from .company_utils import (
     render_toast_response,
     render_with_messages,
@@ -16,8 +21,8 @@ from .company_utils import (
     get_legal_form_display_name,
 )
 
-# Registration steps
-from .company_registration_views import (
+# Registration views
+from .views.registration import (
     register_company,
     register_company_step1,
     register_company_step2,
@@ -28,21 +33,21 @@ from .company_registration_views import (
     validate_registration_data,
 )
 
-# CRUD operations
-from .company_crud_views import (
+# CRUD views
+from .views.crud import (
     company_info,
     edit_company,
-    edit_company_step1,  # НОВОЕ: Редактирование только Grunddaten
-    edit_company_step2,  # НОВОЕ: Редактирование только Registrierungsdaten
-    edit_company_step3,  # НОВОЕ: Редактирование только Adressdaten
-    edit_company_step4,  # НОВОЕ: Редактирование только Kontaktdaten
-    edit_company_step5,  # НОВОЕ: Редактирование только Bankdaten
+    edit_company_step1,
+    edit_company_step2,
+    edit_company_step3,
+    edit_company_step4,
+    edit_company_step5,
     delete_company,
     set_primary_company,
 )
 
 # Extra views
-from .company_extra_views import (
+from .views.extra import (
     company_stats_json,
     company_status,
     debug_company_data,

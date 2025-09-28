@@ -1,5 +1,9 @@
+# company/urls.py - ОБНОВЛЕНО для новой структуры views
 from django.urls import path
-from . import views
+from . import views  # Импортируем основной views.py, который реэкспортирует все
+
+# Альтернативно можно импортировать напрямую из подкаталога:
+# from .views import registration, crud, extra
 
 app_name = 'company'
 
@@ -10,18 +14,18 @@ urlpatterns = [
     path('register/step2/', views.register_company_step2, name='register_company_step2'),
     path('register/step3/', views.register_company_step3, name='register_company_step3'),
     path('register/step4/', views.register_company_step4, name='register_company_step4'),
-    path('register/step5/', views.register_company_step5, name='register_company_step5'),  # Финальный шаг (бывший step6)
+    path('register/step5/', views.register_company_step5, name='register_company_step5'),
 
     # Управление компанией
     path('info/', views.company_info, name='company_info'),
-    path('edit/', views.edit_company, name='edit_company'),  # Общее редактирование (все шаги)
+    path('edit/', views.edit_company, name='edit_company'),
 
-    # НОВОЕ: Редактирование отдельных шагов
-    path('edit/step1/', views.edit_company_step1, name='edit_company_step1'),  # Grunddaten
-    path('edit/step2/', views.edit_company_step2, name='edit_company_step2'),  # Registrierungsdaten
-    path('edit/step3/', views.edit_company_step3, name='edit_company_step3'),  # Adressdaten
-    path('edit/step4/', views.edit_company_step4, name='edit_company_step4'),  # Kontaktdaten
-    path('edit/step5/', views.edit_company_step5, name='edit_company_step5'),  # Bankdaten
+    # Редактирование отдельных шагов
+    path('edit/step1/', views.edit_company_step1, name='edit_company_step1'),
+    path('edit/step2/', views.edit_company_step2, name='edit_company_step2'),
+    path('edit/step3/', views.edit_company_step3, name='edit_company_step3'),
+    path('edit/step4/', views.edit_company_step4, name='edit_company_step4'),
+    path('edit/step5/', views.edit_company_step5, name='edit_company_step5'),
 
     path('delete/', views.delete_company, name='delete_company'),
 
