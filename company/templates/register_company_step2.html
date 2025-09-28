@@ -5,126 +5,127 @@
 {% load company_extras %}
 
 {% block content %}
-<div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-file-earmark-text me-2"></i>
-                    {{ text.title }}
-                </h5>
-                <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
-                <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
-            </div>
+    <div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        {{ text.title }}
+                    </h5>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
+                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
+                </div>
 
-            <div class="modal-body">
+                <div class="modal-body">
 
-                <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    {{ text.desc }}
-                    <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {{ text.desc }}
+                        <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
                         {% if legal_form %}
                             {{ legal_form|legal_form_display }}
                         {% endif %}
                     </strong></small>
-                </div>
-{##}
-{#                <div class="alert alert-warning" role="alert">#}
-{#                    <i class="bi bi-exclamation-triangle me-2"></i>#}
-{#                    <strong>Wichtig:</strong> Alle Registrierungsfelder sind jetzt Pflichtfelder.#}
-{#                </div>#}
-
-                <form method="post"
-                      id="company-step2-form"
-                      action="{% url 'company:register_company_step2' %}"
-                      data-url="{% url 'company:register_company_step2' %}"
-                      data-next-url="{% url 'company:register_company_step3' %}">
-                    {% csrf_token %}
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.commercial_register.id_for_label }}" class="form-label">
-                                    <i class="bi bi-building-check me-1"></i>
-                                    {{ text.commercial_register }} <span class="text-danger">*</span>
-                                </label>
-                                {{ form.commercial_register }}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.tax_number.id_for_label }}" class="form-label">
-                                    <i class="bi bi-receipt me-1"></i>
-                                    {{ text.tax_number }} <span class="text-danger">*</span>
-                                </label>
-                                {{ form.tax_number }}
-                            </div>
-                        </div>
                     </div>
+                    {##}
+                    {#                <div class="alert alert-warning" role="alert">#}
+                    {#                    <i class="bi bi-exclamation-triangle me-2"></i>#}
+                    {#                    <strong>Wichtig:</strong> Alle Registrierungsfelder sind jetzt Pflichtfelder.#}
+                    {#                </div>#}
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.vat_id.id_for_label }}" class="form-label">
-                                    <i class="bi bi-currency-euro me-1"></i>
-                                    {{ text.vat_id }} <span class="text-danger">*</span>
-                                </label>
-                                {{ form.vat_id }}
+                    <form method="post"
+                          id="company-step2-form"
+                          action="{% url 'company:register_company_step2' %}"
+                          data-url="{% url 'company:register_company_step2' %}"
+                          data-next-url="{% url 'company:register_company_step3' %}">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.commercial_register.id_for_label }}" class="form-label">
+                                        <i class="bi bi-building-check me-1"></i>
+                                        {{ text.commercial_register }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.commercial_register }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.tax_number.id_for_label }}" class="form-label">
+                                        <i class="bi bi-receipt me-1"></i>
+                                        {{ text.tax_number }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.tax_number }}
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.tax_id.id_for_label }}" class="form-label">
-                                    <i class="bi bi-person-vcard me-1"></i>
-                                    {{ text.tax_id }} <span class="text-danger">*</span>
-                                </label>
-                                {{ form.tax_id }}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.vat_id.id_for_label }}" class="form-label">
+                                        <i class="bi bi-currency-euro me-1"></i>
+                                        {{ text.vat_id }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.vat_id }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.tax_id.id_for_label }}" class="form-label">
+                                        <i class="bi bi-person-vcard me-1"></i>
+                                        {{ text.tax_id }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.tax_id }}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="validation-status mb-3" style="display: none;" id="validationStatus">
-                        <div class="alert alert-success" role="alert" id="validationSuccess" style="display: none;">
-                            <i class="bi bi-check-circle me-2"></i> Alle Registrierungsdaten sind korrekt ausgefüllt!
-                        </div>
-                        <div class="alert alert-danger" role="alert" id="validationErrors" style="display: none;">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            <span id="validationErrorText">Bitte korrigieren Sie die Eingaben</span>
-                        </div>
-                    </div>
+{#                        <div class="validation-status mb-3" style="display: none;" id="validationStatus">#}
+{#                            <div class="alert alert-success" role="alert" id="validationSuccess" style="display: none;">#}
+{#                                <i class="bi bi-check-circle me-2"></i> Alle Registrierungsdaten sind korrekt ausgefüllt!#}
+{#                            </div>#}
+{#                            <div class="alert alert-danger" role="alert" id="validationErrors" style="display: none;">#}
+{#                                <i class="bi bi-exclamation-triangle me-2"></i>#}
+{#                                <span id="validationErrorText">Bitte korrigieren Sie die Eingaben</span>#}
+{#                            </div>#}
+{#                        </div>#}
 
-                    <div class="d-flex justify-content-between align-items-center mt-4">
-                        <div class="d-flex gap-2">
+                        <div class="d-flex justify-content-between align-items-center mt-4">
                             <a href="{% url 'company:register_company_step1' %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
                             </a>
-                            <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
-                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                    <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
+                                </button>
+                                <button type="submit" class="btn btn-success" id="continue-btn">
+                                    <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
+                                </button>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-success" id="continue-btn">
-                            <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
-                        </button>
-                    </div>
-                </form>
-            </div>
 
-            <div class="modal-footer">
-                <small class="text-muted">
-                    <i class="bi bi-exclamation-circle me-1"></i> Alle Registrierungsfelder sind Pflichtfelder
-                </small>
-                <small class="text-muted ms-3">
-                    <i class="bi bi-info-circle me-1"></i>
-                    <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Eingaben, ohne zum nächsten Schritt zu gehen.
-                </small>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <small class="text-muted">
+                        <i class="bi bi-exclamation-circle me-1"></i> Alle Registrierungsfelder sind Pflichtfelder
+                    </small>
+                    <small class="text-muted ms-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Eingaben, ohne zum nächsten Schritt zu gehen.
+                    </small>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="modal-backdrop fade show"></div>
+    <div class="modal-backdrop fade show"></div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/register_company_step2.js' %}"></script>
+    <script src="{% static 'js/register_company_step2.js' %}"></script>
 {% endblock %}
