@@ -1,5 +1,3 @@
-# company/company_manager.py - ИСПРАВЛЕНО: все проверки MongoDB объектов
-
 import datetime
 import json
 
