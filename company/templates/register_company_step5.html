@@ -26,12 +26,6 @@
                     <br><small class="text-muted">Firma: <strong>{{ company_name }} {% if legal_form %}{{ legal_form|legal_form_display }}{% endif %}</strong></small>
                 </div>
 
-                <!-- Предупреждение о банковских данных -->
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Hinweis:</strong> Alle Bankdaten sind optional und können übersprungen werden.
-                </div>
-
                 <!-- Форма регистрации компании -->
                 <form id="company-step5-form"
                       method="post"
