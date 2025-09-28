@@ -6,122 +6,135 @@
 {% load company_extras %}
 
 {% block content %}
-<div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display:block;">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-telephone me-2"></i>
-                    {{ text.title }}
-                </h5>
-                <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
-                <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
-            </div>
-
-            <div class="modal-body">
-                <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    {{ text.desc }}
-                    <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
-                        {% if legal_form %}{{ legal_form|legal_form_display }}{% endif %}
-                    </strong></small>
+    <div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-telephone me-2"></i>
+                        {{ text.title }}
+                    </h5>
+                    <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
+                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
                 </div>
 
-                <form id="company-step4-form"
-                      method="post"
-                      action="{% url 'company:register_company_step4' %}"
-                      data-url="{% url 'company:register_company_step4' %}"
-                      data-next-url="{% url 'company:register_company_step5' %}">
-                    {% csrf_token %}
-
-                    <!-- Hauptkontakte -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="bi bi-telephone-fill me-2"></i> Hauptkontakte (Pflichtfelder)</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="{{ form.email.id_for_label }}" class="form-label">
-                                            <i class="bi bi-envelope me-1"></i> Haupt-E-Mail *
-                                        </label>
-                                        {{ form.email }}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="{{ form.phone.id_for_label }}" class="form-label">
-                                            <i class="bi bi-telephone me-1"></i> Haupttelefon *
-                                        </label>
-                                        {{ form.phone }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="{{ form.fax.id_for_label }}" class="form-label">
-                                            <i class="bi bi-printer me-1"></i> Fax <small class="text-muted">(Optional)</small>
-                                        </label>
-                                        {{ form.fax }}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="{{ form.website.id_for_label }}" class="form-label">
-                                            <i class="bi bi-globe me-1"></i> Website <small class="text-muted">(Optional)</small>
-                                        </label>
-                                        {{ form.website }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        {{ text.desc }}
+                        <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
+                        {% if legal_form %}{{ legal_form|legal_form_display }}{% endif %}
+                    </strong></small>
                     </div>
 
-                    <!-- скрытое поле для дополнительных контактов -->
-                    <input type="hidden" name="additional_contacts_data" id="additionalContactsDataInput"
-                           value="{{ existing_additional_contacts|default:'[]' }}">
+                    <form id="company-step4-form"
+                          method="post"
+                          action="{% url 'company:register_company_step4' %}"
+                          data-url="{% url 'company:register_company_step4' %}"
+                          data-next-url="{% url 'company:register_company_step5' %}">
+                        {% csrf_token %}
 
-                    <!-- кнопки -->
-                    <div class="d-flex justify-content-between align-items-center mt-4">
-                        <div class="d-flex gap-2">
+                        <!-- Hauptkontakte -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-telephone-fill me-2"></i> Hauptkontakte (Pflichtfelder)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                                <i class="bi bi-envelope me-1"></i> Haupt-E-Mail *
+                                            </label>
+                                            {{ form.email }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                                <i class="bi bi-telephone me-1"></i> Haupttelefon *
+                                            </label>
+                                            {{ form.phone }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.fax.id_for_label }}" class="form-label">
+                                                <i class="bi bi-printer me-1"></i> Fax <small class="text-muted">(Optional)</small>
+                                            </label>
+                                            {{ form.fax }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.website.id_for_label }}" class="form-label">
+                                                <i class="bi bi-globe me-1"></i> Website <small class="text-muted">(Optional)</small>
+                                            </label>
+                                            {{ form.website }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- скрытое поле для дополнительных контактов -->
+                        <input type="hidden" name="additional_contacts_data" id="additionalContactsDataInput"
+                               value="{{ existing_additional_contacts|default:'[]' }}">
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
                             <a href="{% url 'company:register_company_step3' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i> {{ text.btn_back }}
+                                <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
                             </a>
-                            <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
-                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                    <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
+                                </button>
+                                <button type="submit" class="btn btn-success" id="continue-btn">
+                                    <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
+                                </button>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-info" id="openAdditionalContactsBtn">
-                                <i class="bi bi-plus-circle me-1"></i> Zusätzliche Kontakte
-                                <span class="badge bg-info ms-1" id="additionalContactsCount">0</span>
-                            </button>
-                            <button type="submit" class="btn btn-success" id="continue-btn">
-                                <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
 
-            <div class="modal-footer">
-                <small class="text-muted"><i class="bi bi-exclamation-circle me-1"></i> {{ text.notification }}</small>
-                <small class="text-muted ms-3"><i class="bi bi-info-circle me-1"></i>
-                    <strong>Tipp:</strong> "Sichern & Schließen" speichert alle Kontaktdaten</small>
+                        {#                    <!-- кнопки -->#}
+                        {#                    <div class="d-flex justify-content-between align-items-center mt-4">#}
+                        {#                        <div class="d-flex gap-2">#}
+                        {#                            <a href="{% url 'company:register_company_step3' %}" class="btn btn-outline-secondary">#}
+                        {#                                <i class="bi bi-arrow-left me-1"></i> {{ text.btn_back }}#}
+                        {#                            </a>#}
+                        {#                            <button type="button" class="btn btn-outline-success" id="save-and-close-btn">#}
+                        {#                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen#}
+                        {#                            </button>#}
+                        {#                        </div>#}
+                        {#                        <div class="d-flex gap-2">#}
+                        {#                            <button type="button" class="btn btn-outline-info" id="openAdditionalContactsBtn">#}
+                        {#                                <i class="bi bi-plus-circle me-1"></i> Zusätzliche Kontakte#}
+                        {#                                <span class="badge bg-info ms-1" id="additionalContactsCount">0</span>#}
+                        {#                            </button>#}
+                        {#                            <button type="submit" class="btn btn-success" id="continue-btn">#}
+                        {#                                <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}#}
+                        {#                            </button>#}
+                        {#                        </div>#}
+                        {#                    </div>#}
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <small class="text-muted"><i class="bi bi-exclamation-circle me-1"></i> {{ text.notification }}</small>
+                    <small class="text-muted ms-3"><i class="bi bi-info-circle me-1"></i>
+                        <strong>Tipp:</strong> "Sichern & Schließen" speichert alle Kontaktdaten, ohne zum nächsten Schritt zu gehen.
+                    </small>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-{# модалки для дополнительных контактов оставляем без изменений #}
-
-<div class="modal-backdrop fade show"></div>
+    <div class="modal-backdrop fade show"></div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/register_company_step4.js' %}"></script>
-<script src="{% static 'js/company_contacts_manager.js' %}"></script>
+    <script src="{% static 'js/register_company_step4.js' %}"></script>
+    <script src="{% static 'js/company_contacts_manager.js' %}"></script>
 {% endblock %}
