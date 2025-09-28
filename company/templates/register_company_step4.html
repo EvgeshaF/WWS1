@@ -77,10 +77,17 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Кнопка справа -->
+                                <div class="d-flex">
+                                    <button type="button" class="btn btn-outline-info ms-auto" id="openAdditionalContactsBtn">
+                                        <i class="bi bi-plus-circle me-1"></i> Zusätzliche Kontakte
+                                        <span class="badge bg-info ms-1" id="additionalContactsCount">0</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- скрытое поле для дополнительных контактов -->
                         <input type="hidden" name="additional_contacts_data" id="additionalContactsDataInput"
                                value="{{ existing_additional_contacts|default:'[]' }}">
 
@@ -98,26 +105,6 @@
                             </div>
                         </div>
 
-                        {#                    <!-- кнопки -->#}
-                        {#                    <div class="d-flex justify-content-between align-items-center mt-4">#}
-                        {#                        <div class="d-flex gap-2">#}
-                        {#                            <a href="{% url 'company:register_company_step3' %}" class="btn btn-outline-secondary">#}
-                        {#                                <i class="bi bi-arrow-left me-1"></i> {{ text.btn_back }}#}
-                        {#                            </a>#}
-                        {#                            <button type="button" class="btn btn-outline-success" id="save-and-close-btn">#}
-                        {#                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen#}
-                        {#                            </button>#}
-                        {#                        </div>#}
-                        {#                        <div class="d-flex gap-2">#}
-                        {#                            <button type="button" class="btn btn-outline-info" id="openAdditionalContactsBtn">#}
-                        {#                                <i class="bi bi-plus-circle me-1"></i> Zusätzliche Kontakte#}
-                        {#                                <span class="badge bg-info ms-1" id="additionalContactsCount">0</span>#}
-                        {#                            </button>#}
-                        {#                            <button type="submit" class="btn btn-success" id="continue-btn">#}
-                        {#                                <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}#}
-                        {#                            </button>#}
-                        {#                        </div>#}
-                        {#                    </div>#}
                     </form>
                 </div>
 
