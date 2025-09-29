@@ -2,7 +2,7 @@
 <div class="modal fade login-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="loginModalLabel">
                     <i class="bi bi-shield-lock me-2"></i>
                     Systemanmeldung
@@ -10,13 +10,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Системная информация -->
-                <div class="login-security-notice">
-                    <i class="bi bi-info-circle"></i>
-                    <div class="notice-content">
-                        <strong>System bereit für Anmeldung</strong>
-                        <small>Administratoren verfügbar • MongoDB verbunden</small>
-                    </div>
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>System bereit für Anmeldung</strong><br>
+                    <small>Administratoren verfügbar • MongoDB verbunden</small>
                 </div>
 
                 <!-- Форма входа -->
@@ -61,10 +58,12 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="btn btn-login" id="loginSubmitBtn">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>
-                        Anmelden
-                    </button>
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>
+                            Anmelden
+                        </button>
+                    </div>
                 </form>
 
                 <!-- Информация о попытках -->
