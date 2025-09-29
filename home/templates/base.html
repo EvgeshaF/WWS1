@@ -204,3 +204,105 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 </style>
+
+<script>
+    // Добавьте этот скрипт в конец base.html для отладки dropdown
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Начинаем диагностику navbar dropdown...');
+
+    // Проверяем наличие Bootstrap
+    if (typeof bootstrap === 'undefined') {
+        console.error('❌ Bootstrap не загружен!');
+        return;
+    } else {
+        console.log('✅ Bootstrap загружен, версия:', bootstrap.Tooltip.VERSION || 'неизвестно');
+    }
+
+    // Находим dropdown элементы
+    const userDropdownToggle = document.getElementById('userDropdown');
+    const userDropdownMenu = document.querySelector('#userDropdown + .dropdown-menu');
+
+    if (!userDropdownToggle) {
+        console.error('❌ userDropdown элемент не найден');
+        return;
+    }
+    console.log('✅ userDropdown найден:', userDropdownToggle);
+
+    if (!userDropdownMenu) {
+        console.error('❌ dropdown-menu не найден');
+        return;
+    }
+    console.log('✅ dropdown-menu найден:', userDropdownMenu);
+
+    // Проверяем атрибуты
+    console.log('📋 data-bs-toggle:', userDropdownToggle.getAttribute('data-bs-toggle'));
+    console.log('📋 aria-expanded:', userDropdownToggle.getAttribute('aria-expanded'));
+
+    // Инициализируем dropdown принудительно
+    try {
+        const dropdown = new bootstrap.Dropdown(userDropdownToggle, {
+            autoClose: true,
+            boundary: 'viewport'
+        });
+        console.log('✅ Dropdown инициализирован:', dropdown);
+
+        // Добавляем обработчики событий для диагностики
+        userDropdownToggle.addEventListener('click', function(e) {
+            console.log('🖱️ Click на dropdown trigger');
+            console.log('📋 Event target:', e.target);
+            console.log('📋 Current aria-expanded:', this.getAttribute('aria-expanded'));
+        });
+
+        userDropdownToggle.addEventListener('show.bs.dropdown', function(e) {
+            console.log('👁️ Dropdown показывается');
+            console.log('📋 Menu element:', userDropdownMenu);
+            console.log('📋 Menu classes:', userDropdownMenu.className);
+        });
+
+        userDropdownToggle.addEventListener('shown.bs.dropdown', function(e) {
+            console.log('✅ Dropdown показан');
+            console.log('📋 Menu display:', window.getComputedStyle(userDropdownMenu).display);
+            console.log('📋 Menu position:', window.getComputedStyle(userDropdownMenu).position);
+            console.log('📋 Menu z-index:', window.getComputedStyle(userDropdownMenu).zIndex);
+        });
+
+        userDropdownToggle.addEventListener('hide.bs.dropdown', function(e) {
+            console.log('👁️ Dropdown скрывается');
+        });
+
+        userDropdownToggle.addEventListener('hidden.bs.dropdown', function(e) {
+            console.log('❌ Dropdown скрыт');
+        });
+
+        // Тестовая кнопка для принудительного показа
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            const testBtn = document.createElement('button');
+            testBtn.textContent = 'Test Dropdown';
+            testBtn.style.cssText = 'position: fixed; top: 10px; left: 10px; z-index: 9999; background: red; color: white; padding: 5px;';
+            testBtn.onclick = function() {
+                console.log('🧪 Тестируем dropdown...');
+                dropdown.toggle();
+            };
+            document.body.appendChild(testBtn);
+        }
+
+    } catch (error) {
+        console.error('❌ Ошибка инициализации dropdown:', error);
+    }
+
+    // Проверяем CSS стили
+    const computedStyle = window.getComputedStyle(userDropdownMenu);
+    console.log('🎨 CSS стили dropdown-menu:');
+    console.log('  display:', computedStyle.display);
+    console.log('  position:', computedStyle.position);
+    console.log('  z-index:', computedStyle.zIndex);
+    console.log('  visibility:', computedStyle.visibility);
+    console.log('  opacity:', computedStyle.opacity);
+
+    // Проверяем Bootstrap классы
+    const hasBootstrapClasses = userDropdownMenu.classList.contains('dropdown-menu');
+    console.log('📋 Имеет класс dropdown-menu:', hasBootstrapClasses);
+
+    console.log('🏁 Диагностика завершена');
+});
+</script>
