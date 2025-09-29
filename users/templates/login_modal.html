@@ -1,56 +1,60 @@
-<!-- Модальное окно входа -->
-<div class="modal fade login-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<!-- users/templates/login_modal.html - ПОЛНАЯ ПЕРЕРАБОТКА -->
+<div class="modal fade show" id="loginModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="loginModalLabel">
+                <h5 class="modal-title">
                     <i class="bi bi-shield-lock me-2"></i>
                     Systemanmeldung
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body">
                 <div class="alert alert-info" role="alert">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>System bereit für Anmeldung</strong><br>
+                    <strong>System bereit für Anmeldung</strong>
+                    <br>
                     <small>Administratoren verfügbar • MongoDB verbunden</small>
                 </div>
 
-                <!-- Форма входа -->
-                <form id="loginForm" class="login-form">
+                <form method="post" id="loginForm" action="">
                     {% csrf_token %}
 
-                    <div class="form-floating mb-3">
+                    <div class="mb-3">
+                        <label for="loginUsername" class="form-label">
+                            <i class="bi bi-person me-1"></i>
+                            Benutzername
+                        </label>
                         <input type="text"
                                class="form-control"
                                id="loginUsername"
                                name="username"
-                               placeholder="Benutzername"
+                               placeholder="Benutzername eingeben"
                                required
-                               autocomplete="username">
-                        <label for="loginUsername">
-                            <i class="bi bi-person me-1"></i>
-                            Benutzername
-                        </label>
+                               autocomplete="username"
+                               autofocus>
                     </div>
 
-                    <div class="form-floating mb-3">
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">
+                            <i class="bi bi-key me-1"></i>
+                            Passwort
+                        </label>
                         <input type="password"
                                class="form-control"
                                id="loginPassword"
                                name="password"
-                               placeholder="Passwort"
+                               placeholder="Passwort eingeben"
                                required
                                autocomplete="current-password">
-                        <label for="loginPassword">
-                            <i class="bi bi-key me-1"></i>
-                            Passwort
-                        </label>
                     </div>
 
-                    <div class="d-flex align-items-center mb-3 ps-0">
-                        <input type="checkbox" class="form-check-input me-2" id="loginRememberMe" name="remember_me">
-                        <label class="form-check-label mb-0" for="loginRememberMe">
+                    <div class="mb-3 form-check">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="loginRememberMe"
+                               name="remember_me">
+                        <label class="form-check-label" for="loginRememberMe">
                             Angemeldet bleiben
                         </label>
                     </div>
@@ -61,18 +65,23 @@
                             Anmelden
                         </button>
                     </div>
-
                 </form>
 
                 <!-- Информация о попытках -->
-                <div class="attempts-info mt-3" style="display: none;"></div>
+                <div class="attempts-info mt-3 text-center" style="display: none;"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Loader для модального окна -->
+<div class="modal-backdrop fade show"></div>
+
+<!-- Loader -->
 <div class="login-loader">
-    <div class="spinner"></div>
-    <div class="loading-text">Anmeldung...</div>
+    <div class="d-flex align-items-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <span class="ms-3 fw-bold text-primary">Anmeldung...</span>
+    </div>
 </div>

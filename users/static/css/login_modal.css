@@ -1,551 +1,236 @@
-/* users/static/css/login_modal.css - Стили для модального окна аутентификации */
+/* users/static/css/login_modal.css - ИДЕНТИЧНО create_admin_step1-3.css */
 
-:root {
-    --primary-color: #0d6efd;
-    --primary-dark: #0056b3;
-    --primary-light: rgba(13, 110, 253, 0.1);
-    --surface-color: #ffffff;
-    --text-primary: #212529;
-    --text-secondary: #6c757d;
-    --border-color: #dee2e6;
-    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
-    --border-radius: 15px;
-    --border-radius-sm: 8px;
-    --success-color: #198754;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
+.main-content .welcome-section,
+.main-header .header-content,
+.main-footer {
+    display: none !important;
 }
 
-/* ==================== ОСНОВНЫЕ СТИЛИ МОДАЛЬНОГО ОКНА ==================== */
-
-.login-modal {
-    z-index: 1055 !important; /* Выше обычных модальных окон */
+.main-container {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
 }
 
-.login-modal .modal-backdrop {
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(13, 110, 253, 0.3) 100%);
-    backdrop-filter: blur(5px);
-    z-index: 1054;
+/* Базовые стили модального окна - БЕЗ ИЗМЕНЕНИЙ */
+#loginModal .modal-dialog {
+    max-width: 500px;
 }
 
-.login-modal .modal-content {
+#loginModal .modal-content {
     border: none;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-lg);
-    background: var(--surface-color);
-    overflow: hidden;
-    position: relative;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
-.login-modal .modal-header {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    color: white;
+#loginModal .modal-header {
+    background: linear-gradient(145deg, #0d6efd 0%, #0056b3 100%);
     border-bottom: none;
-    padding: 1.5rem 2rem;
-    position: relative;
+    border-radius: 0.5rem 0.5rem 0 0;
+    color: white;
 }
 
-.login-modal .modal-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>');
-    pointer-events: none;
-}
-
-.login-modal .modal-title {
+#loginModal .modal-title {
     font-weight: 600;
     display: flex;
     align-items: center;
-    position: relative;
-    z-index: 1;
 }
 
-.login-modal .modal-title i {
+#loginModal .modal-title i {
     font-size: 1.5rem;
     margin-right: 0.75rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-.login-modal .btn-close {
+#loginModal .btn-close-white {
     filter: brightness(0) invert(1);
     opacity: 0.8;
-    position: relative;
-    z-index: 1;
 }
 
-.login-modal .btn-close:hover {
+#loginModal .btn-close-white:hover {
     opacity: 1;
-    transform: scale(1.1);
 }
 
-/* ==================== ТЕЛО МОДАЛЬНОГО ОКНА ==================== */
-
-.login-modal .modal-body {
+#loginModal .modal-body {
     padding: 2rem;
-    background: var(--surface-color);
 }
 
-.login-security-notice {
+/* Alert стили */
+#loginModal .alert-info {
     background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
-    border-left: 4px solid var(--primary-color);
-    border-radius: var(--border-radius-sm);
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-}
-
-.login-security-notice i {
-    color: var(--primary-color);
-    font-size: 1.2rem;
-    margin-right: 0.75rem;
-    flex-shrink: 0;
-}
-
-.login-security-notice .notice-content {
-    flex: 1;
-}
-
-.login-security-notice strong {
-    color: var(--text-primary);
-    display: block;
-    font-size: 0.95rem;
-    margin-bottom: 0.25rem;
-}
-
-.login-security-notice small {
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    line-height: 1.4;
-}
-
-/* ==================== ФОРМА ВХОДА ==================== */
-
-.login-form {
-    position: relative;
-}
-
-.login-form .form-floating {
-    position: relative;
-    margin-bottom: 1.25rem;
-}
-
-.login-form .form-floating .form-control {
-    height: 3.5rem;
-    padding: 1rem 0.75rem 0.25rem;
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    font-size: 1rem;
-    background-color: #fff;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.login-form .form-floating .form-control:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem var(--primary-light), 0 4px 12px rgba(13, 110, 253, 0.15);
-    transform: translateY(-1px);
-}
-
-.login-form .form-floating .form-control::placeholder {
-    color: transparent;
-}
-
-.login-form .form-floating label {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    padding: 1rem 0.75rem;
-    pointer-events: none;
-    border: 2px solid transparent;
-    transform-origin: 0 0;
-    transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.login-form .form-floating .form-control:focus ~ label,
-.login-form .form-floating .form-control:not(:placeholder-shown) ~ label {
-    opacity: 0.65;
-    transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
-    color: var(--primary-color);
-}
-
-/* Иконки в полях */
-.login-form .input-group {
-    position: relative;
-}
-
-.login-form .input-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-    z-index: 10;
-    transition: color 0.3s ease;
-}
-
-.login-form .form-control:focus + .input-icon {
-    color: var(--primary-color);
-}
-
-.login-form .form-control.with-icon {
-    padding-left: 3rem;
-}
-
-/* ==================== ЧЕКБОКС "ЗАПОМНИТЬ МЕНЯ" ==================== */
-
-.login-form .form-check {
-    margin-bottom: 1.5rem;
-    padding-left: 0;
-    display: flex;
-    align-items: center;
-}
-
-.login-form .form-check-input {
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-right: 0.75rem;
-    border: 2px solid var(--border-color);
+    border-left: 4px solid #0d6efd;
     border-radius: 0.375rem;
-    background-color: #fff;
-    transition: all 0.2s ease;
 }
 
-.login-form .form-check-input:checked {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.125rem rgba(13, 110, 253, 0.25);
-}
-
-.login-form .form-check-input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.125rem rgba(13, 110, 253, 0.25);
-}
-
-.login-form .form-check-label {
-    color: var(--text-primary);
+/* Form labels - ТОЧНО КАК В create_admin */
+#loginForm .form-label {
     font-weight: 500;
-    font-size: 0.95rem;
-    cursor: pointer;
-    user-select: none;
+    color: #374151;
+    margin-bottom: 0.5rem;
 }
 
-/* ==================== КНОПКИ ==================== */
+#loginForm .form-label i {
+    color: #6c757d;
+}
 
-.login-form .btn-login {
+/* Form controls - ТОЧНО КАК В create_admin */
+#loginForm .form-control {
+    display: block;
     width: 100%;
-    height: 3rem;
+    padding: 0.375rem 0.75rem;
     font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: var(--border-radius-sm);
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    color: white;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    appearance: none;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
-.login-form .btn-login::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.6s;
+#loginForm .form-control:focus {
+    color: #212529;
+    background-color: #fff;
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-.login-form .btn-login:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4);
+#loginForm .form-control::placeholder {
+    color: #6c757d;
+    opacity: 0.5;
 }
 
-.login-form .btn-login:hover::before {
-    left: 100%;
+/* Checkbox - ТОЧНО КАК В create_admin */
+#loginForm .form-check {
+    display: block;
+    min-height: 1.5rem;
+    padding-left: 1.5em;
+    margin-bottom: 0.125rem;
 }
 
-.login-form .btn-login:active {
-    transform: translateY(0);
+#loginForm .form-check-input {
+    float: left;
+    margin-left: -1.5em;
+    width: 1em;
+    height: 1em;
+    margin-top: 0.25em;
+    vertical-align: top;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    appearance: none;
+    print-color-adjust: exact;
 }
 
-.login-form .btn-login:disabled {
-    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-    box-shadow: none;
-    cursor: not-allowed;
-    transform: none;
+#loginForm .form-check-input[type="checkbox"] {
+    border-radius: 0.25em;
 }
 
-.login-form .btn-login:disabled::before {
+#loginForm .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+#loginForm .form-check-input:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+#loginForm .form-check-label {
+    cursor: pointer;
+}
+
+/* Button - ТОЧНО КАК В create_admin */
+#loginForm .btn-primary {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    border-radius: 0.375rem;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+#loginForm .btn-primary:hover {
+    color: #fff;
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+#loginForm .btn-primary:focus {
+    color: #fff;
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    box-shadow: 0 0 0 0.25rem rgba(49, 132, 253, 0.5);
+}
+
+#loginForm .btn-primary:disabled {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    opacity: 0.65;
+}
+
+/* Validation */
+#loginForm .is-valid {
+    border-color: #198754 !important;
+    box-shadow: inset 0 0 0 1px rgba(25, 135, 84, 0.1) !important;
+}
+
+#loginForm .is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.1) !important;
+}
+
+#loginForm .invalid-feedback {
     display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
 }
 
-/* ==================== СОСТОЯНИЯ ВАЛИДАЦИИ ==================== */
-
-.login-form .form-control.is-valid {
-    border-color: var(--success-color);
-    box-shadow: 0 0 0 0.125rem rgba(25, 135, 84, 0.25);
-}
-
-.login-form .form-control.is-invalid {
-    border-color: var(--danger-color);
-    box-shadow: 0 0 0 0.125rem rgba(220, 53, 69, 0.25);
-}
-
-.login-form .invalid-feedback {
+#loginForm .is-invalid ~ .invalid-feedback {
     display: block;
-    color: var(--danger-color);
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: rgba(220, 53, 69, 0.1);
-    border-radius: var(--border-radius-sm);
-    border-left: 3px solid var(--danger-color);
 }
 
-.login-form .valid-feedback {
-    display: block;
-    color: var(--success-color);
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: rgba(25, 135, 84, 0.1);
-    border-radius: var(--border-radius-sm);
-    border-left: 3px solid var(--success-color);
-}
-
-/* ==================== LOADER ==================== */
-
+/* Loader */
 .login-loader {
     display: none;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(2px);
-    z-index: 100;
-    border-radius: var(--border-radius);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
 }
 
 .login-loader.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
 }
 
-.login-loader .spinner {
-    width: 2.5rem;
-    height: 2.5rem;
-    border: 3px solid var(--primary-light);
-    border-top-color: var(--primary-color);
-    border-radius: 50%;
-    animation: loginSpin 1s linear infinite;
+/* Attempts info */
+.attempts-info {
+    padding: 0.75rem;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
 }
 
-@keyframes loginSpin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.login-loader .loading-text {
-    margin-left: 1rem;
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-/* ==================== АНИМАЦИИ ==================== */
-
-.login-modal.show .modal-dialog {
-    animation: loginModalSlideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-@keyframes loginModalSlideIn {
-    from {
-        opacity: 0;
-        transform: scale(0.8) translateY(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-.login-modal.fade .modal-dialog {
-    transform: scale(0.8) translateY(-50px);
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.login-modal.show .modal-dialog {
-    transform: scale(1) translateY(0);
-}
-
-/* ==================== ДОПОЛНИТЕЛЬНЫЕ ССЫЛКИ ==================== */
-
-.login-links {
-    text-align: center;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.login-links a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: color 0.2s ease;
-}
-
-.login-links a:hover {
-    color: var(--primary-dark);
-    text-decoration: underline;
-}
-
-.login-links .link-separator {
-    margin: 0 1rem;
-    color: var(--text-secondary);
-}
-
-/* ==================== СИСТЕМНАЯ ИНФОРМАЦИЯ ==================== */
-
-.login-system-info {
-    background: #f8f9fa;
-    border-radius: var(--border-radius-sm);
-    padding: 1rem;
-    margin-top: 1.5rem;
-    border: 1px solid var(--border-color);
-}
-
-.login-system-info .system-status {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.login-system-info .system-status i {
-    color: var(--success-color);
-    margin-right: 0.5rem;
-    font-size: 1rem;
-}
-
-.login-system-info .system-status span {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.9rem;
-}
-
-.login-system-info .system-details {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
-
-/* ==================== АДАПТИВНОСТЬ ==================== */
-
+/* Responsive */
 @media (max-width: 576px) {
-    .login-modal .modal-dialog {
+    #loginModal .modal-dialog {
         margin: 1rem;
-        max-width: none;
     }
 
-    .login-modal .modal-header {
-        padding: 1.25rem 1.5rem;
-    }
-
-    .login-modal .modal-body {
+    #loginModal .modal-body {
         padding: 1.5rem;
-    }
-
-    .login-modal .modal-title {
-        font-size: 1.25rem;
-    }
-
-    .login-modal .modal-title i {
-        font-size: 1.25rem;
-        margin-right: 0.5rem;
-    }
-
-    .login-form .form-floating .form-control {
-        height: 3rem;
-        font-size: 0.95rem;
-    }
-
-    .login-form .btn-login {
-        height: 2.75rem;
-        font-size: 0.95rem;
-    }
-
-    .login-security-notice {
-        padding: 0.875rem 1rem;
-    }
-
-    .login-security-notice i {
-        font-size: 1rem;
-    }
-}
-
-@media (max-width: 400px) {
-    .login-modal .modal-header,
-    .login-modal .modal-body {
-        padding: 1rem;
-    }
-
-    .login-form .form-floating {
-        margin-bottom: 1rem;
-    }
-
-    .login-system-info {
-        padding: 0.75rem;
-        margin-top: 1rem;
-    }
-}
-
-/* ==================== ТЁМНАЯ ТЕМА (опционально) ==================== */
-
-@media (prefers-color-scheme: dark) {
-    .login-modal .modal-content {
-        background: #1a1a1a;
-        color: #fff;
-    }
-
-    .login-modal .form-control {
-        background-color: #2a2a2a;
-        border-color: #404040;
-        color: #fff;
-    }
-
-    .login-modal .form-control:focus {
-        background-color: #2a2a2a;
-        border-color: var(--primary-color);
-    }
-
-    .login-system-info {
-        background: #2a2a2a;
-        border-color: #404040;
-    }
-
-    .login-security-notice {
-        background: rgba(13, 110, 253, 0.15);
-    }
-}
-
-/* ==================== ПЕЧАТЬ ==================== */
-
-@media print {
-    .login-modal {
-        display: none !important;
     }
 }
