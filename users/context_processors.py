@@ -1,10 +1,11 @@
+# users/context_processors.py - ИСПРАВЛЕНО
+
 from loguru import logger
 from mongodb.mongodb_config import MongoConfig
 
 from user_auth import (
     is_user_authenticated,
     get_user_display_name,
-    should_show_login_modal,
 )
 from .user_utils import UserManager
 
@@ -12,7 +13,7 @@ from .user_utils import UserManager
 def auth_context(request):
     """Context processor для передачи информации об аутентификации"""
     try:
-        # ИСПОЛЬЗУЕМ НОВЫЙ МОДУЛЬ AUTH
+        # Проверяем авторизацию пользователя
         is_auth, user_data = is_user_authenticated(request)
 
         # Проверяем, не находимся ли мы на странице создания админа
@@ -26,14 +27,24 @@ def auth_context(request):
         logger.debug(f"🔍 Current path: {current_path}")
         logger.debug(f"🔍 is_admin_creation_page: {is_admin_creation_page}")
 
-        # Определяем, нужно ли показывать модальное окно входа
+        # Получаем количество администраторов
+        try:
+            user_manager = UserManager()
+            admin_count = user_manager.get_admin_count()
+        except Exception as e:
+            logger.error(f"Ошибка получения количества администраторов: {e}")
+            admin_count = 0
+
+        # ✅ ИСПРАВЛЕНИЕ: Модальное окно показывается только если:
+        # - Есть администраторы (admin_count > 0)
+        # - Пользователь НЕ авторизован
+        # - Не на странице создания админа
         show_login = False
-        if not is_auth and not is_admin_creation_page:
-            # ИСПОЛЬЗУЕМ НОВЫЙ МОДУЛЬ AUTH
-            show_login = should_show_login_modal()
+        if not is_auth and not is_admin_creation_page and admin_count > 0:
+            show_login = True
 
         # Получаем информацию о системе
-        system_info = get_system_info()
+        system_info = get_system_info(admin_count)
 
         context = {
             # Информация о пользователе
@@ -43,7 +54,7 @@ def auth_context(request):
 
             # Информация об аутентификации
             'show_login_modal': show_login,
-            'requires_auth': not is_auth and should_show_login_modal(),
+            'requires_auth': show_login,  # То же самое значение
             'is_admin_creation_page': is_admin_creation_page,
 
             # Системная информация
@@ -54,7 +65,7 @@ def auth_context(request):
             'user_stats': get_user_stats() if is_auth and user_data and user_data.get('is_admin') else None
         }
 
-        logger.debug(f"Auth context: is_auth={is_auth}, show_login={show_login}, admin_creation={is_admin_creation_page}")
+        logger.debug(f"Auth context: is_auth={is_auth}, show_login={show_login}, admin_count={admin_count}, admin_creation={is_admin_creation_page}")
         return context
 
     except Exception as e:
@@ -70,7 +81,7 @@ def auth_context(request):
         }
 
 
-def get_system_info():
+def get_system_info(admin_count=None):
     """Получает информацию о состоянии системы"""
     try:
         # Проверяем MongoDB
@@ -78,13 +89,16 @@ def get_system_info():
         mongodb_status = 'connected' if config.get('setup_completed') else 'disconnected'
 
         # Проверяем пользователей
-        try:
-            user_manager = UserManager()
-            admin_count = user_manager.get_admin_count()
+        if admin_count is None:
+            try:
+                user_manager = UserManager()
+                admin_count = user_manager.get_admin_count()
+                user_status = 'ready' if admin_count > 0 else 'no_admins'
+            except Exception:
+                user_status = 'error'
+                admin_count = 0
+        else:
             user_status = 'ready' if admin_count > 0 else 'no_admins'
-        except Exception:
-            user_status = 'error'
-            admin_count = 0
 
         # Проверяем компанию
         try:

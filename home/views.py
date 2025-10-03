@@ -1,4 +1,4 @@
-# home/views.py - ИСПРАВЛЕНО: одинаковый интерфейс до и после авторизации
+# home/views.py - ИСПРАВЛЕНО: правильная логика перенаправлений
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -10,27 +10,16 @@ from user_auth import is_user_authenticated
 
 def home(request):
     """
-    Главная страница с проверкой состояния системы и авторизации
-    Показывает одинаковый интерфейс до и после авторизации
+    Главная страница с правильной логикой перенаправлений:
+    1. Проверка MongoDB -> если не настроен, редирект на настройку
+    2. Проверка админов -> если нет, редирект на создание админа
+    3. Проверка компании -> предупреждение, но не редирект
+    4. Показ главной страницы
     """
     try:
         logger.info("🏠 Загрузка главной страницы")
 
-        # Проверяем авторизацию пользователя
-        try:
-            from users.views import is_user_authenticated
-            is_auth, user_data = is_user_authenticated(request)
-            logger.info(f"👤 Пользователь авторизован: {is_auth}")
-
-            if user_data:
-                username = user_data.get('username', 'Unknown')
-                is_admin = user_data.get('is_admin', False)
-                logger.info(f"👤 Данные пользователя: {username} (admin: {is_admin})")
-        except Exception as e:
-            logger.error(f"Ошибка проверки авторизации: {e}")
-            is_auth, user_data = False, None
-
-        # Шаг 1: Проверяем MongoDB конфигурацию
+        # ==================== ШАГ 1: ПРОВЕРКА MONGODB ====================
         logger.info("1️⃣ Проверяем конфигурацию MongoDB...")
         config_status = MongoConfig.check_config_completeness()
 
@@ -49,19 +38,19 @@ def home(request):
             messages.warning(request, "MongoDB-Datenbank muss erstellt werden")
             return redirect('create_database_step3')
 
-        elif config_status == 'complete':
-            logger.success("✅ MongoDB: конфигурация завершена")
-        else:
+        elif config_status != 'complete':
             logger.error(f"❌ MongoDB: неизвестный статус конфигурации: {config_status}")
             messages.error(request, "Unbekannter MongoDB-Konfigurationsstatus")
             return render(request, 'home.html', {
                 'setup_complete': False,
                 'error': 'Unbekannte MongoDB-Konfiguration',
-                'is_authenticated': is_auth,
-                'current_user': user_data
+                'is_authenticated': False,
+                'current_user': None
             })
 
-        # Шаг 2: Проверяем наличие администраторов в системе
+        logger.success("✅ MongoDB: конфигурация завершена")
+
+        # ==================== ШАГ 2: ПРОВЕРКА АДМИНИСТРАТОРОВ ====================
         logger.info("2️⃣ Проверяем наличие администраторов...")
         try:
             user_manager = UserManager()
@@ -72,8 +61,30 @@ def home(request):
             messages.error(request, "Fehler beim Überprüfen der Administratoren")
             admin_count = 0
 
-        # Шаг 3: Проверяем наличие зарегистрированной компании
-        logger.info("3️⃣ Проверяем наличие зарегистрированной компании...")
+        # ✅ ИСПРАВЛЕНИЕ: Если админов нет, перенаправляем на создание
+        if admin_count == 0:
+            logger.warning("❌ Администраторы не найдены, перенаправляем на создание")
+            messages.warning(request, "Administrator muss erstellt werden")
+            return redirect('users:create_admin_step1')
+
+        logger.success(f"✅ Найдено администраторов: {admin_count}")
+
+        # ==================== ШАГ 3: ПРОВЕРКА АВТОРИЗАЦИИ ====================
+        logger.info("3️⃣ Проверяем авторизацию пользователя...")
+        try:
+            is_auth, user_data = is_user_authenticated(request)
+            logger.info(f"👤 Пользователь авторизован: {is_auth}")
+
+            if user_data:
+                username = user_data.get('username', 'Unknown')
+                is_admin = user_data.get('is_admin', False)
+                logger.info(f"👤 Данные пользователя: {username} (admin: {is_admin})")
+        except Exception as e:
+            logger.error(f"Ошибка проверки авторизации: {e}")
+            is_auth, user_data = False, None
+
+        # ==================== ШАГ 4: ПРОВЕРКА КОМПАНИИ ====================
+        logger.info("4️⃣ Проверяем наличие зарегистрированной компании...")
         try:
             from company.company_manager import CompanyManager
             company_manager = CompanyManager()
@@ -106,12 +117,9 @@ def home(request):
             company_name = 'Fehler beim Laden'
             company_data = None
 
-        # КРИТИЧНО: Не показываем предупреждения, чтобы интерфейс был одинаковым
-        # Предупреждения будут отображаться в самом шаблоне
-
+        # ==================== ФОРМИРОВАНИЕ КОНТЕКСТА ====================
         logger.success("✅ Главная страница загружена")
 
-        # Подготавливаем контекст для шаблона
         context = {
             'setup_complete': True,
             'admin_count': admin_count,
@@ -143,15 +151,16 @@ def home(request):
             'total_users': admin_count,
             'system_version': '1.0.0',
 
-            # ВАЖНО: Всегда показываем одинаковые флаги независимо от авторизации
-            'show_no_admin_warning': admin_count == 0,
-            'show_no_company_warning': not has_company,
+            # ✅ ИСПРАВЛЕНИЕ: Правильная логика показа модального окна
+            # Модальное окно показывается только если:
+            # - Есть администраторы (admin_count > 0)
+            # - Пользователь НЕ авторизован
+            # - Не находимся на странице создания админа
+            'show_login_modal': admin_count > 0 and not is_auth,
+            'requires_auth': admin_count > 0 and not is_auth,
 
-            # Рекомендации для следующих шагов (одинаковые для всех)
+            # Рекомендации для следующих шагов
             'next_steps': get_next_steps(is_auth, admin_count, has_company),
-
-            # НОВОЕ: Флаг для показа кнопок авторизации
-            'requires_auth': not is_auth,
         }
 
         return render(request, 'home.html', context)
@@ -168,7 +177,9 @@ def home(request):
             'has_company': False,
             'company_name': 'Fehler',
             'is_authenticated': False,
-            'current_user': None
+            'current_user': None,
+            'show_login_modal': False,
+            'requires_auth': False,
         }
 
         return render(request, 'home.html', error_context)
@@ -194,19 +205,8 @@ def get_user_display_name(user_data):
 def get_next_steps(is_authenticated, admin_count, has_company):
     """
     Определяет следующие шаги для пользователя
-    ВАЖНО: Возвращает одинаковые шаги независимо от авторизации
     """
     steps = []
-
-    # Если нет администраторов - самый приоритетный шаг
-    if admin_count == 0:
-        steps.append({
-            'title': 'Administrator erstellen',
-            'description': 'Erstellen Sie den ersten Administrator',
-            'icon': 'bi-person-plus',
-            'priority': 'critical',
-            'action': 'create_admin'
-        })
 
     # Если не авторизован, но есть админы
     if not is_authenticated and admin_count > 0:
