@@ -1,54 +1,66 @@
-// users/static/js/login_modal.js - С ЗАЩИТОЙ от показа на admin pages
+// auth/static/js/auth_login_modal.js - JavaScript для модального окна авторизации
 
-(function () {
+(function() {
     'use strict';
 
-    // КРИТИЧНАЯ ПРОВЕРКА: НЕ инициализируем на страницах создания админа
+    // КРИТИЧЕСКАЯ ПРОВЕРКА: НЕ инициализируем на страницах создания админа
     var currentPath = window.location.pathname;
     var isAdminCreationPage = currentPath.includes('/users/create-admin/') ||
                                currentPath.includes('create-admin') ||
                                (window.isAdminCreationPage === true);
 
     if (isAdminCreationPage) {
-        console.log('🚫 Login Modal System ОТКЛЮЧЕН на странице:', currentPath);
+        console.log('🚫 Auth Login Modal System ОТКЛЮЧЕН на странице:', currentPath);
 
-        // Удаляем модальное окно и backdrop если они есть
         document.addEventListener('DOMContentLoaded', function() {
-            var modal = document.getElementById('loginModal');
-            var backdrop = document.getElementById('loginModalBackdrop');
+            var modal = document.getElementById('authLoginModal');
+            var loader = document.getElementById('authModalLoader');
 
             if (modal) {
                 modal.remove();
-                console.log('🗑️ Login modal удален');
+                console.log('🗑️ Auth login modal удален');
             }
 
-            if (backdrop) {
-                backdrop.remove();
-                console.log('🗑️ Login modal backdrop удален');
+            if (loader) {
+                loader.remove();
+                console.log('🗑️ Auth modal loader удален');
             }
 
-            // Удаляем все backdrop с классом modal-backdrop
             var allBackdrops = document.querySelectorAll('.modal-backdrop');
             allBackdrops.forEach(function(el) {
                 el.remove();
             });
         });
 
-        return; // ОСТАНАВЛИВАЕМ выполнение скрипта
+        return;
     }
 
-    console.log('🔐 Login Modal System загружен на странице:', currentPath);
+    console.log('🔐 Auth Login Modal System загружен на странице:', currentPath);
 
-    class LoginModal {
+    // Конфигурация
+    const CONFIG = {
+        maxAttempts: 5,
+        lockoutTime: 15 * 60 * 1000,
+        storageKeys: {
+            attempts: 'auth_login_attempts',
+            lockout: 'auth_login_lockout',
+            username: 'auth_login_username'
+        }
+    };
+
+    class AuthLoginModal {
         constructor() {
             this.modal = null;
+            this.modalInstance = null;
             this.form = null;
+            this.usernameInput = null;
+            this.passwordInput = null;
+            this.togglePasswordBtn = null;
             this.submitBtn = null;
             this.loader = null;
+            this.attemptsAlert = null;
             this.isSubmitting = false;
-            this.maxAttempts = 5;
             this.currentAttempts = 0;
-            this.lockoutTime = 15 * 60 * 1000; // 15 минут
 
             this.init();
         }
@@ -62,17 +74,21 @@
         }
 
         setup() {
-            console.log('🔧 Инициализация Login Modal');
+            console.log('🔧 Инициализация Auth Login Modal');
 
-            this.modal = document.getElementById('loginModal');
+            this.modal = document.getElementById('authLoginModal');
             if (!this.modal) {
-                console.warn('⚠️ Модальное окно #loginModal не найдено');
+                console.warn('⚠️ Модальное окно #authLoginModal не найдено');
                 return;
             }
 
-            this.form = this.modal.querySelector('#loginForm');
-            this.submitBtn = this.modal.querySelector('#loginSubmitBtn');
-            this.loader = document.querySelector('.login-loader');
+            this.form = document.getElementById('authLoginForm');
+            this.usernameInput = document.getElementById('authUsername');
+            this.passwordInput = document.getElementById('authPassword');
+            this.togglePasswordBtn = document.getElementById('authTogglePassword');
+            this.submitBtn = document.getElementById('authSubmitBtn');
+            this.loader = document.getElementById('authModalLoader');
+            this.attemptsAlert = document.getElementById('authAttemptsAlert');
 
             if (!this.form || !this.submitBtn) {
                 console.error('❌ Форма или кнопка входа не найдены');
@@ -83,11 +99,10 @@
             this.checkAuthStatus();
             this.restoreFormData();
 
-            console.log('✅ Login Modal инициализирован');
+            console.log('✅ Auth Login Modal инициализирован');
         }
 
         checkAuthStatus() {
-            // Проверяем, нужно ли показать модальное окно при загрузке
             if (window.isAuthenticated === false && window.requiresAuth === true) {
                 setTimeout(() => {
                     this.showModal();
@@ -99,32 +114,33 @@
             // Обработка отправки формы
             this.form.addEventListener('submit', (e) => this.handleSubmit(e));
 
+            // Toggle password visibility
+            if (this.togglePasswordBtn) {
+                this.togglePasswordBtn.addEventListener('click', () => this.togglePasswordVisibility());
+            }
+
             // Валидация в реальном времени
-            const usernameInput = this.form.querySelector('input[name="username"]');
-            const passwordInput = this.form.querySelector('input[name="password"]');
-
-            if (usernameInput) {
-                usernameInput.addEventListener('input', () => this.validateField(usernameInput));
-                usernameInput.addEventListener('blur', () => this.validateField(usernameInput));
+            if (this.usernameInput) {
+                this.usernameInput.addEventListener('input', () => this.validateField(this.usernameInput));
+                this.usernameInput.addEventListener('blur', () => this.validateField(this.usernameInput));
             }
 
-            if (passwordInput) {
-                passwordInput.addEventListener('input', () => this.validateField(passwordInput));
-                passwordInput.addEventListener('blur', () => this.validateField(passwordInput));
+            if (this.passwordInput) {
+                this.passwordInput.addEventListener('input', () => this.validateField(this.passwordInput));
+                this.passwordInput.addEventListener('blur', () => this.validateField(this.passwordInput));
             }
 
-            // Автофокус при открытии модального окна
+            // События модального окна
             this.modal.addEventListener('shown.bs.modal', () => {
-                if (usernameInput && !usernameInput.value.trim()) {
-                    usernameInput.focus();
-                } else if (passwordInput) {
-                    passwordInput.focus();
+                if (this.usernameInput && !this.usernameInput.value.trim()) {
+                    this.usernameInput.focus();
+                } else if (this.passwordInput) {
+                    this.passwordInput.focus();
                 }
                 this.currentAttempts = this.getStoredAttempts();
                 this.updateAttemptsDisplay();
             });
 
-            // Сохранение данных при закрытии
             this.modal.addEventListener('hidden.bs.modal', () => {
                 this.saveFormData();
             });
@@ -164,7 +180,7 @@
             try {
                 const formData = new FormData(this.form);
 
-                const response = await fetch('/users/login/', {
+                const response = await fetch(this.form.action, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -239,19 +255,17 @@
                 window.showToast(message, 'error');
             }
 
-            if (this.currentAttempts >= this.maxAttempts) {
+            if (this.currentAttempts >= CONFIG.maxAttempts) {
                 this.setLockout();
                 this.showLockoutMessage();
             } else {
-                const remainingAttempts = this.maxAttempts - this.currentAttempts;
+                const remainingAttempts = CONFIG.maxAttempts - this.currentAttempts;
                 this.showRemainingAttempts(remainingAttempts);
             }
 
-            // Очищаем пароль
-            const passwordInput = this.form.querySelector('input[name="password"]');
-            if (passwordInput) {
-                passwordInput.value = '';
-                passwordInput.focus();
+            if (this.passwordInput) {
+                this.passwordInput.value = '';
+                this.passwordInput.focus();
             }
         }
 
@@ -274,16 +288,13 @@
         }
 
         validateForm() {
-            const usernameInput = this.form.querySelector('input[name="username"]');
-            const passwordInput = this.form.querySelector('input[name="password"]');
-
             let isValid = true;
 
-            if (!this.validateField(usernameInput)) {
+            if (!this.validateField(this.usernameInput)) {
                 isValid = false;
             }
 
-            if (!this.validateField(passwordInput)) {
+            if (!this.validateField(this.passwordInput)) {
                 isValid = false;
             }
 
@@ -299,7 +310,7 @@
 
             this.clearFieldError(field);
 
-            if (field.name === 'username') {
+            if (field === this.usernameInput) {
                 if (!value) {
                     isValid = false;
                     message = 'Benutzername ist erforderlich';
@@ -307,7 +318,7 @@
                     isValid = false;
                     message = 'Benutzername muss mindestens 3 Zeichen lang sein';
                 }
-            } else if (field.name === 'password') {
+            } else if (field === this.passwordInput) {
                 if (!value) {
                     isValid = false;
                     message = 'Passwort ist erforderlich';
@@ -330,33 +341,42 @@
             field.classList.remove('is-valid');
             field.classList.add('is-invalid');
 
-            const existingFeedback = field.parentNode.querySelector('.invalid-feedback');
-            if (existingFeedback) {
-                existingFeedback.remove();
-            }
+            const wrapper = field.closest('.input-icon-wrapper');
+            if (wrapper) {
+                const existingFeedback = wrapper.parentNode.querySelector('.invalid-feedback');
+                if (existingFeedback) {
+                    existingFeedback.remove();
+                }
 
-            const feedback = document.createElement('div');
-            feedback.className = 'invalid-feedback';
-            feedback.textContent = message;
-            field.parentNode.appendChild(feedback);
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = message;
+                wrapper.parentNode.appendChild(feedback);
+            }
         }
 
         setFieldSuccess(field) {
             field.classList.remove('is-invalid');
             field.classList.add('is-valid');
 
-            const existingFeedback = field.parentNode.querySelector('.invalid-feedback');
-            if (existingFeedback) {
-                existingFeedback.remove();
+            const wrapper = field.closest('.input-icon-wrapper');
+            if (wrapper) {
+                const existingFeedback = wrapper.parentNode.querySelector('.invalid-feedback');
+                if (existingFeedback) {
+                    existingFeedback.remove();
+                }
             }
         }
 
         clearFieldError(field) {
             field.classList.remove('is-invalid', 'is-valid');
 
-            const existingFeedback = field.parentNode.querySelector('.invalid-feedback');
-            if (existingFeedback) {
-                existingFeedback.remove();
+            const wrapper = field.closest('.input-icon-wrapper');
+            if (wrapper) {
+                const existingFeedback = wrapper.parentNode.querySelector('.invalid-feedback');
+                if (existingFeedback) {
+                    existingFeedback.remove();
+                }
             }
         }
 
@@ -367,6 +387,18 @@
             }
         }
 
+        togglePasswordVisibility() {
+            if (!this.passwordInput || !this.togglePasswordBtn) return;
+
+            const type = this.passwordInput.type === 'password' ? 'text' : 'password';
+            this.passwordInput.type = type;
+
+            const icon = document.getElementById('authPasswordIcon');
+            if (icon) {
+                icon.className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+            }
+        }
+
         showLoader() {
             if (this.loader) {
                 this.loader.classList.add('active');
@@ -374,7 +406,10 @@
 
             if (this.submitBtn) {
                 this.submitBtn.disabled = true;
-                this.submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Anmeldung...';
+                const buttonText = document.getElementById('authButtonText');
+                if (buttonText) {
+                    buttonText.textContent = 'Anmeldung...';
+                }
             }
         }
 
@@ -385,26 +420,28 @@
 
             if (this.submitBtn) {
                 this.submitBtn.disabled = false;
-                this.submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Anmelden';
+                const buttonText = document.getElementById('authButtonText');
+                if (buttonText) {
+                    buttonText.textContent = 'Anmelden';
+                }
             }
         }
 
         showModal() {
             if (this.modal && window.bootstrap) {
-                const modal = new bootstrap.Modal(this.modal, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
-                modal.show();
+                if (!this.modalInstance) {
+                    this.modalInstance = new bootstrap.Modal(this.modal, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                }
+                this.modalInstance.show();
             }
         }
 
         hideModal() {
-            if (this.modal && window.bootstrap) {
-                const modal = bootstrap.Modal.getInstance(this.modal);
-                if (modal) {
-                    modal.hide();
-                }
+            if (this.modalInstance) {
+                this.modalInstance.hide();
             }
         }
 
@@ -415,12 +452,13 @@
             }, 500);
         }
 
-        // Система попыток и блокировки
+        // ==================== ATTEMPTS & LOCKOUT ====================
+
         getStoredAttempts() {
-            const stored = localStorage.getItem('login_attempts');
+            const stored = localStorage.getItem(CONFIG.storageKeys.attempts);
             const data = stored ? JSON.parse(stored) : {count: 0, timestamp: 0};
 
-            if (Date.now() - data.timestamp > this.lockoutTime) {
+            if (Date.now() - data.timestamp > CONFIG.lockoutTime) {
                 this.clearAttempts();
                 return 0;
             }
@@ -433,17 +471,17 @@
                 count: this.currentAttempts,
                 timestamp: Date.now()
             };
-            localStorage.setItem('login_attempts', JSON.stringify(data));
+            localStorage.setItem(CONFIG.storageKeys.attempts, JSON.stringify(data));
         }
 
         clearAttempts() {
             this.currentAttempts = 0;
-            localStorage.removeItem('login_attempts');
-            localStorage.removeItem('login_lockout');
+            localStorage.removeItem(CONFIG.storageKeys.attempts);
+            localStorage.removeItem(CONFIG.storageKeys.lockout);
         }
 
         isLockedOut() {
-            const lockout = localStorage.getItem('login_lockout');
+            const lockout = localStorage.getItem(CONFIG.storageKeys.lockout);
             if (!lockout) return false;
 
             const lockoutTime = parseInt(lockout);
@@ -451,26 +489,28 @@
                 return true;
             }
 
-            localStorage.removeItem('login_lockout');
+            localStorage.removeItem(CONFIG.storageKeys.lockout);
             this.clearAttempts();
             return false;
         }
 
         setLockout() {
-            const lockoutUntil = Date.now() + this.lockoutTime;
-            localStorage.setItem('login_lockout', lockoutUntil.toString());
+            const lockoutUntil = Date.now() + CONFIG.lockoutTime;
+            localStorage.setItem(CONFIG.storageKeys.lockout, lockoutUntil.toString());
         }
 
         updateAttemptsDisplay() {
-            const attemptsInfo = this.modal.querySelector('.attempts-info');
-            if (!attemptsInfo) return;
+            if (!this.attemptsAlert) return;
 
             if (this.currentAttempts > 0) {
-                const remaining = this.maxAttempts - this.currentAttempts;
-                attemptsInfo.innerHTML = `<i class="bi bi-exclamation-triangle text-warning"></i> ${remaining} Versuche verbleibend`;
-                attemptsInfo.style.display = 'block';
+                const remaining = CONFIG.maxAttempts - this.currentAttempts;
+                const attemptsText = document.getElementById('authAttemptsText');
+                if (attemptsText) {
+                    attemptsText.textContent = `Noch ${remaining} Versuche verbleibend`;
+                }
+                this.attemptsAlert.style.display = 'block';
             } else {
-                attemptsInfo.style.display = 'none';
+                this.attemptsAlert.style.display = 'none';
             }
         }
 
@@ -489,70 +529,33 @@
 
             this.form.style.pointerEvents = 'none';
             this.form.style.opacity = '0.5';
-            this.showLockoutTimer();
         }
 
-        showLockoutTimer() {
-            const lockout = localStorage.getItem('login_lockout');
-            if (!lockout) return;
+        // ==================== STORAGE ====================
 
-            const lockoutUntil = parseInt(lockout);
-            const timerElement = document.createElement('div');
-            timerElement.className = 'lockout-timer alert alert-danger text-center';
-            timerElement.innerHTML = '<i class="bi bi-clock"></i> <span class="timer-text"></span>';
-
-            const formContainer = this.form.parentNode;
-            formContainer.insertBefore(timerElement, this.form);
-
-            const updateTimer = () => {
-                const remaining = lockoutUntil - Date.now();
-                if (remaining <= 0) {
-                    timerElement.remove();
-                    this.form.style.pointerEvents = '';
-                    this.form.style.opacity = '';
-                    this.clearAttempts();
-                    return;
-                }
-
-                const minutes = Math.floor(remaining / 60000);
-                const seconds = Math.floor((remaining % 60000) / 1000);
-                timerElement.querySelector('.timer-text').textContent =
-                    `Entsperrt in ${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-                setTimeout(updateTimer, 1000);
-            };
-
-            updateTimer();
-        }
-
-        // Сохранение данных формы
         saveFormData() {
-            const rememberMe = this.form.querySelector('input[name="remember_me"]');
+            const rememberMe = document.getElementById('authRememberMe');
             if (!rememberMe || !rememberMe.checked) return;
 
-            const username = this.form.querySelector('input[name="username"]').value;
+            const username = this.usernameInput.value;
             if (username) {
-                localStorage.setItem('login_username', username);
+                localStorage.setItem(CONFIG.storageKeys.username, username);
             }
         }
 
         restoreFormData() {
-            const savedUsername = localStorage.getItem('login_username');
-            if (savedUsername) {
-                const usernameInput = this.form.querySelector('input[name="username"]');
-                const rememberInput = this.form.querySelector('input[name="remember_me"]');
-
-                if (usernameInput) {
-                    usernameInput.value = savedUsername;
-                }
-                if (rememberInput) {
-                    rememberInput.checked = true;
+            const savedUsername = localStorage.getItem(CONFIG.storageKeys.username);
+            if (savedUsername && this.usernameInput) {
+                this.usernameInput.value = savedUsername;
+                const rememberCheckbox = document.getElementById('authRememberMe');
+                if (rememberCheckbox) {
+                    rememberCheckbox.checked = true;
                 }
             }
         }
 
         clearFormData() {
-            localStorage.removeItem('login_username');
+            localStorage.removeItem(CONFIG.storageKeys.username);
         }
 
         getCSRFToken() {
@@ -561,34 +564,33 @@
         }
     }
 
-    // Создаем глобальный экземпляр только если НЕ страница создания админа
+    // Создаем глобальный экземпляр
     if (!isAdminCreationPage) {
-        window.loginModal = new LoginModal();
+        window.authLoginModal = new AuthLoginModal();
 
-        // Экспортируем функции для внешнего использования
-        window.showLoginModal = function () {
-            if (window.loginModal) {
-                window.loginModal.showModal();
+        // Экспортируем функции
+        window.showAuthLoginModal = function() {
+            if (window.authLoginModal) {
+                window.authLoginModal.showModal();
             }
         };
 
-        window.hideLoginModal = function () {
-            if (window.loginModal) {
-                window.loginModal.hideModal();
+        window.hideAuthLoginModal = function() {
+            if (window.authLoginModal) {
+                window.authLoginModal.hideModal();
             }
         };
 
-        console.log('✅ Login Modal System готов к работе');
+        console.log('✅ Auth Login Modal System готов к работе');
     } else {
-        console.log('🚫 Login Modal System НЕ инициализирован (admin creation page)');
+        console.log('🚫 Auth Login Modal System НЕ инициализирован (admin creation page)');
 
-        // Заглушки для функций
-        window.showLoginModal = function () {
-            console.log('🚫 showLoginModal заблокирован на admin creation page');
+        window.showAuthLoginModal = function() {
+            console.log('🚫 showAuthLoginModal заблокирован на admin creation page');
         };
 
-        window.hideLoginModal = function () {
-            console.log('🚫 hideLoginModal заблокирован на admin creation page');
+        window.hideAuthLoginModal = function() {
+            console.log('🚫 hideAuthLoginModal заблокирован на admin creation page');
         };
     }
 

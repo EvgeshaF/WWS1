@@ -11,54 +11,21 @@ from loguru import logger
 import datetime
 import json
 
-from .forms import (
-    LoginForm, CreateAdminUserForm, AdminProfileForm,
-    AdminPermissionsForm, get_communication_types_from_mongodb,
+from auth import is_user_authenticated, should_show_login_modal
+from auth.session import clear_user_session
+
+from auth.forms import LoginForm  # LoginForm в auth/forms.py
+from .forms import (  # Остальные формы из users/forms.py
+    CreateAdminUserForm,
+    AdminProfileForm,
+    AdminPermissionsForm,
+    get_communication_types_from_mongodb,
     get_communication_config_from_mongodb
 )
+
 from .user_utils import UserManager
 from . import language
 from django_ratelimit.decorators import ratelimit
-
-
-def is_user_authenticated(request):
-    """Проверяет, авторизован ли пользователь"""
-    try:
-        user_authenticated = request.session.get('user_authenticated', False)
-        if user_authenticated:
-            username = request.session.get('username')
-            if username:
-                user_manager = UserManager()
-                user_data = user_manager.find_user_by_username(username)
-                if user_data and user_data.get('is_active', False):
-                    return True, user_data
-                else:
-                    clear_user_session(request)
-                    return False, None
-        return False, None
-    except Exception as e:
-        logger.error(f"Ошибка проверки авторизации: {e}")
-        return False, None
-
-
-def clear_user_session(request):
-    """Очищает данные пользователя из сессии"""
-    session_keys = ['user_authenticated', 'user_id', 'username', 'is_admin', 'user_data']
-    for key in session_keys:
-        if key in request.session:
-            del request.session[key]
-    request.session.modified = True
-
-
-def should_show_login_modal():
-    """Определяет, нужно ли показывать модальное окно входа"""
-    try:
-        user_manager = UserManager()
-        admin_count = user_manager.get_admin_count()
-        return admin_count > 0
-    except Exception as e:
-        logger.error(f"Ошибка проверки необходимости показа модального окна: {e}")
-        return False
 
 
 @ratelimit(key='ip', rate='5/m', method='POST')

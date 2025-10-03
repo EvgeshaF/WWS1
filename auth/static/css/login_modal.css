@@ -1,236 +1,383 @@
-/* users/static/css/login_modal.css - ИДЕНТИЧНО create_admin_step1-3.css */
+/* auth/static/css/auth_login_modal.css - Стили для модального окна авторизации */
 
-.main-content .welcome-section,
-.main-header .header-content,
-.main-footer {
-    display: none !important;
+/* ==================== ПЕРЕМЕННЫЕ ==================== */
+:root {
+    --auth-primary: #0d6efd;
+    --auth-primary-dark: #0056b3;
+    --auth-primary-light: rgba(13, 110, 253, 0.1);
+    --auth-success: #198754;
+    --auth-warning: #ffc107;
+    --auth-danger: #dc3545;
+    --auth-border-radius: 15px;
+    --auth-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.main-container {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+/* ==================== МОДАЛЬНОЕ ОКНО ==================== */
+#authLoginModal .modal-dialog {
+    max-width: 800px;
 }
 
-/* Базовые стили модального окна - БЕЗ ИЗМЕНЕНИЙ */
-#loginModal .modal-dialog {
-    max-width: 500px;
-}
-
-#loginModal .modal-content {
+#authLoginModal .auth-modal-content {
     border: none;
-    border-radius: 0.5rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border-radius: var(--auth-border-radius);
+    overflow: hidden;
+    box-shadow: var(--auth-shadow);
+    animation: modalSlideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-#loginModal .modal-header {
-    background: linear-gradient(145deg, #0d6efd 0%, #0056b3 100%);
-    border-bottom: none;
-    border-radius: 0.5rem 0.5rem 0 0;
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==================== HEADER ==================== */
+#authLoginModal .auth-modal-header {
+    background: linear-gradient(135deg, var(--auth-primary) 0%, var(--auth-primary-dark) 100%);
     color: white;
+    padding: 1.5rem 2rem;
+    border-bottom: none;
 }
 
-#loginModal .modal-title {
+#authLoginModal .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#authLoginModal .header-icon {
+    font-size: 2.5rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+#authLoginModal .header-text h5 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+#authLoginModal .modal-subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* ==================== BODY ==================== */
+#authLoginModal .auth-modal-body {
+    padding: 2rem;
+    background: #f8f9fa;
+}
+
+/* Alert */
+#authLoginModal .auth-alert {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+    border-left: 4px solid var(--auth-primary);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+/* ==================== FORM STYLES ==================== */
+#authLoginModal .form-label {
     font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
 }
 
-#loginModal .modal-title i {
-    font-size: 1.5rem;
-    margin-right: 0.75rem;
+#authLoginModal .form-label i {
+    color: var(--auth-primary);
 }
 
-#loginModal .btn-close-white {
-    filter: brightness(0) invert(1);
-    opacity: 0.8;
+/* Input with Icon */
+.input-icon-wrapper {
+    position: relative;
 }
 
-#loginModal .btn-close-white:hover {
-    opacity: 1;
-}
-
-#loginModal .modal-body {
-    padding: 2rem;
-}
-
-/* Alert стили */
-#loginModal .alert-info {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
-    border-left: 4px solid #0d6efd;
-    border-radius: 0.375rem;
-}
-
-/* Form labels - ТОЧНО КАК В create_admin */
-#loginForm .form-label {
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.5rem;
-}
-
-#loginForm .form-label i {
+.input-icon-wrapper .input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     color: #6c757d;
+    font-size: 1.1rem;
+    z-index: 2;
+    pointer-events: none;
 }
 
-/* Form controls - ТОЧНО КАК В create_admin */
-#loginForm .form-control {
-    display: block;
-    width: 100%;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: #212529;
-    background-color: #fff;
-    background-clip: padding-box;
-    border: 1px solid #ced4da;
-    appearance: none;
-    border-radius: 0.375rem;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+.input-icon-wrapper .form-control {
+    padding-left: 3rem;
+    padding-right: 3rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    background: white;
 }
 
-#loginForm .form-control:focus {
-    color: #212529;
-    background-color: #fff;
-    border-color: #86b7fe;
-    outline: 0;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+.input-icon-wrapper .form-control:focus {
+    border-color: var(--auth-primary);
+    box-shadow: 0 0 0 0.25rem var(--auth-primary-light);
+    background: white;
 }
 
-#loginForm .form-control::placeholder {
+.input-icon-wrapper .btn-icon-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
     color: #6c757d;
-    opacity: 0.5;
+    padding: 0.5rem;
+    z-index: 2;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-/* Checkbox - ТОЧНО КАК В create_admin */
-#loginForm .form-check {
+.input-icon-wrapper .btn-icon-toggle:hover {
+    color: var(--auth-primary);
+    background: var(--auth-primary-light);
+    border-radius: 0.25rem;
+}
+
+/* ==================== VALIDATION ==================== */
+.input-icon-wrapper .form-control.is-valid {
+    border-color: var(--auth-success);
+}
+
+.input-icon-wrapper .form-control.is-invalid {
+    border-color: var(--auth-danger);
+}
+
+.invalid-feedback {
+    display: none;
+    color: var(--auth-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.is-invalid ~ .invalid-feedback {
     display: block;
-    min-height: 1.5rem;
-    padding-left: 1.5em;
-    margin-bottom: 0.125rem;
 }
 
-#loginForm .form-check-input {
-    float: left;
-    margin-left: -1.5em;
-    width: 1em;
-    height: 1em;
-    margin-top: 0.25em;
-    vertical-align: top;
-    background-color: #fff;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    border: 1px solid rgba(0, 0, 0, 0.25);
-    appearance: none;
-    print-color-adjust: exact;
-}
-
-#loginForm .form-check-input[type="checkbox"] {
-    border-radius: 0.25em;
-}
-
-#loginForm .form-check-input:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-}
-
-#loginForm .form-check-input:focus {
-    border-color: #86b7fe;
-    outline: 0;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-#loginForm .form-check-label {
+/* ==================== CHECKBOX ==================== */
+#authLoginModal .form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+    border: 2px solid #dee2e6;
     cursor: pointer;
 }
 
-/* Button - ТОЧНО КАК В create_admin */
-#loginForm .btn-primary {
-    color: #fff;
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    padding: 0.375rem 0.75rem;
+#authLoginModal .form-check-input:checked {
+    background-color: var(--auth-primary);
+    border-color: var(--auth-primary);
+}
+
+#authLoginModal .form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ==================== SECURITY CARD ==================== */
+.security-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 2px solid #e5e7eb;
+    height: 100%;
+}
+
+.security-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.security-header i {
+    font-size: 1.5rem;
+}
+
+.security-header h6 {
+    margin: 0;
+    font-weight: 600;
+    color: #374151;
+}
+
+.security-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.security-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.security-list li i {
     font-size: 1rem;
-    border-radius: 0.375rem;
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    flex-shrink: 0;
 }
 
-#loginForm .btn-primary:hover {
-    color: #fff;
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
+/* ==================== ATTEMPTS WARNING ==================== */
+.attempts-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-left: 4px solid var(--auth-warning);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    animation: shake 0.5s ease;
 }
 
-#loginForm .btn-primary:focus {
-    color: #fff;
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
-    box-shadow: 0 0 0 0.25rem rgba(49, 132, 253, 0.5);
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
-#loginForm .btn-primary:disabled {
-    color: #fff;
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    opacity: 0.65;
+/* ==================== FOOTER ==================== */
+#authLoginModal .auth-modal-footer {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-top: 2px solid #f3f4f6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
 }
 
-/* Validation */
-#loginForm .is-valid {
-    border-color: #198754 !important;
-    box-shadow: inset 0 0 0 1px rgba(25, 135, 84, 0.1) !important;
+#authLoginModal .btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
 }
 
-#loginForm .is-invalid {
-    border-color: #dc3545 !important;
-    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.1) !important;
+#authLoginModal .btn-primary {
+    background: linear-gradient(135deg, var(--auth-primary) 0%, var(--auth-primary-dark) 100%);
+    border: none;
 }
 
-#loginForm .invalid-feedback {
-    display: none;
-    width: 100%;
-    margin-top: 0.25rem;
-    font-size: 0.875em;
-    color: #dc3545;
+#authLoginModal .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
 }
 
-#loginForm .is-invalid ~ .invalid-feedback {
-    display: block;
+#authLoginModal .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
-/* Loader */
-.login-loader {
-    display: none;
+#authLoginModal .btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+}
+
+/* ==================== LOADER OVERLAY ==================== */
+.auth-modal-loader {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
-    z-index: 10000;
-    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 1060;
+    display: none;
     align-items: center;
+    justify-content: center;
 }
 
-.login-loader.active {
-    display: flex !important;
+.auth-modal-loader.active {
+    display: flex;
 }
 
-/* Attempts info */
-.attempts-info {
-    padding: 0.75rem;
-    background: rgba(255, 193, 7, 0.1);
-    border: 1px solid rgba(255, 193, 7, 0.3);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
+.auth-modal-loader .loader-content {
+    text-align: center;
 }
 
-/* Responsive */
-@media (max-width: 576px) {
-    #loginModal .modal-dialog {
+.auth-modal-loader .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    #authLoginModal .modal-dialog {
         margin: 1rem;
     }
 
-    #loginModal .modal-body {
+    #authLoginModal .auth-modal-body {
         padding: 1.5rem;
     }
+
+    #authLoginModal .auth-modal-header {
+        padding: 1rem 1.5rem;
+    }
+
+    #authLoginModal .header-icon {
+        font-size: 2rem;
+    }
+
+    #authLoginModal .header-text h5 {
+        font-size: 1.2rem;
+    }
+
+    .security-card {
+        margin-top: 1rem;
+    }
+
+    #authLoginModal .auth-modal-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    #authLoginModal .btn {
+        width: 100%;
+    }
+}
+
+/* ==================== ANIMATIONS ==================== */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ==================== СКРЫТЬ НА СТРАНИЦАХ СОЗДАНИЯ АДМИНА ==================== */
+.main-content .welcome-section,
+.main-header .header-content,
+.main-footer {
+    display: block !important;
 }

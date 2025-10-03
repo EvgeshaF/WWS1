@@ -1,4 +1,4 @@
-
+from django import forms
 
 class LoginForm(forms.Form):
     """Форма аутентификации пользователя"""

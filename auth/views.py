@@ -11,7 +11,7 @@ from loguru import logger
 from .authentication import authenticate_user, is_user_authenticated
 from .session import create_user_session, clear_user_session
 from .decorators import anonymous_required
-from users.forms import LoginForm
+from .forms import LoginForm
 
 
 @require_http_methods(["GET", "POST"])

@@ -1,10 +1,7 @@
-# users/context_processors.py - ОБНОВЛЕННЫЙ с использованием модуля auth
-
 from loguru import logger
 from mongodb.mongodb_config import MongoConfig
 
-# ИСПОЛЬЗУЕМ НОВЫЙ МОДУЛЬ AUTH
-from .auth import (
+from auth import (
     is_user_authenticated,
     get_user_display_name,
     should_show_login_modal,

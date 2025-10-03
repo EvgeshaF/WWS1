@@ -1,8 +1,7 @@
-<!-- users/templates/login_modal.html - С ЗАЩИТОЙ от показа на admin pages -->
+<!-- auth/templates/auth/login_modal.html - Модальное окно авторизации -->
 
 <!-- ПРОВЕРКА: Не показываем если это страница создания админа -->
 <script>
-    // Немедленная проверка перед рендерингом
     (function() {
         var currentPath = window.location.pathname;
         var isAdminPage = currentPath.includes('/users/create-admin/') ||
@@ -10,9 +9,8 @@
 
         if (isAdminPage) {
             console.log('🚫 Login modal ЗАБЛОКИРОВАН на admin creation page:', currentPath);
-            // Скрываем весь блок login modal
             document.addEventListener('DOMContentLoaded', function() {
-                var loginModal = document.getElementById('loginModal');
+                var loginModal = document.getElementById('authLoginModal');
                 var backdrop = document.querySelectorAll('.modal-backdrop');
 
                 if (loginModal) {
@@ -22,7 +20,7 @@
 
                 backdrop.forEach(function(el) {
                     if (el.previousElementSibling &&
-                        el.previousElementSibling.id === 'loginModal') {
+                        el.previousElementSibling.id === 'authLoginModal') {
                         el.remove();
                         console.log('🗑️ Login modal backdrop удален');
                     }
@@ -35,89 +33,165 @@
     })();
 </script>
 
-<div class="modal fade" id="loginModal" tabindex="-1" aria-modal="true" role="dialog" style="display: none;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-shield-lock me-2"></i>
-                    Systemanmeldung
-                </h5>
+<!-- Модальное окно авторизации -->
+<div class="modal fade" id="authLoginModal" tabindex="-1" aria-labelledby="authLoginModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content auth-modal-content">
+            <div class="modal-header auth-modal-header">
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <div class="header-text">
+                        <h5 class="modal-title" id="authLoginModalLabel">
+                            Systemanmeldung
+                        </h5>
+                        <p class="modal-subtitle">
+                            Geben Sie Ihre Anmeldedaten ein
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div class="modal-body">
-                <div class="alert alert-info" role="alert">
+            <div class="modal-body auth-modal-body">
+
+                <!-- System Info Alert -->
+                <div class="alert alert-info auth-alert" role="alert">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>System bereit für Anmeldung</strong>
-                    <br>
-                    <small>Administratoren verfügbar • MongoDB verbunden</small>
+                    <div>
+                        <strong>System bereit für Anmeldung</strong>
+                        <br>
+                        <small class="text-muted">
+                            MongoDB verbunden • {{ admin_count|default:0 }} Administrator{{ admin_count|pluralize:"en" }} verfügbar
+                        </small>
+                    </div>
                 </div>
 
-                <form method="post" id="loginForm" action="">
+                <!-- Login Form -->
+                <form method="post" id="authLoginForm" action="{% url 'auth:login' %}" novalidate>
                     {% csrf_token %}
 
-                    <div class="mb-3">
-                        <label for="loginUsername" class="form-label">
-                            <i class="bi bi-person me-1"></i>
-                            Benutzername
-                        </label>
-                        <input type="text"
-                               class="form-control"
-                               id="loginUsername"
-                               name="username"
-                               placeholder="Benutzername eingeben"
-                               required
-                               autocomplete="username"
-                               autofocus>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <!-- Username Field -->
+                            <div class="form-group mb-3">
+                                <label for="authUsername" class="form-label">
+                                    <i class="bi bi-person me-1"></i>
+                                    Benutzername
+                                </label>
+                                <div class="input-icon-wrapper">
+                                    <i class="bi bi-person-circle input-icon"></i>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="authUsername"
+                                           name="username"
+                                           placeholder="Benutzername eingeben"
+                                           required
+                                           autocomplete="username"
+                                           autofocus>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Password Field -->
+                            <div class="form-group mb-3">
+                                <label for="authPassword" class="form-label">
+                                    <i class="bi bi-key me-1"></i>
+                                    Passwort
+                                </label>
+                                <div class="input-icon-wrapper">
+                                    <i class="bi bi-shield-lock input-icon"></i>
+                                    <input type="password"
+                                           class="form-control"
+                                           id="authPassword"
+                                           name="password"
+                                           placeholder="Passwort eingeben"
+                                           required
+                                           autocomplete="current-password">
+                                    <button class="btn btn-icon-toggle"
+                                            type="button"
+                                            id="authTogglePassword"
+                                            title="Passwort anzeigen/verbergen">
+                                        <i class="bi bi-eye" id="authPasswordIcon"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <!-- Remember Me -->
+                            <div class="form-check mb-3">
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="authRememberMe"
+                                       name="remember_me">
+                                <label class="form-check-label" for="authRememberMe">
+                                    Angemeldet bleiben
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- Security Info -->
+                            <div class="security-card">
+                                <div class="security-header">
+                                    <i class="bi bi-shield-check text-success"></i>
+                                    <h6>Sicherheitsinformationen</h6>
+                                </div>
+                                <ul class="security-list">
+                                    <li>
+                                        <i class="bi bi-check-circle text-success"></i>
+                                        Verschlüsselte Verbindung
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check-circle text-success"></i>
+                                        Sichere Authentifizierung
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check-circle text-success"></i>
+                                        Sitzungsverwaltung
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-info-circle text-primary"></i>
+                                        Nach 5 Fehlversuchen: 15 Min. Sperre
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="loginPassword" class="form-label">
-                            <i class="bi bi-key me-1"></i>
-                            Passwort
-                        </label>
-                        <input type="password"
-                               class="form-control"
-                               id="loginPassword"
-                               name="password"
-                               placeholder="Passwort eingeben"
-                               required
-                               autocomplete="current-password">
+                    <!-- Attempts Warning -->
+                    <div class="alert alert-warning attempts-warning" id="authAttemptsAlert" style="display: none;">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span id="authAttemptsText"></span>
                     </div>
 
-                    <div class="mb-3 form-check">
-                        <input type="checkbox"
-                               class="form-check-input"
-                               id="loginRememberMe"
-                               name="remember_me">
-                        <label class="form-check-label" for="loginRememberMe">
-                            Angemeldet bleiben
-                        </label>
-                    </div>
-
-                    <div class="d-flex justify-content-end mt-4">
-                        <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
+                    <!-- Action Buttons -->
+                    <div class="modal-footer auth-modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="authCancelBtn">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Abbrechen
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="authSubmitBtn">
                             <i class="bi bi-box-arrow-in-right me-1"></i>
-                            Anmelden
+                            <span id="authButtonText">Anmelden</span>
                         </button>
                     </div>
                 </form>
-
-                <!-- Информация о попытках -->
-                <div class="attempts-info mt-3 text-center" style="display: none;"></div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal-backdrop fade" id="loginModalBackdrop" style="display: none;"></div>
-
-<!-- Loader -->
-<div class="login-loader">
-    <div class="d-flex align-items-center">
+<!-- Loader для модального окна -->
+<div class="auth-modal-loader" id="authModalLoader">
+    <div class="loader-content">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">Lädt...</span>
         </div>
-        <span class="ms-3 fw-bold text-primary">Anmeldung...</span>
+        <p class="mt-3 text-white">Anmeldung wird verarbeitet...</p>
     </div>
 </div>
+
+<!-- Подключаем стили и скрипты модального окна -->
+<link rel="stylesheet" href="{% static 'css/login_modal.css' %}">
+<script src="{% static 'js/login_modal.js' %}"></script>
