@@ -1,4 +1,4 @@
-# home/views.py - ИСПРАВЛЕНО: добавлена поддержка авторизации
+# home/views.py - ИСПРАВЛЕНО: одинаковый интерфейс до и после авторизации
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -11,16 +11,12 @@ from users.user_utils import UserManager
 def home(request):
     """
     Главная страница с проверкой состояния системы и авторизации
-    Проверяет:
-    1. MongoDB конфигурацию
-    2. Наличие администраторов
-    3. Наличие зарегистрированной компании
-    4. Статус авторизации пользователя
+    Показывает одинаковый интерфейс до и после авторизации
     """
     try:
         logger.info("🏠 Загрузка главной страницы")
 
-        # НОВОЕ: Проверяем авторизацию пользователя
+        # Проверяем авторизацию пользователя
         try:
             from users.views import is_user_authenticated
             is_auth, user_data = is_user_authenticated(request)
@@ -71,7 +67,6 @@ def home(request):
             user_manager = UserManager()
             admin_count = user_manager.get_admin_count()
             logger.info(f"👥 Найдено администраторов: {admin_count}")
-
         except Exception as e:
             logger.error(f"❌ Ошибка проверки администраторов: {e}")
             messages.error(request, "Fehler beim Überprüfen der Administratoren")
@@ -98,58 +93,21 @@ def home(request):
                             has_company = True
                             company_data = direct_company
 
-            # Анализируем результаты
-            if company_data is not None and not has_company:
-                logger.error("🚨 НЕСООТВЕТСТВИЕ: get_company() возвращает данные, но has_company() = False")
-                has_company = True
-            elif company_data is None and has_company:
-                logger.error("🚨 ОБРАТНОЕ НЕСООТВЕТСТВИЕ: has_company() = True, но get_company() = None")
-                has_company = False
-
             if not has_company:
                 logger.warning("❌ Компания не зарегистрирована")
                 company_name = 'Не зарегистрирована'
             else:
-                company_name = company_data.get('company_name', 'Неизвестно') if company_data is not None else 'Не настроено'
+                company_name = company_data.get('company_name', 'Неизвестно') if company_data else 'Не настроено'
                 logger.success(f"✅ Компания найдена: {company_name}")
-
-        except ImportError as e:
-            logger.error(f"❌ Ошибка импорта CompanyManager: {e}")
-            messages.error(request, "Fehler beim Laden der Firmenverwaltung")
-            has_company = False
-            company_name = 'Fehler beim Laden'
-            company_data = None
 
         except Exception as e:
             logger.error(f"❌ Ошибка проверки компании: {e}")
-            messages.error(request, "Fehler beim Überprüfen der Firmeninformationen")
             has_company = False
             company_name = 'Fehler beim Laden'
             company_data = None
 
-        # Определяем приоритеты для сообщений
-        warnings_to_show = []
-
-        if admin_count == 0:
-            warnings_to_show.append({
-                'type': 'warning',
-                'message': "Kein Administrator im System gefunden",
-                'action': 'Erstellen Sie einen Administrator',
-                'link': 'users:create_admin_step1'
-            })
-
-        if not has_company:
-            warnings_to_show.append({
-                'type': 'warning',
-                'message': "Keine Firma registriert",
-                'action': 'Registrieren Sie Ihre Firma',
-                'link': 'company:register_company'
-            })
-
-        # Показываем только первое предупреждение (по приоритету)
-        if warnings_to_show:
-            warning = warnings_to_show[0]
-            messages.warning(request, warning['message'])
+        # КРИТИЧНО: Не показываем предупреждения, чтобы интерфейс был одинаковым
+        # Предупреждения будут отображаться в самом шаблоне
 
         logger.success("✅ Главная страница загружена")
 
@@ -165,6 +123,9 @@ def home(request):
             'is_authenticated': is_auth,
             'current_user': user_data,
 
+            # НОВОЕ: Информация для отображения имени пользователя
+            'user_display_name': get_user_display_name(user_data) if user_data else None,
+
             # Дополнительная информация для шаблона
             'mongodb_status': 'Aktiv',
             'database_status': 'Bereit',
@@ -174,13 +135,15 @@ def home(request):
             'total_users': admin_count,
             'system_version': '1.0.0',
 
-            # Флаги для отображения предупреждений
+            # ВАЖНО: Всегда показываем одинаковые флаги независимо от авторизации
             'show_no_admin_warning': admin_count == 0,
             'show_no_company_warning': not has_company,
-            'show_login_suggestion': not is_auth and admin_count > 0,
 
-            # Рекомендации для следующих шагов
+            # Рекомендации для следующих шагов (одинаковые для всех)
             'next_steps': get_next_steps(is_auth, admin_count, has_company),
+
+            # НОВОЕ: Флаг для показа кнопок авторизации
+            'requires_auth': not is_auth,
         }
 
         return render(request, 'home.html', context)
@@ -203,9 +166,39 @@ def home(request):
         return render(request, 'home.html', error_context)
 
 
+def get_user_display_name(user_data):
+    """Получает отображаемое имя пользователя"""
+    if not user_data:
+        return None
+
+    profile = user_data.get('profile', {})
+    first_name = profile.get('first_name', '')
+    last_name = profile.get('last_name', '')
+
+    if first_name and last_name:
+        return f"{first_name} {last_name}"
+    elif first_name:
+        return first_name
+    else:
+        return user_data.get('username', 'Unknown')
+
+
 def get_next_steps(is_authenticated, admin_count, has_company):
-    """Определяет следующие шаги для пользователя"""
+    """
+    Определяет следующие шаги для пользователя
+    ВАЖНО: Возвращает одинаковые шаги независимо от авторизации
+    """
     steps = []
+
+    # Если нет администраторов - самый приоритетный шаг
+    if admin_count == 0:
+        steps.append({
+            'title': 'Administrator erstellen',
+            'description': 'Erstellen Sie den ersten Administrator',
+            'icon': 'bi-person-plus',
+            'priority': 'critical',
+            'action': 'create_admin'
+        })
 
     # Если не авторизован, но есть админы
     if not is_authenticated and admin_count > 0:
@@ -217,34 +210,24 @@ def get_next_steps(is_authenticated, admin_count, has_company):
             'action': 'login'
         })
 
-    # Если нет администраторов
-    if admin_count == 0:
-        steps.append({
-            'title': 'Administrator erstellen',
-            'description': 'Erstellen Sie den ersten Administrator',
-            'icon': 'bi-person-plus',
-            'priority': 'critical',
-            'action': 'create_admin'
-        })
-
     # Если нет компании
     if not has_company:
         steps.append({
             'title': 'Firma registrieren',
             'description': 'Registrieren Sie Ihre Firma im System',
             'icon': 'bi-building-add',
-            'priority': 'high' if is_authenticated else 'medium',
+            'priority': 'high',
             'action': 'register_company'
         })
 
     # Если все настроено
     if is_authenticated and admin_count > 0 and has_company:
         steps.append({
-            'title': 'System nutzen',
-            'description': 'Das System ist vollständig konfiguriert',
-            'icon': 'bi-check-circle',
-            'priority': 'info',
-            'action': 'use_system'
+            'title': 'System bereit',
+            'description': 'Das System ist vollständig konfiguriert und einsatzbereit',
+            'icon': 'bi-check-circle-fill',
+            'priority': 'success',
+            'action': 'ready'
         })
 
     return steps

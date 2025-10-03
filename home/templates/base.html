@@ -1,11 +1,11 @@
 {% load static %}
 
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}WWS1{% endblock %}</title>
+    <title>{% block title %}{{ company_name|default:"WWS1" }}{% endblock %}</title>
 
     <link rel="icon" href="{% static 'defaults/img/favicon.ico' %}">
     <link rel="apple-touch-icon" href="{% static 'defaults/img/apple-touch-icon.png' %}">
@@ -23,41 +23,29 @@
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <link rel="stylesheet" href="{% static 'css/toasts.css' %}">
 
-    <!-- НОВОЕ: Стили для модального окна аутентификации -->
-    {% if show_login_modal or requires_auth %}
+    <!-- Стили для модального окна аутентификации -->
+    {% if not is_authenticated %}
     <link rel="stylesheet" href="{% static 'css/login_modal.css' %}">
     {% endif %}
 
     {% block extra_css %}{% endblock %}
 </head>
-<body class="modern-body"{% if show_login_modal %} data-show-login="true"{% endif %}>
+<body class="modern-body">
 
-<!-- Верхняя навигация -->
+<!-- Верхняя навигация - ВСЕГДА показываем -->
 {% block navbar %}
     {% include 'navbar.html' %}
 {% endblock %}
 
 <!-- Основной контейнер с боковой панелью и контентом -->
 <div class="main-container d-flex">
-    <!-- Боковая панель (только для аутентифицированных пользователей) -->
+    <!-- Боковая панель - ВСЕГДА показываем -->
     {% block navmenu %}
-{#        {% if is_authenticated %}#}
-            {% include 'sidebar.html' %}
-{#        {% endif %}#}
+        {% include 'sidebar.html' %}
     {% endblock %}
 
     <!-- Основной контент -->
-    <div class="main-content flex-grow-1{% if not is_authenticated %} no-sidebar{% endif %}">
-        <!-- Заголовок страницы -->
-        {% block header_section %}
-{#            <header class="main-header">#}
-{#                <div class="header-content">#}
-{#                    <h1 class="header-title">{% block header %}WWS1{% endblock %}</h1>#}
-{#                    <p class="header-subtitle">{% block subtitle %}Warehouse Management System{% endblock %}</p>#}
-{#                </div>#}
-{#            </header>#}
-        {% endblock %}
-
+    <div class="main-content flex-grow-1">
         <!-- Основной контент страницы -->
         <main class="content-wrapper">
             {% block content %}{% endblock %}
@@ -67,13 +55,15 @@
         <footer class="main-footer">
             <div class="footer-content">
                 <p class="text-muted text-center">
-                    &copy; 2025 WWS1 EF-SOFT
-                    {% if system_version %}
-                        • Version {{ system_version }}
-                    {% endif %}
-                    {% if current_user %}
-                        • Angemeldet als: {{ user_display_name|default:current_user.username }}
-                    {% endif %}
+                    &copy; 2025 EF-SOFT
+
+{#                    &copy; 2025 {{ company_name|default:"WWS1" }} EF-SOFT#}
+{#                    {% if system_version %}#}
+{#                        • Version {{ system_version }}#}
+{#                    {% endif %}#}
+{#                    {% if is_authenticated and user_display_name %}#}
+{#                        • Angemeldet als: {{ user_display_name }}#}
+{#                    {% endif %}#}
                 </p>
             </div>
         </footer>
@@ -83,8 +73,8 @@
 <!-- Контейнер тостов -->
 <div id="toast-container"></div>
 
-<!-- НОВОЕ: Модальное окно аутентификации (показывается при необходимости) -->
-{% if show_login_modal or requires_auth %}
+<!-- Модальное окно аутентификации (для неавторизованных пользователей) -->
+{% if not is_authenticated %}
     {% include 'login_modal.html' %}
 {% endif %}
 
@@ -95,45 +85,47 @@
     {% endfor %}
 </div>
 
-<!-- НОВОЕ: JavaScript для модального окна аутентификации -->
-{% if show_login_modal or requires_auth %}
-<script src="{% static 'js/login_modal.js' %}"></script>
-{% endif %}
-
-<script src="{% static 'js/toasts.js' %}"></script>
-
+<!-- JavaScript -->
 <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<!-- jQuery (требуется для Select2) -->
 <script src="{% static 'jquery/jquery-3.7.1.min.js' %}"></script>
-<!-- Select2 JS -->
 <script src="{% static 'select2/dist/js/select2.min.js' %}"></script>
 <script src="{% static 'select2/dist/js/i18n/de.js' %}"></script>
-
 <script src="{% static 'htmx/js/htmx.min.js' %}"></script>
 
-<!-- Sidebar скрипт только для аутентифицированных пользователей -->
-{#{% if is_authenticated %}#}
-<script src="{% static 'js/sidebar.js' %}"></script>
-{#{% endif %}#}
+<!-- Toast система -->
+<script src="{% static 'js/toasts.js' %}"></script>
 
-{% if show_login_modal or requires_auth %}
+<!-- Sidebar скрипт - всегда загружаем -->
+<script src="{% static 'js/sidebar.js' %}"></script>
+
+<!-- Login modal - только для неавторизованных -->
+{% if not is_authenticated %}
 <script src="{% static 'js/login_modal.js' %}"></script>
 {% endif %}
 
+<!-- Глобальные переменные -->
 <script>
     // Информация о текущем пользователе
     window.currentUser = {% if current_user %}{{ current_user|safe }}{% else %}null{% endif %};
     window.isAuthenticated = {{ is_authenticated|yesno:"true,false" }};
-    window.requiresAuth = {{ requires_auth|yesno:"true,false" }};
-    window.systemInfo = {{ system_info|safe }};
-    window.showLoginModal = {{ show_login_modal|yesno:"true,false" }};
+    window.systemInfo = {{ system_info|safe|default:"null" }};
 
-    // Глобальная функция для показа модального окна
+    // Глобальная функция для показа модального окна входа
     function showLoginModal() {
+        if (window.isAuthenticated) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Sie sind bereits angemeldet', 'info');
+            }
+            return;
+        }
+
         if (window.loginModal) {
             window.loginModal.showModal();
         } else {
             console.error('Login modal не инициализирован');
+            if (typeof window.showToast === 'function') {
+                window.showToast('Anmeldesystem wird geladen...', 'info');
+            }
         }
     }
 </script>
@@ -141,61 +133,3 @@
 {% block extra_js %}{% endblock %}
 </body>
 </html>
-
-<!-- НОВОЕ: Дополнительные стили для макета без боковой панели -->
-<style>
-.main-content.no-sidebar {
-    margin-left: 0 !important;
-}
-
-/* Стили для публичной навигации */
-.navbar-public {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
-}
-
-.navbar-public .navbar-brand {
-    color: white !important;
-    font-weight: 700;
-}
-
-.navbar-public .nav-link {
-    color: rgba(255, 255, 255, 0.85) !important;
-}
-
-.navbar-public .nav-link:hover {
-    color: white !important;
-}
-
-/* Адаптация контента для неаутентифицированных пользователей */
-.public-layout .welcome-section {
-    margin-top: 2rem;
-}
-
-.public-layout .container-fluid {
-    max-width: 1200px;
-}
-
-/* Дополнительные стили безопасности */
-.auth-required .action-card,
-.auth-required .info-card {
-    opacity: 0.7;
-    pointer-events: none;
-    position: relative;
-}
-
-.auth-required .action-card::after,
-.auth-required .info-card::after {
-    content: '🔒 Anmeldung erforderlich';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(13, 110, 253, 0.9);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-</style>
