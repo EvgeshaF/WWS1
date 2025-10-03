@@ -1,5 +1,41 @@
-<!-- users/templates/login_modal.html - ПОЛНАЯ ПЕРЕРАБОТКА -->
-<div class="modal fade show" id="loginModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;">
+<!-- users/templates/login_modal.html - С ЗАЩИТОЙ от показа на admin pages -->
+
+<!-- ПРОВЕРКА: Не показываем если это страница создания админа -->
+<script>
+    // Немедленная проверка перед рендерингом
+    (function() {
+        var currentPath = window.location.pathname;
+        var isAdminPage = currentPath.includes('/users/create-admin/') ||
+                          currentPath.includes('create-admin');
+
+        if (isAdminPage) {
+            console.log('🚫 Login modal ЗАБЛОКИРОВАН на admin creation page:', currentPath);
+            // Скрываем весь блок login modal
+            document.addEventListener('DOMContentLoaded', function() {
+                var loginModal = document.getElementById('loginModal');
+                var backdrop = document.querySelectorAll('.modal-backdrop');
+
+                if (loginModal) {
+                    loginModal.remove();
+                    console.log('🗑️ Login modal удален из DOM');
+                }
+
+                backdrop.forEach(function(el) {
+                    if (el.previousElementSibling &&
+                        el.previousElementSibling.id === 'loginModal') {
+                        el.remove();
+                        console.log('🗑️ Login modal backdrop удален');
+                    }
+                });
+            });
+            return;
+        }
+
+        console.log('✅ Login modal разрешен на странице:', currentPath);
+    })();
+</script>
+
+<div class="modal fade" id="loginModal" tabindex="-1" aria-modal="true" role="dialog" style="display: none;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
@@ -74,7 +110,7 @@
     </div>
 </div>
 
-<div class="modal-backdrop fade show"></div>
+<div class="modal-backdrop fade" id="loginModalBackdrop" style="display: none;"></div>
 
 <!-- Loader -->
 <div class="login-loader">

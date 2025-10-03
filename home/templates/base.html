@@ -23,9 +23,12 @@
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <link rel="stylesheet" href="{% static 'css/toasts.css' %}">
 
+    <!-- DEBUG: is_authenticated={{ is_authenticated }}, is_admin_creation_page={{ is_admin_creation_page }} -->
+
     <!-- Стили для модального окна аутентификации -->
-    {% if not is_authenticated %}
+    {% if not is_authenticated and not is_admin_creation_page %}
     <link rel="stylesheet" href="{% static 'css/login_modal.css' %}">
+    <!-- DEBUG: LOGIN CSS LOADED -->
     {% endif %}
 
     {% block extra_css %}{% endblock %}
@@ -56,14 +59,6 @@
             <div class="footer-content">
                 <p class="text-muted text-center">
                     &copy; 2025 EF-SOFT
-
-{#                    &copy; 2025 {{ company_name|default:"WWS1" }} EF-SOFT#}
-{#                    {% if system_version %}#}
-{#                        • Version {{ system_version }}#}
-{#                    {% endif %}#}
-{#                    {% if is_authenticated and user_display_name %}#}
-{#                        • Angemeldet als: {{ user_display_name }}#}
-{#                    {% endif %}#}
                 </p>
             </div>
         </footer>
@@ -73,9 +68,16 @@
 <!-- Контейнер тостов -->
 <div id="toast-container"></div>
 
-<!-- Модальное окно аутентификации (для неавторизованных пользователей) -->
-{% if not is_authenticated %}
+<!-- DEBUG: Checking login modal conditions -->
+<!-- is_authenticated: {{ is_authenticated }} -->
+<!-- is_admin_creation_page: {{ is_admin_creation_page }} -->
+
+<!-- Модальное окно аутентификации - НЕ показываем на страницах создания админа -->
+{% if not is_authenticated and not is_admin_creation_page %}
+    <!-- DEBUG: LOGIN MODAL INCLUDED -->
     {% include 'login_modal.html' %}
+{% else %}
+    <!-- DEBUG: LOGIN MODAL NOT INCLUDED - is_authenticated={{ is_authenticated }}, is_admin_creation_page={{ is_admin_creation_page }} -->
 {% endif %}
 
 <!-- Скрытые Django сообщения -->
@@ -98,9 +100,16 @@
 <!-- Sidebar скрипт - всегда загружаем -->
 <script src="{% static 'js/sidebar.js' %}"></script>
 
-<!-- Login modal - только для неавторизованных -->
-{% if not is_authenticated %}
+<!-- Login modal - НЕ загружаем на страницах создания админа -->
+{% if not is_authenticated and not is_admin_creation_page %}
 <script src="{% static 'js/login_modal.js' %}"></script>
+<script>
+    console.log('🔐 Login modal JS загружен');
+</script>
+{% else %}
+<script>
+    console.log('🚫 Login modal JS НЕ загружен - is_authenticated={{ is_authenticated }}, is_admin_creation_page={{ is_admin_creation_page }}');
+</script>
 {% endif %}
 
 <!-- Глобальные переменные -->
@@ -109,10 +118,25 @@
     window.currentUser = {% if current_user %}{{ current_user|safe }}{% else %}null{% endif %};
     window.isAuthenticated = {{ is_authenticated|yesno:"true,false" }};
     window.systemInfo = {{ system_info|safe|default:"null" }};
+    window.isAdminCreationPage = {{ is_admin_creation_page|yesno:"true,false" }};
+
+    console.log('🔍 DEBUG INFO:');
+    console.log('  - isAuthenticated:', window.isAuthenticated);
+    console.log('  - isAdminCreationPage:', window.isAdminCreationPage);
+    console.log('  - Current URL:', window.location.pathname);
 
     // Глобальная функция для показа модального окна входа
     function showLoginModal() {
+        console.log('📞 showLoginModal() вызвана');
+
+        // НЕ показываем на страницах создания администратора
+        if (window.isAdminCreationPage) {
+            console.log('🚫 Login modal отключен на странице создания администратора');
+            return;
+        }
+
         if (window.isAuthenticated) {
+            console.log('✅ Пользователь уже авторизован');
             if (typeof window.showToast === 'function') {
                 window.showToast('Sie sind bereits angemeldet', 'info');
             }
@@ -120,9 +144,10 @@
         }
 
         if (window.loginModal) {
+            console.log('✅ Открываем login modal');
             window.loginModal.showModal();
         } else {
-            console.error('Login modal не инициализирован');
+            console.error('❌ Login modal не инициализирован');
             if (typeof window.showToast === 'function') {
                 window.showToast('Anmeldesystem wird geladen...', 'info');
             }

@@ -1,4 +1,4 @@
-# users/context_processors.py - Context processor для аутентификации - ИСПРАВЛЕНО
+# users/context_processors.py - ИСПРАВЛЕНИЕ: не показываем login modal на страницах создания админа
 
 from loguru import logger
 from .user_utils import UserManager
@@ -11,9 +11,21 @@ def auth_context(request):
         # Проверяем, аутентифицирован ли пользователь
         is_auth, user_data = is_user_authenticated(request)
 
+        # КРИТИЧНО: Не показываем login modal на страницах создания администратора
+        current_path = request.path
+        is_admin_creation_page = (
+                '/users/create-admin/' in current_path or
+                current_path.startswith('/users/create-admin/') or
+                'create-admin' in current_path
+        )
+
+        # DEBUG
+        logger.debug(f"🔍 Current path: {current_path}")
+        logger.debug(f"🔍 is_admin_creation_page: {is_admin_creation_page}")
+
         # Определяем, нужно ли показывать модальное окно входа
         show_login = False
-        if not is_auth:
+        if not is_auth and not is_admin_creation_page:
             show_login = should_show_login_modal()
 
         # Получаем информацию о системе
@@ -28,6 +40,7 @@ def auth_context(request):
             # Информация об аутентификации
             'show_login_modal': show_login,
             'requires_auth': not is_auth and should_show_login_modal(),
+            'is_admin_creation_page': is_admin_creation_page,  # НОВОЕ
 
             # Системная информация
             'system_info': system_info,
@@ -37,7 +50,7 @@ def auth_context(request):
             'user_stats': get_user_stats() if is_auth and user_data and user_data.get('is_admin') else None
         }
 
-        logger.debug(f"Auth context: is_auth={is_auth}, show_login={show_login}")
+        logger.debug(f"Auth context: is_auth={is_auth}, show_login={show_login}, admin_creation={is_admin_creation_page}")
         return context
 
     except Exception as e:
@@ -47,6 +60,7 @@ def auth_context(request):
             'current_user': None,
             'show_login_modal': False,
             'requires_auth': False,
+            'is_admin_creation_page': False,
             'system_info': {'status': 'error'},
             'system_version': '1.0.0'
         }
@@ -76,6 +90,7 @@ def is_user_authenticated(request):
     except Exception as e:
         logger.error(f"Ошибка проверки авторизации: {e}")
         return False, None
+
 
 def should_show_login_modal():
     """Определяет, нужно ли показывать модальное окно входа"""

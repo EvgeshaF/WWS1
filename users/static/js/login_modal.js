@@ -1,7 +1,43 @@
+// users/static/js/login_modal.js - С ЗАЩИТОЙ от показа на admin pages
+
 (function () {
     'use strict';
 
-    console.log('🔐 Login Modal System загружен');
+    // КРИТИЧНАЯ ПРОВЕРКА: НЕ инициализируем на страницах создания админа
+    var currentPath = window.location.pathname;
+    var isAdminCreationPage = currentPath.includes('/users/create-admin/') ||
+                               currentPath.includes('create-admin') ||
+                               (window.isAdminCreationPage === true);
+
+    if (isAdminCreationPage) {
+        console.log('🚫 Login Modal System ОТКЛЮЧЕН на странице:', currentPath);
+
+        // Удаляем модальное окно и backdrop если они есть
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = document.getElementById('loginModal');
+            var backdrop = document.getElementById('loginModalBackdrop');
+
+            if (modal) {
+                modal.remove();
+                console.log('🗑️ Login modal удален');
+            }
+
+            if (backdrop) {
+                backdrop.remove();
+                console.log('🗑️ Login modal backdrop удален');
+            }
+
+            // Удаляем все backdrop с классом modal-backdrop
+            var allBackdrops = document.querySelectorAll('.modal-backdrop');
+            allBackdrops.forEach(function(el) {
+                el.remove();
+            });
+        });
+
+        return; // ОСТАНАВЛИВАЕМ выполнение скрипта
+    }
+
+    console.log('🔐 Login Modal System загружен на странице:', currentPath);
 
     class LoginModal {
         constructor() {
@@ -12,7 +48,7 @@
             this.isSubmitting = false;
             this.maxAttempts = 5;
             this.currentAttempts = 0;
-            this.lockoutTime = 1 * 60 * 1000; // 15 минут
+            this.lockoutTime = 15 * 60 * 1000; // 15 минут
 
             this.init();
         }
@@ -36,7 +72,7 @@
 
             this.form = this.modal.querySelector('#loginForm');
             this.submitBtn = this.modal.querySelector('#loginSubmitBtn');
-            this.loader = this.modal.querySelector('.login-loader');
+            this.loader = document.querySelector('.login-loader');
 
             if (!this.form || !this.submitBtn) {
                 console.error('❌ Форма или кнопка входа не найдены');
@@ -523,34 +559,37 @@
             const token = document.querySelector('[name=csrfmiddlewaretoken]');
             return token ? token.value : '';
         }
-
-        checkAuthStatus() {
-            // Проверяем, нужно ли показать модальное окно при загрузке
-            const showLogin = document.body.dataset.showLogin === 'true';
-            if (showLogin) {
-                setTimeout(() => {
-                    this.showModal();
-                }, 500);
-            }
-        }
     }
 
-    // Создаем глобальный экземпляр
-    window.loginModal = new LoginModal();
+    // Создаем глобальный экземпляр только если НЕ страница создания админа
+    if (!isAdminCreationPage) {
+        window.loginModal = new LoginModal();
 
-    // Экспортируем функции для внешнего использования
-    window.showLoginModal = function () {
-        if (window.loginModal) {
-            window.loginModal.showModal();
-        }
-    };
+        // Экспортируем функции для внешнего использования
+        window.showLoginModal = function () {
+            if (window.loginModal) {
+                window.loginModal.showModal();
+            }
+        };
 
-    window.hideLoginModal = function () {
-        if (window.loginModal) {
-            window.loginModal.hideModal();
-        }
-    };
+        window.hideLoginModal = function () {
+            if (window.loginModal) {
+                window.loginModal.hideModal();
+            }
+        };
 
-    console.log('✅ Login Modal System готов к работе');
+        console.log('✅ Login Modal System готов к работе');
+    } else {
+        console.log('🚫 Login Modal System НЕ инициализирован (admin creation page)');
+
+        // Заглушки для функций
+        window.showLoginModal = function () {
+            console.log('🚫 showLoginModal заблокирован на admin creation page');
+        };
+
+        window.hideLoginModal = function () {
+            console.log('🚫 hideLoginModal заблокирован на admin creation page');
+        };
+    }
 
 })();
