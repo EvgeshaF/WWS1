@@ -12,7 +12,7 @@ import datetime
 import json
 
 # ✅ ИМПОРТИРУЕМ ИЗ ЦЕНТРАЛИЗОВАННОГО МОДУЛЯ WWS1.auth
-from WWS1.auth import (
+from auth import (
     authenticate_user,
     is_user_authenticated,
     clear_user_session,
