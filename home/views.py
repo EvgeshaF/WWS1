@@ -121,9 +121,17 @@ def home(request):
 
             # Информация об авторизации
             'is_authenticated': is_auth,
-            'current_user': user_data,
+            'current_user': {
+                'username': user_data.get('username'),
+                'is_admin': user_data.get('is_admin', False),
+                'is_active': user_data.get('is_active', True),
+                'profile': {
+                    'first_name': user_data.get('profile', {}).get('first_name', ''),
+                    'last_name': user_data.get('profile', {}).get('last_name', ''),
+                    'salutation': user_data.get('profile', {}).get('salutation', ''),
+                }
+            } if user_data else None,
 
-            # НОВОЕ: Информация для отображения имени пользователя
             'user_display_name': get_user_display_name(user_data) if user_data else None,
 
             # Дополнительная информация для шаблона

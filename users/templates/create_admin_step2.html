@@ -391,94 +391,93 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function () {
-        console.log('Инициализируем Select2');
+$(document).ready(function () {
+    console.log('Инициализируем Select2');
 
-        // ==================== Общие настройки ====================
-        $.fn.select2.defaults.set('language', 'de');
+    $.fn.select2.defaults.set('language', 'de');
 
-        // ==================== Anrede ====================
-        $('#{{ form.salutation.id_for_label }}').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Anrede auswählen...',
-            allowClear: false,
-            minimumResultsForSearch: Infinity, // скрыть поиск
-            width: '100%'
-        }).on('select2:select', function (e) {
-            console.log('Выбрана Anrede:', e.params.data.id, '-', e.params.data.text);
-            $(this).closest('.mb-3').find('.invalid-feedback').hide();
-        });
+    // ==================== Anrede ====================
+    $('#{{ form.salutation.id_for_label }}').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Anrede auswählen...',
+        allowClear: false,
+        minimumResultsForSearch: Infinity,
+        width: '100%',
+        dropdownParent: $('#adminModal')  // ✅ ИСПРАВЛЕНО
+    }).on('select2:select', function (e) {
+        console.log('Выбрана Anrede:', e.params.data.id, '-', e.params.data.text);
+        $(this).closest('.mb-3').find('.invalid-feedback').hide();
+    });
 
-        // ==================== Titel ====================
-        $('#{{ form.title.id_for_label }}').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Titel suchen oder auswählen...',
-            allowClear: true,
-            width: '100%',
-            language: {
-                noResults: () => 'Keine Ergebnisse gefunden',
-                searching: () => 'Suche läuft...',
-                inputTooShort: () => 'Bitte geben Sie mindestens 1 Zeichen ein',
-                removeAllItems: () => 'Alle Elemente entfernen'
-            },
-            matcher: function (params, data) {
-                if ($.trim(params.term) === '') {
-                    return data;
-                }
-                if (typeof data.text === 'undefined') {
-                    return null;
-                }
-                var term = params.term.toLowerCase();
-                if (data.text.toLowerCase().indexOf(term) > -1 || data.id.toLowerCase().indexOf(term) > -1) {
-                    return data;
-                }
+    // ==================== Titel ====================
+    $('#{{ form.title.id_for_label }}').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Titel suchen oder auswählen...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#adminModal'),  // ✅ ИСПРАВЛЕНО
+        language: {
+            noResults: () => 'Keine Ergebnisse gefunden',
+            searching: () => 'Suche läuft...',
+            inputTooShort: () => 'Bitte geben Sie mindestens 1 Zeichen ein',
+            removeAllItems: () => 'Alle Elemente entfernen'
+        },
+        matcher: function (params, data) {
+            if ($.trim(params.term) === '') {
+                return data;
+            }
+            if (typeof data.text === 'undefined') {
                 return null;
             }
-        }).on('select2:select', function (e) {
-            console.log('Выбран Titel:', e.params.data.id, '-', e.params.data.text);
-            $(this).closest('.mb-3').find('.invalid-feedback').hide();
-        }).on('select2:clear', function () {
-            console.log('Titel очищен');
-        });
-
-        // ==================== Kontakttyp (в модалке) ====================
-        $('#contactModal').on('shown.bs.modal', function () {
-            console.log('Открыта модалка Kontakt hinzufügen');
-
-            if ($('#contactType').data('select2')) {
-                $('#contactType').select2('destroy');
+            var term = params.term.toLowerCase();
+            if (data.text.toLowerCase().indexOf(term) > -1 || data.id.toLowerCase().indexOf(term) > -1) {
+                return data;
             }
-
-            $('#contactType').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Kontakttyp auswählen...',
-                allowClear: false,
-                width: '100%',
-                dropdownParent: $('#contactModal'),
-                minimumResultsForSearch: Infinity, // скрыть поиск
-                language: {
-                    noResults: () => 'Keine Ergebnisse gefunden'
-                }
-            }).on('select2:select', function (e) {
-                console.log('Выбран Kontakttyp:', e.params.data.id, '-', e.params.data.text);
-                $(this).closest('.mb-3').find('.invalid-feedback').hide();
-
-                // 🔥 Автофокус на поле Kontaktdaten
-                setTimeout(() => {
-                    $('#contactValue').trigger('focus');
-                }, 100);
-            });
-        });
-
-        // Очистка при закрытии модалки
-        $('#contactModal').on('hidden.bs.modal', function () {
-            $('#contactType').val('').trigger('change');
-            $('#contactValue').val('');
-            $('#contactLabel').val('');
-        });
-
-        console.log('Select2 успешно инициализирован');
+            return null;
+        }
+    }).on('select2:select', function (e) {
+        console.log('Выбран Titel:', e.params.data.id, '-', e.params.data.text);
+        $(this).closest('.mb-3').find('.invalid-feedback').hide();
+    }).on('select2:clear', function () {
+        console.log('Titel очищен');
     });
+
+    // ==================== Kontakttyp (уже правильно) ====================
+    $('#contactModal').on('shown.bs.modal', function () {
+        console.log('Открыта модалка Kontakt hinzufügen');
+
+        if ($('#contactType').data('select2')) {
+            $('#contactType').select2('destroy');
+        }
+
+        $('#contactType').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Kontakttyp auswählen...',
+            allowClear: false,
+            width: '100%',
+            dropdownParent: $('#contactModal'),  // ✅ УЖЕ ЕСТЬ
+            minimumResultsForSearch: Infinity,
+            language: {
+                noResults: () => 'Keine Ergebnisse gefunden'
+            }
+        }).on('select2:select', function (e) {
+            console.log('Выбран Kontakttyp:', e.params.data.id, '-', e.params.data.text);
+            $(this).closest('.mb-3').find('.invalid-feedback').hide();
+
+            setTimeout(() => {
+                $('#contactValue').trigger('focus');
+            }, 100);
+        });
+    });
+
+    $('#contactModal').on('hidden.bs.modal', function () {
+        $('#contactType').val('').trigger('change');
+        $('#contactValue').val('');
+        $('#contactLabel').val('');
+    });
+
+    console.log('Select2 успешно инициализирован');
+});
 
     // ==================== Дополнительные контакты из backend ====================
     window.initialAdditionalContactsData = {{ existing_additional_contacts|default:"[]"|safe }};
