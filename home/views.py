@@ -95,7 +95,7 @@ def home(request):
 
             if not has_company:
                 logger.warning("❌ Компания не зарегистрирована")
-                company_name = 'Не зарегистрирована'
+                company_name = 'Keine Firma registriert'
             else:
                 company_name = company_data.get('company_name', 'Неизвестно') if company_data else 'Не настроено'
                 logger.success(f"✅ Компания найдена: {company_name}")
