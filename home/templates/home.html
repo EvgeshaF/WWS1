@@ -24,19 +24,31 @@
                         </div>
                     </div>
                 </div>
+            {% elif not has_company %}
+                <!-- Админ есть, но фирма не зарегистрирована -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-warning d-flex align-items-center" role="alert">
+                            <i class="bi bi-building-add me-3 fs-4"></i>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading mb-1">Firma erforderlich</h5>
+                                <p class="mb-2">Bitte registrieren Sie eine Firma, um das System vollständig nutzen zu können.</p>
+                                <a href="{% url 'company:register_company' %}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-building-add me-1"></i> Firma registrieren
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             {% else %}
-                <!-- Админ есть, пользователь не авторизован -->
+                <!-- Админ и фирма есть, но пользователь не авторизован -->
                 <div class="row mb-4">
                     <div class="col-12">
                         <div class="alert alert-info d-flex align-items-center" role="alert">
                             <i class="bi bi-info-circle me-3 fs-4"></i>
                             <div class="flex-grow-1">
                                 <h5 class="alert-heading mb-1">System bereit für Anmeldung</h5>
-                                {% if has_company %}
-                                    <p class="mb-2">Die Firma <strong>{{ company_name }}</strong> ist registriert. Melden Sie sich an, um fortzufahren.</p>
-                                {% else %}
-                                    <p class="mb-2">Administrator vorhanden, aber keine Firma registriert. Bitte melden Sie sich an, um die Firma zu registrieren.</p>
-                                {% endif %}
+                                <p class="mb-2">Das System ist vollständig konfiguriert. Melden Sie sich an, um alle Funktionen zu nutzen.</p>
                                 <button type="button" class="btn btn-primary btn-sm" onclick="window.showLoginModal && window.showLoginModal()">
                                     <i class="bi bi-box-arrow-in-right me-1"></i> Jetzt anmelden
                                 </button>
@@ -65,98 +77,91 @@
                     </div>
                 </div>
             </div>
-        {% endif %}
 
-        <!-- Willkommensnachricht -->
-        <div class="welcome-section mb-4">
-            <div class="welcome-card">
-                <div class="welcome-header mb-3">
-                    <i class="bi bi-check-circle-fill text-success me-3"></i>
-                    <h3 class="mb-0">System bereit!</h3>
+            <!-- Willkommensnachricht -->
+            <div class="welcome-section mb-4">
+                <div class="welcome-card">
+                    <div class="welcome-header mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-3"></i>
+                        <h3 class="mb-0">System bereit!</h3>
+                    </div>
+                    <p class="welcome-text mb-0">
+                        {% if has_company %}
+                            Das WWS1 System ist vollständig konfiguriert und einsatzbereit für <strong>{{ company_name }}</strong>.
+                            MongoDB-Verbindung aktiv, Administrator erstellt, Firma registriert.
+                        {% else %}
+                            MongoDB wurde erfolgreich konfiguriert und die Datenbankverbindung ist aktiv.
+                            Bitte registrieren Sie Ihre Firma, um das System vollständig zu nutzen.
+                        {% endif %}
+                    </p>
                 </div>
-                <p class="welcome-text mb-0">
-                    {% if has_company %}
-                        Das WWS1 System ist vollständig konfiguriert und einsatzbereit für <strong>{{ company_name }}</strong>.
-                        MongoDB-Verbindung aktiv, Administrator erstellt, Firma registriert.
-                    {% else %}
-                        MongoDB wurde erfolgreich konfiguriert und die Datenbankverbindung ist aktiv.
-                        Das Warehouse Management System ist einsatzbereit.
-                    {% endif %}
-                </p>
             </div>
-        </div>
 
-        <!-- НОВОЕ: Следующие шаги -->
-        {% if next_steps %}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h4><i class="bi bi-list-task me-2"></i>Nächste Schritte</h4>
-                    <div class="row">
-                        {% for step in next_steps %}
-                            <div class="col-md-6 col-lg-4 mb-3">
-                                <div class="card h-100 border-{% if step.priority == 'critical' %}danger{% elif step.priority == 'high' %}warning{% elif step.priority == 'info' %}success{% else %}secondary{% endif %}">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="bi {{ step.icon }} me-2 fs-4 text-{% if step.priority == 'critical' %}danger{% elif step.priority == 'high' %}warning{% elif step.priority == 'info' %}success{% else %}secondary{% endif %}"></i>
-                                            <h6 class="card-title mb-0">{{ step.title }}</h6>
+            <!-- НОВОЕ: Следующие шаги -->
+            {% if next_steps %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4><i class="bi bi-list-task me-2"></i>Nächste Schritte</h4>
+                        <div class="row">
+                            {% for step in next_steps %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card h-100 border-{% if step.priority == 'critical' %}danger{% elif step.priority == 'high' %}warning{% elif step.priority == 'info' %}success{% else %}secondary{% endif %}">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi {{ step.icon }} me-2 fs-4 text-{% if step.priority == 'critical' %}danger{% elif step.priority == 'high' %}warning{% elif step.priority == 'info' %}success{% else %}secondary{% endif %}"></i>
+                                                <h6 class="card-title mb-0">{{ step.title }}</h6>
+                                            </div>
+                                            <p class="card-text small">{{ step.description }}</p>
+                                            {% if step.action == 'login' %}
+                                                <button type="button" class="btn btn-primary btn-sm" onclick="window.showLoginModal && window.showLoginModal()">
+                                                    <i class="bi bi-box-arrow-in-right me-1"></i>Anmelden
+                                                </button>
+                                            {% elif step.action == 'create_admin' %}
+                                                <a href="{% url 'users:create_admin_step1' %}" class="btn btn-danger btn-sm">
+                                                    <i class="bi bi-person-plus me-1"></i>Administrator erstellen
+                                                </a>
+                                            {% elif step.action == 'register_company' %}
+                                                <a href="{% url 'company:register_company' %}" class="btn btn-warning btn-sm">
+                                                    <i class="bi bi-building-add me-1"></i>Firma registrieren
+                                                </a>
+                                            {% endif %}
                                         </div>
-                                        <p class="card-text small">{{ step.description }}</p>
-                                        {% if step.action == 'login' %}
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="window.showLoginModal && window.showLoginModal()">
-                                                <i class="bi bi-box-arrow-in-right me-1"></i>Anmelden
-                                            </button>
-                                        {% elif step.action == 'create_admin' %}
-                                            <a href="{% url 'users:create_admin_step1' %}" class="btn btn-danger btn-sm">
-                                                <i class="bi bi-person-plus me-1"></i>Administrator erstellen
-                                            </a>
-                                        {% elif step.action == 'register_company' %}
-                                            <a href="{% url 'company:register_company' %}" class="btn btn-warning btn-sm">
-                                                <i class="bi bi-building-add me-1"></i>Firma registrieren
-                                            </a>
-                                        {% endif %}
                                     </div>
                                 </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% endif %}
+            {% endif %}
 
-        {% if not next_steps %}
-            <!-- Aktionscards -->
-            <div class="row g-4 mb-4">
-                {% if not has_company %}
-                    <div class="col-lg-4 col-md-6">
-                        <div class="action-card border-warning">
-                            <div class="action-header">
-                                <i class="bi bi-building-add text-warning"></i>
-                                <h5>Firma registrieren</h5>
-                            </div>
-                            <p class="action-text">
-                                Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration abzuschließen.
-                            </p>
-                            {% if is_authenticated %}
+            {% if not next_steps %}
+                <!-- Aktionscards -->
+                <div class="row g-4 mb-4">
+                    {% if not has_company %}
+                        <div class="col-lg-4 col-md-6">
+                            <div class="action-card border-warning">
+                                <div class="action-header">
+                                    <i class="bi bi-building-add text-warning"></i>
+                                    <h5>Firma registrieren</h5>
+                                </div>
+                                <p class="action-text">
+                                    Registrieren Sie Ihre Firma als primäres Unternehmen im System, um die Konfiguration abzuschließen.
+                                </p>
                                 <a href="{% url 'company:register_company' %}" class="action-btn btn btn-warning">
                                     <i class="bi bi-building-add me-1"></i>
                                     Firma registrieren
                                 </a>
-                            {% else %}
-                                <button type="button" class="btn btn-outline-primary" onclick="showLoginModal()">
-                                    <i class="bi bi-lock me-1"></i>
-                                    Anmeldung erforderlich
-                                </button>
-                            {% endif %}
+                            </div>
                         </div>
-                    </div>
-                {% endif %}
-                <!-- Остальные Aktionscards без изменений -->
-            </div>
+                    {% endif %}
+                    <!-- Остальные Aktionscards без изменений -->
+                </div>
 
-            <!-- Info Cards -->
-            <div class="row g-4">
-                <!-- Остальные InfoCards без изменений -->
-            </div>
+                <!-- Info Cards -->
+                <div class="row g-4">
+                    <!-- Остальные InfoCards без изменений -->
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 {% endblock %}
