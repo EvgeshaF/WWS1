@@ -135,7 +135,7 @@ def create_database_step1(request):
     if config:
         # Если конфиг есть — используем его
         form = MongoConnectionForm(initial={
-            'host': config.get('host', 'localhost'),
+            'host': config.get('host', 'ef-soft.local'),
             'port': config.get('port', 27017),
         })
     else:

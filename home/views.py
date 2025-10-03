@@ -6,7 +6,7 @@ from loguru import logger
 
 from mongodb.mongodb_config import MongoConfig
 from users.user_utils import UserManager
-
+from user_auth import is_user_authenticated
 
 def home(request):
     """

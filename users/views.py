@@ -11,10 +11,10 @@ from loguru import logger
 import datetime
 import json
 
-from auth import is_user_authenticated, should_show_login_modal
-from auth.session import clear_user_session
+from user_auth import is_user_authenticated, should_show_login_modal
+from user_auth.session import clear_user_session
 
-from auth.forms import LoginForm  # LoginForm в auth/forms.py
+from  user_auth.forms import LoginForm  # LoginForm в auth/forms.py
 from .forms import (  # Остальные формы из users/forms.py
     CreateAdminUserForm,
     AdminProfileForm,

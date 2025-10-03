@@ -1,7 +1,7 @@
 from loguru import logger
 from mongodb.mongodb_config import MongoConfig
 
-from auth import (
+from user_auth import (
     is_user_authenticated,
     get_user_display_name,
     should_show_login_modal,

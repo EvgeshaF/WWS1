@@ -1,4 +1,4 @@
-<!-- auth/templates/auth/login_modal.html - Модальное окно авторизации -->
+{% load static %}
 
 <!-- ПРОВЕРКА: Не показываем если это страница создания админа -->
 <script>
@@ -68,7 +68,7 @@
                 </div>
 
                 <!-- Login Form -->
-                <form method="post" id="authLoginForm" action="{% url 'auth:login' %}" novalidate>
+                <form method="post" id="authLoginForm" action="{% url 'users:login' %}" novalidate>
                     {% csrf_token %}
 
                     <div class="row">
@@ -167,10 +167,6 @@
 
                     <!-- Action Buttons -->
                     <div class="modal-footer auth-modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="authCancelBtn">
-                            <i class="bi bi-x-circle me-1"></i>
-                            Abbrechen
-                        </button>
                         <button type="submit" class="btn btn-primary" id="authSubmitBtn">
                             <i class="bi bi-box-arrow-in-right me-1"></i>
                             <span id="authButtonText">Anmelden</span>

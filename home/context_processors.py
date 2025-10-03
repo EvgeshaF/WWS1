@@ -21,7 +21,7 @@ def company_name(request):
             }
         else:
             return {
-                'company_name': 'WWS1',
+                'company_name': 'Keine Firma registriert',
                 'company_legal_form': ''
             }
 

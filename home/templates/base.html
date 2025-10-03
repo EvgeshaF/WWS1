@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}WWS1{% endblock %}</title>
+    <title>{% block title %}{% endblock %}</title>
 
     <link rel="icon" href="{% static 'defaults/img/favicon.ico' %}">
     <link rel="apple-touch-icon" href="{% static 'defaults/img/apple-touch-icon.png' %}">
@@ -50,12 +50,7 @@
     <div class="main-content flex-grow-1{% if not is_authenticated %} no-sidebar{% endif %}">
         <!-- Заголовок страницы -->
         {% block header_section %}
-{#            <header class="main-header">#}
-{#                <div class="header-content">#}
-{#                    <h1 class="header-title">{% block header %}WWS1{% endblock %}</h1>#}
-{#                    <p class="header-subtitle">{% block subtitle %}Warehouse Management System{% endblock %}</p>#}
-{#                </div>#}
-{#            </header>#}
+
         {% endblock %}
 
         <!-- Основной контент страницы -->
@@ -88,11 +83,6 @@
         <div data-tags="{{ message.tags }}" data-text="{{ message|force_escape }}" data-delay="5000"></div>
     {% endfor %}
 </div>
-
-<!-- НОВОЕ: JavaScript для модального окна аутентификации -->
-{% if show_login_modal or requires_auth %}
-<script src="{% static 'js/login_modal.js' %}"></script>
-{% endif %}
 
 <script src="{% static 'js/toasts.js' %}"></script>
 
