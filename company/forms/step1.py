@@ -1,6 +1,3 @@
-# company/forms/step1.py
-# Шаг 1: Основные данные компании + Geschäftsführer
-
 from django import forms
 from django.core.validators import RegexValidator
 from loguru import logger

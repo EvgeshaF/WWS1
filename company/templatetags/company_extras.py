@@ -1,6 +1,3 @@
-# company/templatetags/company_extras.py
-# Template filters для отображения кодов в человекочитаемом виде
-
 from django import template
 from mongodb.mongodb_utils import MongoConnection
 from mongodb.mongodb_config import MongoConfig

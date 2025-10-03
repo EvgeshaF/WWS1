@@ -1,6 +1,3 @@
-// company/static/js/company_info.js
-// JavaScript для страницы информации о компании
-
 document.addEventListener('DOMContentLoaded', function () {
     // Анимация прогресс-бара
     document.querySelectorAll('.completion-fill').forEach(bar => {

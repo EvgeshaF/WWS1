@@ -1,6 +1,3 @@
-# company/forms/step2.py
-# Шаг 2: Регистрационные данные
-
 from django import forms
 from django.core.validators import RegexValidator
 

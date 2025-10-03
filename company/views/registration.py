@@ -584,15 +584,7 @@ def register_company_step5(request):
 
 
 def save_partial_company_data(request, data, step):
-    """
-    НОВАЯ ФУНКЦИЯ: Сохраняет частичные данные компании в базу данных
-    Args:
-        request: HTTP запрос
-        data: Данные для сохранения
-        step: Номер шага (1-5)
-    Returns:
-        bool: True если сохранение успешно
-    """
+
     try:
         company_manager = CompanyManager()
 

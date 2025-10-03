@@ -1,6 +1,3 @@
-# company/forms/step5.py
-# Шаг 5: Банковские данные - ОБНОВЛЕНО: Hauptbankverbindung обязательны
-
 from django import forms
 from django.core.validators import RegexValidator
 

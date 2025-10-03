@@ -1,6 +1,3 @@
-# company/forms/step4.py
-# Шаг 4: Контактные данные
-
 from django import forms
 from django.core.validators import RegexValidator
 

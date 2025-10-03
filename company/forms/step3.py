@@ -1,6 +1,3 @@
-# company/forms/step3.py
-# Шаг 3: Адресные данные
-
 from django import forms
 from django.core.validators import RegexValidator
 from loguru import logger

@@ -1,7 +1,3 @@
-# company/forms/__init__.py
-# Централизованный импорт всех форм для удобства использования
-
-# Импортируем утилиты
 from .utils import (
     get_salutations_from_mongodb,
     get_default_salutation_choices,

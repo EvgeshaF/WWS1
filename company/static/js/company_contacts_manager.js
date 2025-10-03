@@ -1,5 +1,3 @@
-// company/static/js/company_contacts_manager.js - ОБНОВЛЕННАЯ ВЕРСИЯ с адаптацией из users
-
 // ==================== ГЛАВНЫЙ КОНТАКТ МЕНЕДЖЕР ДЛЯ КОМПАНИИ ====================
 class CompanyContactManager {
     constructor() {

@@ -1,6 +1,3 @@
-# company/forms/utils.py
-# Утилиты для работы с MongoDB и получения choices для форм
-
 from mongodb.mongodb_utils import MongoConnection
 from mongodb.mongodb_config import MongoConfig
 from loguru import logger
