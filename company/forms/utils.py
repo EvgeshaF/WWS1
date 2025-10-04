@@ -1,12 +1,14 @@
+# company/forms/utils.py - ОБНОВЛЕНО: добавлена загрузка правовых форм из MongoDB
+
+from loguru import logger
 from mongodb.mongodb_utils import MongoConnection
 from mongodb.mongodb_config import MongoConfig
-from loguru import logger
 
 
 def get_salutations_from_mongodb():
-    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations - SAME AS USERS"""
+    """Загружает салютации (Anrede) из MongoDB коллекции basic_salutations"""
     try:
-        logger.info("Загружаем salutations из MongoDB (for company)")
+        logger.info("Загружаем salutations из MongoDB для компании")
         db = MongoConnection.get_database()
         if db is None:
             logger.error("База данных недоступна")
@@ -26,7 +28,6 @@ def get_salutations_from_mongodb():
 
         salutations_collection = db[salutations_collection_name]
 
-        # SAME LOGIC AS USERS: адаптировано под структуру данных
         salutations_cursor = salutations_collection.find(
             {'deleted': {'$ne': True}},
             {'salutation': 1}
@@ -47,16 +48,16 @@ def get_salutations_from_mongodb():
                 seen_salutations.add(salutation_value)
                 count += 1
 
-        logger.success(f"Успешно загружено {count} salutations для компании")
+        logger.success(f"Успешно загружено {count} salutations из коллекции")
         return choices
 
     except Exception as e:
-        logger.error(f"Ошибка загрузки salutations из MongoDB (company): {e}")
+        logger.error(f"Ошибка загрузки salutations из MongoDB: {e}")
         return get_default_salutation_choices()
 
 
 def get_default_salutation_choices():
-    """Возвращает статичный список салютаций как fallback - SAME AS USERS"""
+    """Возвращает статичный список салютаций как fallback"""
     return [
         ('', '-- Auswählen --'),
         ('herr', 'Herr'),
@@ -66,9 +67,9 @@ def get_default_salutation_choices():
 
 
 def get_titles_from_mongodb():
-    """Загружает titles из MongoDB коллекции - SAME AS USERS"""
+    """Загружает titles из MongoDB коллекции"""
     try:
-        logger.info("Загружаем titles из MongoDB (for company)")
+        logger.info("Загружаем titles из MongoDB для компании")
         db = MongoConnection.get_database()
         if db is None:
             logger.error("База данных недоступна")
@@ -103,16 +104,16 @@ def get_titles_from_mongodb():
                 choices.append((code, name))
                 count += 1
 
-        logger.success(f"Успешно загружено {count} titles для компании")
+        logger.success(f"Успешно загружено {count} titles из коллекции")
         return choices
 
     except Exception as e:
-        logger.error(f"Ошибка загрузки titles из MongoDB (company): {e}")
+        logger.error(f"Ошибка загрузки titles из MongoDB: {e}")
         return get_default_title_choices()
 
 
 def get_default_title_choices():
-    """Возвращает статичный список титулов как fallback - SAME AS USERS"""
+    """Возвращает статичный список титулов как fallback"""
     return [
         ('', '-- Kein Titel --'),
         ('dr', 'Dr.'),
@@ -124,31 +125,95 @@ def get_default_title_choices():
         ('mag', 'Mag.'),
         ('mba', 'MBA'),
         ('msc', 'M.Sc.'),
+        ('ma', 'M.A.'),
         ('ba', 'B.A.'),
         ('bsc', 'B.Sc.'),
         ('beng', 'B.Eng.'),
     ]
 
 
-def get_countries_from_mongodb():
-    """Загружает страны из MongoDB коллекции"""
+# НОВОЕ: Функция для загрузки правовых форм из MongoDB
+def get_legal_forms_from_mongodb():
+    """Загружает правовые формы (Rechtsform) из MongoDB коллекции basic_legal_forms"""
     try:
-        logger.info("Загружаем страны из MongoDB")
+        logger.info("Загружаем legal forms из MongoDB")
         db = MongoConnection.get_database()
         if db is None:
             logger.error("База данных недоступна")
-            return get_default_country_choices()
+            return get_default_legal_form_choices()
 
         config = MongoConfig.read_config()
         db_name = config.get('db_name')
         if not db_name:
             logger.error("Имя базы данных не найдено в конфигурации")
+            return get_default_legal_form_choices()
+
+        legal_forms_collection_name = f"{db_name}_basic_legal_forms"
+        collections = db.list_collection_names()
+        if legal_forms_collection_name not in collections:
+            logger.warning(f"Коллекция '{legal_forms_collection_name}' не найдена")
+            return get_default_legal_form_choices()
+
+        legal_forms_collection = db[legal_forms_collection_name]
+        legal_forms_cursor = legal_forms_collection.find(
+            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
+            {'code': 1, 'name': 1, 'display_order': 1}
+        ).sort('display_order', 1)
+
+        choices = [('', '-- Rechtsform auswählen --')]
+        count = 0
+
+        for legal_form_doc in legal_forms_cursor:
+            code = legal_form_doc.get('code', '').strip()
+            name = legal_form_doc.get('name', code).strip()
+
+            if code:
+                choices.append((code, name))
+                count += 1
+
+        logger.success(f"Успешно загружено {count} legal forms из коллекции")
+        return choices
+
+    except Exception as e:
+        logger.error(f"Ошибка загрузки legal forms из MongoDB: {e}")
+        return get_default_legal_form_choices()
+
+
+def get_default_legal_form_choices():
+    """Возвращает статичный список правовых форм как fallback"""
+    return [
+        ('', '-- Rechtsform auswählen --'),
+        ('gmbh', 'GmbH'),
+        ('ag', 'AG'),
+        ('ug', 'UG (haftungsbeschränkt)'),
+        ('ohg', 'OHG'),
+        ('kg', 'KG'),
+        ('gbr', 'GbR'),
+        ('eg', 'eG'),
+        ('einzelunternehmen', 'Einzelunternehmen'),
+        ('freiberufler', 'Freiberufler'),
+        ('se', 'SE (Societas Europaea)'),
+        ('ltd', 'Ltd.'),
+        ('sonstige', 'Sonstige'),
+    ]
+
+
+def get_countries_from_mongodb():
+    """Загружает страны из MongoDB"""
+    try:
+        logger.info("Загружаем countries из MongoDB")
+        db = MongoConnection.get_database()
+        if db is None:
+            return get_default_country_choices()
+
+        config = MongoConfig.read_config()
+        db_name = config.get('db_name')
+        if not db_name:
             return get_default_country_choices()
 
         countries_collection_name = f"{db_name}_countries"
         collections = db.list_collection_names()
         if countries_collection_name not in collections:
-            logger.warning(f"Коллекция '{countries_collection_name}' не найдена")
             return get_default_country_choices()
 
         countries_collection = db[countries_collection_name]
@@ -168,11 +233,11 @@ def get_countries_from_mongodb():
                 choices.append((code, name))
                 count += 1
 
-        logger.success(f"Успешно загружено {count} стран из коллекции")
+        logger.success(f"Успешно загружено {count} countries из коллекции")
         return choices
 
     except Exception as e:
-        logger.error(f"Ошибка загрузки стран из MongoDB: {e}")
+        logger.error(f"Ошибка загрузки countries из MongoDB: {e}")
         return get_default_country_choices()
 
 
@@ -200,24 +265,21 @@ def get_default_country_choices():
 
 
 def get_industries_from_mongodb():
-    """Загружает отрасли из MongoDB коллекции"""
+    """Загружает отрасли из MongoDB"""
     try:
-        logger.info("Загружаем отрасли из MongoDB")
+        logger.info("Загружаем industries из MongoDB")
         db = MongoConnection.get_database()
         if db is None:
-            logger.error("База данных недоступна")
             return get_default_industry_choices()
 
         config = MongoConfig.read_config()
         db_name = config.get('db_name')
         if not db_name:
-            logger.error("Имя базы данных не найдено в конфигурации")
             return get_default_industry_choices()
 
         industries_collection_name = f"{db_name}_industries"
         collections = db.list_collection_names()
         if industries_collection_name not in collections:
-            logger.warning(f"Коллекция '{industries_collection_name}' не найдена")
             return get_default_industry_choices()
 
         industries_collection = db[industries_collection_name]
@@ -237,11 +299,11 @@ def get_industries_from_mongodb():
                 choices.append((code, name))
                 count += 1
 
-        logger.success(f"Успешно загружено {count} отраслей из коллекции")
+        logger.success(f"Успешно загружено {count} industries из коллекции")
         return choices
 
     except Exception as e:
-        logger.error(f"Ошибка загрузки отраслей из MongoDB: {e}")
+        logger.error(f"Ошибка загрузки industries из MongoDB: {e}")
         return get_default_industry_choices()
 
 
@@ -265,7 +327,7 @@ def get_default_industry_choices():
         ('medien', 'Medien'),
         ('gastronomie', 'Gastronomie'),
         ('einzelhandel', 'Einzelhandel'),
-        ('grosshandel', 'Grosshandel'),
+        ('grosshandel', 'Großhandel'),
         ('landwirtschaft', 'Landwirtschaft'),
         ('rechtswesen', 'Rechtswesen'),
         ('sonstige', 'Sonstige'),

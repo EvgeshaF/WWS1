@@ -59,15 +59,14 @@
 
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="{{ form.legal_form.id_for_label }}" class="form-label">
+                                            <label for="id_legal_form" class="form-label">
                                                 <i class="bi bi-shield-check me-1"></i>
                                                 Rechtsform
                                                 <span class="text-danger">*</span>
                                             </label>
                                             <select name="{{ form.legal_form.name }}"
-                                                    id="legal_form"
-                                                    data-field-id="{{ form.legal_form.id_for_label }}"
-                                                    class="form-select select2-basic"
+                                                    id="id_legal_form"
+                                                    class="form-select select2-search"
                                                     data-placeholder="Rechtsform auswählen..."
                                                     required>
                                                 <option></option>
@@ -99,23 +98,21 @@
                                 <h6 class="mb-0">
                                     <i class="bi bi-person-badge me-2"></i>
                                     Geschäftsführer
-                                    <small class="text-muted">(Optional)</small>
                                 </h6>
                             </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="{{ form.ceo_salutation.id_for_label }}" class="form-label">
+                                            <label for="id_ceo_salutation" class="form-label">
                                                 <i class="bi bi-person me-1"></i>
                                                 Anrede
+                                                <span class="text-danger">*</span>
                                             </label>
                                             <select name="{{ form.ceo_salutation.name }}"
-                                                    id="ceo_salutation"
-                                                    data-field-id="{{ form.ceo_salutation.id_for_label }}"
+                                                    id="id_ceo_salutation"
                                                     class="form-select select2-basic"
-                                                    data-placeholder="Anrede auswählen..."
-                                                    data-allow-clear="false">
+                                                    data-placeholder="Anrede auswählen...">
                                                 <option></option>
                                                 {% for value, text in form.ceo_salutation.field.choices %}
                                                     {% if value %}
@@ -134,13 +131,13 @@
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="{{ form.ceo_title.id_for_label }}" class="form-label">
+                                            <label for="id_ceo_title" class="form-label">
                                                 <i class="bi bi-mortarboard me-1"></i>
                                                 Titel
+                                                <small class="text-muted">(Optional)</small>
                                             </label>
                                             <select name="{{ form.ceo_title.name }}"
-                                                    id="ceo_title"
-                                                    data-field-id="{{ form.ceo_title.id_for_label }}"
+                                                    id="id_ceo_title"
                                                     class="form-select select2-search"
                                                     data-placeholder="Titel suchen oder auswählen..."
                                                     data-allow-clear="true">
@@ -167,6 +164,7 @@
                                             <label for="{{ form.ceo_first_name.id_for_label }}" class="form-label">
                                                 <i class="bi bi-person-fill me-1"></i>
                                                 Vorname
+                                                <span class="text-danger">*</span>
                                             </label>
                                             {{ form.ceo_first_name }}
                                             {% if form.ceo_first_name.errors %}
@@ -180,6 +178,7 @@
                                             <label for="{{ form.ceo_last_name.id_for_label }}" class="form-label">
                                                 <i class="bi bi-person-fill me-1"></i>
                                                 Nachname
+                                                <span class="text-danger">*</span>
                                             </label>
                                             {{ form.ceo_last_name }}
                                             {% if form.ceo_last_name.errors %}
@@ -215,6 +214,10 @@
                         <i class="bi bi-exclamation-circle me-1"></i>
                         {{ text.notification }}
                     </small>
+                    <small class="text-muted ms-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Eingaben, ohne zum nächsten Schritt zu gehen.
+                    </small>
                 </div>
             </div>
         </div>
@@ -224,5 +227,79 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script>
+        $(document).ready(function() {
+            console.log('🚀 Инициализация Select2 для форм компании');
+
+            // Устанавливаем язык по умолчанию
+            $.fn.select2.defaults.set('language', 'de');
+
+            // ==================== Rechtsform (с поиском) ====================
+            $('#id_legal_form').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Rechtsform suchen oder auswählen...',
+                allowClear: false,
+                width: '100%',
+                dropdownParent: $('#companyModal'),
+                language: {
+                    noResults: () => 'Keine Ergebnisse gefunden',
+                    searching: () => 'Suche läuft...',
+                    inputTooShort: () => 'Bitte geben Sie mindestens 1 Zeichen ein'
+                }
+            }).on('select2:select', function(e) {
+                console.log('✅ Выбрана Rechtsform:', e.params.data.id, '-', e.params.data.text);
+                $(this).removeClass('is-invalid').addClass('is-valid');
+                $(this).closest('.mb-3').find('.invalid-feedback').hide();
+            });
+
+            // ==================== CEO Anrede (без поиска) ====================
+            $('#id_ceo_salutation').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Anrede auswählen...',
+                allowClear: true,
+                minimumResultsForSearch: Infinity,
+                width: '100%',
+                dropdownParent: $('#companyModal')
+            }).on('select2:select', function(e) {
+                console.log('✅ Выбрана Anrede:', e.params.data.id, '-', e.params.data.text);
+                $(this).removeClass('is-invalid').addClass('is-valid');
+                $(this).closest('.mb-3').find('.invalid-feedback').hide();
+            }).on('select2:clear', function() {
+                console.log('🗑️ Anrede очищена');
+                $(this).removeClass('is-valid is-invalid');
+            });
+
+            // ==================== CEO Titel (с поиском и очисткой) ====================
+            $('#id_ceo_title').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Titel suchen oder auswählen...',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $('#companyModal'),
+                language: {
+                    noResults: () => 'Keine Ergebnisse gefunden',
+                    searching: () => 'Suche läuft...',
+                    removeAllItems: () => 'Alle Elemente entfernen'
+                }
+            }).on('select2:select', function(e) {
+                console.log('✅ Выбран Titel:', e.params.data.id, '-', e.params.data.text);
+                $(this).removeClass('is-invalid').addClass('is-valid');
+                $(this).closest('.mb-3').find('.invalid-feedback').hide();
+            }).on('select2:clear', function() {
+                console.log('🗑️ Titel очищен');
+                $(this).removeClass('is-valid is-invalid');
+            });
+
+            console.log('✅ Select2 успешно инициализирован для всех полей');
+        });
+
+        // Функция закрытия модального окна
+        function closeModal() {
+            if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
+                window.location.href = '/';
+            }
+        }
+    </script>
+
     <script src="{% static 'js/register_company_step1.js' %}"></script>
 {% endblock %}

@@ -1,104 +1,109 @@
+# company/forms/step1.py - ОБНОВЛЕНО: динамическая загрузка из MongoDB
+
 from django import forms
 from django.core.validators import RegexValidator
 from loguru import logger
 
-from .utils import get_salutations_from_mongodb, get_titles_from_mongodb
+from .utils import (
+    get_salutations_from_mongodb,
+    get_titles_from_mongodb,
+    get_legal_forms_from_mongodb,  # НОВОЕ
+)
 
 
 class CompanyBasicDataForm(forms.Form):
-    """Шаг 1: Основные данные компании + Geschäftsführer - UPDATED WITH DYNAMIC LOADING"""
+    """Шаг 1: Основные данные компании - ОБНОВЛЕНО: все справочники из MongoDB"""
 
-    LEGAL_FORM_CHOICES = [
-        ('', '-- Rechtsform auswählen --'),
-        ('gmbh', 'GmbH'),
-        ('ag', 'AG'),
-        ('ug', 'UG (haftungsbeschränkt)'),
-        ('ohg', 'OHG'),
-        ('kg', 'KG'),
-        ('gbr', 'GbR'),
-        ('eg', 'eG'),
-        ('einzelunternehmen', 'Einzelunternehmen'),
-        ('freiberufler', 'Freiberufler'),
-        ('se', 'SE (Societas Europaea)'),
-        ('ltd', 'Ltd.'),
-        ('sonstige', 'Sonstige'),
-    ]
-
-    # Основные идентификационные данные
     company_name = forms.CharField(
         label="Firmenname",
         max_length=100,
-        min_length=2,
-        validators=[
-            RegexValidator(
-                regex=r'^[a-zA-ZäöüÄÖÜß0-9\s\.\-&,]+$',
-                message='Firmenname darf nur Buchstaben, Zahlen und gängige Sonderzeichen enthalten'
-            )
-        ],
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Vollständiger Firmenname eingeben',
+            'placeholder': 'z.B. Musterfirma GmbH',
             'autofocus': True
-        })
+        }),
+        error_messages={
+            'required': 'Firmenname ist erforderlich'
+        }
     )
 
+    # ИЗМЕНЕНО: теперь choices загружаются динамически
     legal_form = forms.ChoiceField(
         label="Rechtsform",
-        choices=LEGAL_FORM_CHOICES,
+        choices=[],  # Заполняется в __init__
         required=True,
         widget=forms.Select(attrs={
-            'class': 'form-control'
-        })
+            'class': 'form-select'
+        }),
+        error_messages={
+            'required': 'Rechtsform ist erforderlich'
+        }
     )
 
-    # БЛОК GESCHÄFTSFÜHRER - UPDATED WITH DYNAMIC LOADING
+    # ИЗМЕНЕНО: теперь choices загружаются динамически
     ceo_salutation = forms.ChoiceField(
-        label="Anrede",
-        choices=[],  # CHANGED: Заполняется динамически из MongoDB
-        required=False,
+        label="Anrede Geschäftsführer",
+        choices=[],  # Заполняется в __init__
+        required=True,
         widget=forms.Select(attrs={
-            'class': 'form-control'
-        })
+            'class': 'form-select'
+        }),
+        error_messages={
+            'required': 'Anrede ist erforderlich'
+        }
     )
 
+    # ИЗМЕНЕНО: теперь choices загружаются динамически
     ceo_title = forms.ChoiceField(
-        label="Titel",
-        choices=[],  # CHANGED: Заполняется динамически из MongoDB
+        label="Titel Geschäftsführer",
+        choices=[],  # Заполняется в __init__
         required=False,
         widget=forms.Select(attrs={
-            'class': 'form-control'
+            'class': 'form-select'
         })
     )
 
     ceo_first_name = forms.CharField(
-        label="Vorname",
+        label="Vorname Geschäftsführer",
         max_length=50,
-        required=False,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Vorname eingeben'
-        })
+            'placeholder': 'Vorname'
+        }),
+        error_messages={
+            'required': 'Vorname ist erforderlich'
+        }
     )
 
     ceo_last_name = forms.CharField(
-        label="Nachname",
+        label="Nachname Geschäftsführer",
         max_length=50,
-        required=False,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Nachname eingeben'
-        })
+            'placeholder': 'Nachname'
+        }),
+        error_messages={
+            'required': 'Nachname ist erforderlich'
+        }
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # НОВОЕ: Динамически загружаем salutations из MongoDB - SAME AS USERS
+        # Динамически загружаем Rechtsform из MongoDB
+        legal_form_choices = get_legal_forms_from_mongodb()
+        self.fields['legal_form'].choices = legal_form_choices
+        logger.info(f"Загружено {len(legal_form_choices)} вариантов Rechtsform")
+
+        # Динамически загружаем Anrede из MongoDB
         salutation_choices = get_salutations_from_mongodb()
         self.fields['ceo_salutation'].choices = salutation_choices
-        logger.info(f"Загружено {len(salutation_choices)} вариантов CEO salutation")
+        logger.info(f"Загружено {len(salutation_choices)} вариантов Anrede")
 
-        # НОВОЕ: Динамически загружаем titles из MongoDB - SAME AS USERS
+        # Динамически загружаем Titel из MongoDB
         title_choices = get_titles_from_mongodb()
         self.fields['ceo_title'].choices = title_choices
-        logger.info(f"Загружено {len(title_choices)} вариантов CEO title")
+        logger.info(f"Загружено {len(title_choices)} вариантов Titel")
