@@ -5,38 +5,7 @@ function closeModal() {
     }
 }
 
-$(document).ready(function () {
-    console.log('Инициализируем Select2 для шага 3');
-    $.fn.select2.defaults.set('language', 'de');
-
-    const country = document.querySelector('#country');
-    if (country) {
-        $(`#${country.dataset.fieldId}`).select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Land suchen oder auswählen...',
-            allowClear: false,
-            width: '100%',
-            language: {
-                noResults: () => 'Keine Ergebnisse gefunden',
-                searching: () => 'Suche läuft...',
-                inputTooShort: () => 'Bitte geben Sie mindestens 1 Zeichen ein'
-            },
-            matcher: function (params, data) {
-                if ($.trim(params.term) === '') return data;
-                if (typeof data.text === 'undefined') return null;
-                const term = params.term.toLowerCase();
-                if (data.text.toLowerCase().includes(term) || data.id.toLowerCase().includes(term)) {
-                    return data;
-                }
-                return null;
-            }
-        }).on('select2:select', function (e) {
-            console.log('Выбрана страна:', e.params.data.id, '-', e.params.data.text);
-            $(this).closest('.mb-3').find('.invalid-feedback').hide();
-        });
-    }
-    console.log('Select2 для шага 3 успешно инициализирован');
-});
+// Select2 инициализируется в template (register_company_step3.html)
 
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('company-step3-form');

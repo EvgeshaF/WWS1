@@ -199,38 +199,47 @@ def get_default_legal_form_choices():
 
 
 def get_countries_from_mongodb():
-    """Загружает страны из MongoDB"""
+    """Загружает страны из MongoDB коллекции basic_countrys"""
     try:
         logger.info("Загружаем countries из MongoDB")
         db = MongoConnection.get_database()
         if db is None:
+            logger.error("База данных недоступна")
             return get_default_country_choices()
 
         config = MongoConfig.read_config()
         db_name = config.get('db_name')
         if not db_name:
+            logger.error("Имя базы данных не найдено в конфигурации")
             return get_default_country_choices()
 
-        countries_collection_name = f"{db_name}_countries"
+        # ИСПРАВЛЕНО: используем basic_countrys вместо countries
+        countries_collection_name = f"{db_name}_basic_countrys"
         collections = db.list_collection_names()
         if countries_collection_name not in collections:
+            logger.warning(f"Коллекция '{countries_collection_name}' не найдена")
             return get_default_country_choices()
 
         countries_collection = db[countries_collection_name]
+
+        # ИСПРАВЛЕНО: используем поле 'country' вместо code/name/display_order
         countries_cursor = countries_collection.find(
-            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
-            {'code': 1, 'name': 1, 'display_order': 1}
-        ).sort('display_order', 1)
+            {'deleted': {'$ne': True}},  # Фильтруем по deleted
+            {'country': 1}  # Выбираем только поле country
+        ).sort('country', 1)  # Сортируем по алфавиту
 
         choices = [('', '-- Land auswählen --')]
         count = 0
+        seen_countries = set()
 
         for country_doc in countries_cursor:
-            code = country_doc.get('code', '').strip()
-            name = country_doc.get('name', code).strip()
+            country_value = country_doc.get('country', '').strip()
 
-            if code:
-                choices.append((code, name))
+            # Проверяем что страна не пустая и не дублируется
+            if country_value and country_value not in seen_countries:
+                # Используем название страны и как код, и как отображаемое имя
+                choices.append((country_value, country_value))
+                seen_countries.add(country_value)
                 count += 1
 
         logger.success(f"Успешно загружено {count} countries из коллекции")

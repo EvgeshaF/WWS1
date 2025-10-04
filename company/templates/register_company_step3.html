@@ -22,10 +22,10 @@
                     <i class="bi bi-info-circle me-2"></i>
                     {{ text.desc }}
                     <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
-                        {% if legal_form %}
-                            {{ legal_form|legal_form_display }}
-                        {% endif %}
-                    </strong></small>
+                    {% if legal_form %}
+                        {{ legal_form|legal_form_display }}
+                    {% endif %}
+                </strong></small>
                 </div>
 
                 <form method="post"
@@ -74,11 +74,8 @@
                                             <i class="bi bi-globe-europe-africa me-1"></i> {{ text.country }} <span class="text-danger">*</span>
                                         </label>
                                         <select name="{{ form.country.name }}"
-                                                id="country"
-                                                data-field-id="{{ form.country.id_for_label }}"
-                                                class="form-select select2-search"
-                                                data-placeholder="Land suchen oder auswählen..."
-                                                data-allow-clear="false"
+                                                id="id_country"
+                                                class="form-select"
                                                 required>
                                             <option></option>
                                             {% for value, text in form.country.field.choices %}
@@ -96,19 +93,19 @@
                         </div>
                     </div>
 
-                        <div class="d-flex justify-content-between align-items-center mt-4">
-                            <a href="{% url 'company:register_company_step2' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
-                            </a>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
-                                    <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
-                                </button>
-                                <button type="submit" class="btn btn-success" id="continue-btn">
-                                    <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
-                                </button>
-                            </div>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a href="{% url 'company:register_company_step2' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
+                        </a>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
+                            </button>
+                            <button type="submit" class="btn btn-success" id="continue-btn">
+                                <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
+                            </button>
                         </div>
+                    </div>
                 </form>
             </div>
 
@@ -128,5 +125,44 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    $(document).ready(function() {
+        console.log('🚀 Инициализация Select2 для Country в шаге 3');
+
+        // Устанавливаем язык по умолчанию
+        $.fn.select2.defaults.set('language', 'de');
+
+        // ==================== Country (как Title - с поиском и очисткой) ====================
+        $('#id_country').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Land suchen oder auswählen...',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('#companyModal'),
+            language: {
+                noResults: () => 'Keine Ergebnisse gefunden',
+                searching: () => 'Suche läuft...',
+                removeAllItems: () => 'Alle Elemente entfernen'
+            }
+        }).on('select2:select', function(e) {
+            console.log('✅ Выбрана страна:', e.params.data.id, '-', e.params.data.text);
+            $(this).removeClass('is-invalid').addClass('is-valid');
+            $(this).closest('.mb-3').find('.invalid-feedback').hide();
+        }).on('select2:clear', function() {
+            console.log('🗑️ Страна очищена');
+            $(this).removeClass('is-valid is-invalid');
+        });
+
+        console.log('✅ Select2 для Country успешно инициализирован');
+    });
+
+    // Функция закрытия модального окна
+    function closeModal() {
+        if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
+            window.location.href = '/';
+        }
+    }
+</script>
+
 <script src="{% static 'js/register_company_step3.js' %}"></script>
 {% endblock %}
