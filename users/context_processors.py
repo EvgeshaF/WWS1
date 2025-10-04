@@ -35,10 +35,6 @@ def auth_context(request):
             logger.error(f"Ошибка получения количества администраторов: {e}")
             admin_count = 0
 
-        # ✅ ИСПРАВЛЕНИЕ: Модальное окно показывается только если:
-        # - Есть администраторы (admin_count > 0)
-        # - Пользователь НЕ авторизован
-        # - Не на странице создания админа
         show_login = False
         if not is_auth and not is_admin_creation_page and admin_count > 0:
             show_login = True

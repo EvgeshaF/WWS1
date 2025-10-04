@@ -14,17 +14,6 @@ _rate_limit_storage = defaultdict(list)
 
 
 def login_required(redirect_url: str = 'users:login_page'):
-    """
-    Декоратор для проверки авторизации пользователя
-
-    Args:
-        redirect_url: URL для перенаправления неавторизованных пользователей
-
-    Usage:
-        @login_required()
-        def my_view(request):
-            ...
-    """
 
     def decorator(view_func):
         @wraps(view_func)
@@ -63,17 +52,6 @@ def login_required(redirect_url: str = 'users:login_page'):
 
 
 def admin_required(redirect_url: str = 'home'):
-    """
-    Декоратор для проверки прав администратора
-
-    Args:
-        redirect_url: URL для перенаправления пользователей без прав
-
-    Usage:
-        @admin_required()
-        def admin_view(request):
-            ...
-    """
 
     def decorator(view_func):
         @wraps(view_func)
@@ -121,18 +99,6 @@ def admin_required(redirect_url: str = 'home'):
 
 
 def anonymous_required(redirect_url: str = 'home'):
-    """
-    Декоратор для страниц, доступных только неавторизованным пользователям
-    (например, страница регистрации или входа)
-
-    Args:
-        redirect_url: URL для перенаправления авторизованных пользователей
-
-    Usage:
-        @anonymous_required()
-        def register_view(request):
-            ...
-    """
 
     def decorator(view_func):
         @wraps(view_func)
@@ -153,18 +119,6 @@ def anonymous_required(redirect_url: str = 'home'):
 
 
 def permission_required(permission: str, redirect_url: str = 'home'):
-    """
-    Декоратор для проверки конкретного разрешения
-
-    Args:
-        permission: Требуемое разрешение (например, 'can_manage_users')
-        redirect_url: URL для перенаправления при отсутствии прав
-
-    Usage:
-        @permission_required('can_manage_users')
-        def manage_users_view(request):
-            ...
-    """
 
     def decorator(view_func):
         @wraps(view_func)
@@ -210,18 +164,6 @@ def permission_required(permission: str, redirect_url: str = 'home'):
 
 
 def rate_limit_user(max_requests: int = 5, time_window: int = 60):
-    """
-    Декоратор для ограничения частоты запросов от пользователя
-
-    Args:
-        max_requests: Максимальное количество запросов
-        time_window: Временное окно в секундах
-
-    Usage:
-        @rate_limit_user(max_requests=5, time_window=60)
-        def api_view(request):
-            ...
-    """
 
     def decorator(view_func):
         @wraps(view_func)
@@ -263,17 +205,6 @@ def rate_limit_user(max_requests: int = 5, time_window: int = 60):
 
 
 def session_activity_required(max_inactive_seconds: int = 3600):
-    """
-    Декоратор для проверки активности сессии
-
-    Args:
-        max_inactive_seconds: Максимальное время неактивности в секундах
-
-    Usage:
-        @session_activity_required(max_inactive_seconds=1800)
-        def sensitive_view(request):
-            ...
-    """
 
     def decorator(view_func):
         @wraps(view_func)

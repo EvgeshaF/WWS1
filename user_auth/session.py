@@ -6,14 +6,7 @@ import datetime
 
 
 def create_user_session(request, user_data: Dict[str, Any], remember_me: bool = False) -> None:
-    """
-    Создает сессию для пользователя после успешной авторизации
 
-    Args:
-        request: Django request object
-        user_data: Данные пользователя из MongoDB
-        remember_me: Запомнить пользователя (длительная сессия)
-    """
     try:
         # Сохраняем основные данные в сессии
         request.session["user_authenticated"] = True
@@ -50,13 +43,7 @@ def create_user_session(request, user_data: Dict[str, Any], remember_me: bool = 
 
 
 def update_user_session(request, update_data: Dict[str, Any]) -> None:
-    """
-    Обновляет данные в существующей сессии
 
-    Args:
-        request: Django request object
-        update_data: Данные для обновления
-    """
     try:
         if 'user_data' in request.session:
             request.session['user_data'].update(update_data)
@@ -73,16 +60,7 @@ def update_user_session(request, update_data: Dict[str, Any]) -> None:
 
 
 def get_session_data(request, key: str = None) -> Optional[Any]:
-    """
-    Получает данные из сессии
 
-    Args:
-        request: Django request object
-        key: Ключ данных (если None, возвращает все user_data)
-
-    Returns:
-        Данные из сессии или None
-    """
     try:
         if key:
             return request.session.get(key)
@@ -95,12 +73,7 @@ def get_session_data(request, key: str = None) -> Optional[Any]:
 
 
 def clear_user_session(request) -> None:
-    """
-    Очищает данные пользователя из сессии (logout)
 
-    Args:
-        request: Django request object
-    """
     try:
         # Список ключей для очистки
         session_keys = [
@@ -125,13 +98,7 @@ def clear_user_session(request) -> None:
 
 
 def extend_session(request, seconds: int = 1800) -> None:
-    """
-    Продлевает срок жизни сессии
 
-    Args:
-        request: Django request object
-        seconds: Количество секунд для продления
-    """
     try:
         request.session.set_expiry(seconds)
         request.session.modified = True
@@ -142,16 +109,7 @@ def extend_session(request, seconds: int = 1800) -> None:
 
 
 def is_session_expired(request, max_inactive_seconds: int = 3600) -> bool:
-    """
-    Проверяет, истекла ли сессия по неактивности
 
-    Args:
-        request: Django request object
-        max_inactive_seconds: Максимальное время неактивности в секундах
-
-    Returns:
-        True если сессия истекла
-    """
     try:
         last_activity_str = request.session.get('last_activity')
         if not last_activity_str:
@@ -170,12 +128,7 @@ def is_session_expired(request, max_inactive_seconds: int = 3600) -> bool:
 
 
 def refresh_session_activity(request) -> None:
-    """
-    Обновляет время последней активности в сессии
 
-    Args:
-        request: Django request object
-    """
     try:
         request.session["last_activity"] = datetime.datetime.now().isoformat()
         request.session.modified = True
@@ -185,15 +138,7 @@ def refresh_session_activity(request) -> None:
 
 
 def get_session_info(request) -> Dict[str, Any]:
-    """
-    Получает информацию о текущей сессии
 
-    Args:
-        request: Django request object
-
-    Returns:
-        Словарь с информацией о сессии
-    """
     try:
         login_timestamp_str = request.session.get('login_timestamp')
         last_activity_str = request.session.get('last_activity')

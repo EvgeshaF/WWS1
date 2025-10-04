@@ -9,21 +9,7 @@ from users.user_utils import UserManager
 
 
 def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
-    """
-    Аутентифицирует пользователя по имени и паролю
 
-    Args:
-        username: Имя пользователя
-        password: Пароль
-
-    Returns:
-        Dict с данными пользователя или None
-
-    Example:
-        >>> user = authenticate_user('admin', 'password123')
-        >>> if user:
-        >>>     print(f"Авторизован: {user['username']}")
-    """
     try:
         logger.info(f"🔑 Попытка аутентификации: {username}")
 
@@ -65,20 +51,7 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
 
 
 def is_user_authenticated(request) -> Tuple[bool, Optional[Dict[str, Any]]]:
-    """
-    Проверяет, авторизован ли пользователь в текущей сессии
 
-    Args:
-        request: Django request object
-
-    Returns:
-        Tuple (is_authenticated: bool, user_data: dict or None)
-
-    Example:
-        >>> is_auth, user_data = is_user_authenticated(request)
-        >>> if is_auth:
-        >>>     print(f"Пользователь: {user_data['username']}")
-    """
     try:
         user_authenticated = request.session.get('user_authenticated', False)
 
@@ -105,16 +78,7 @@ def is_user_authenticated(request) -> Tuple[bool, Optional[Dict[str, Any]]]:
 
 
 def clear_user_session(request) -> None:
-    """
-    Очищает данные пользователя из сессии
 
-    Args:
-        request: Django request object
-
-    Example:
-        >>> clear_user_session(request)
-        >>> # Сессия пользователя очищена
-    """
     try:
         session_keys = [
             'user_authenticated',
@@ -138,16 +102,7 @@ def clear_user_session(request) -> None:
 
 
 def should_show_login_modal() -> bool:
-    """
-    Определяет, нужно ли показывать модальное окно входа
 
-    Returns:
-        True если есть зарегистрированные администраторы
-
-    Example:
-        >>> if should_show_login_modal():
-        >>>     # Показываем модальное окно
-    """
     try:
         user_manager = UserManager()
         admin_count = user_manager.get_admin_count()
@@ -159,19 +114,7 @@ def should_show_login_modal() -> bool:
 
 
 def get_user_display_name(user_data: Optional[Dict[str, Any]]) -> Optional[str]:
-    """
-    Формирует отображаемое имя пользователя
 
-    Args:
-        user_data: Данные пользователя из MongoDB
-
-    Returns:
-        Отображаемое имя или None
-
-    Example:
-        >>> display_name = get_user_display_name(user_data)
-        >>> print(f"Привет, {display_name}!")
-    """
     if not user_data:
         return None
 
@@ -194,20 +137,7 @@ def get_user_display_name(user_data: Optional[Dict[str, Any]]) -> Optional[str]:
 
 def verify_user_permissions(user_data: Dict[str, Any],
                             required_permission: str) -> bool:
-    """
-    Проверяет наличие требуемого разрешения у пользователя
 
-    Args:
-        user_data: Данные пользователя
-        required_permission: Требуемое разрешение
-
-    Returns:
-        True если разрешение есть
-
-    Example:
-        >>> if verify_user_permissions(user_data, 'can_manage_users'):
-        >>>     # Пользователь может управлять пользователями
-    """
     try:
         # Суперадминистратор имеет все права
         if user_data.get('is_super_admin', False):
@@ -223,15 +153,7 @@ def verify_user_permissions(user_data: Dict[str, Any],
 
 
 def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
-    """
-    Находит пользователя по email
 
-    Args:
-        email: Email пользователя
-
-    Returns:
-        Данные пользователя или None
-    """
     try:
         user_manager = UserManager()
         return user_manager.find_user_by_email(email)

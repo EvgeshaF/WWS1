@@ -17,14 +17,7 @@ from .forms import LoginForm
 @require_http_methods(["GET", "POST"])
 @never_cache
 def login_view(request):
-    """
-    Форма авторизации с поддержкой AJAX и обычных запросов
 
-    Поддерживает:
-    - AJAX запросы (возвращает JSON)
-    - Обычные POST запросы (с редиректом)
-    - GET запросы (показывает форму)
-    """
     try:
         if request.method == "POST":
             logger.info("🔐 Обработка POST запроса для входа")
@@ -127,9 +120,7 @@ def login_view(request):
 
 @require_http_methods(["GET", "POST"])
 def logout_view(request):
-    """
-    Выход из системы с улучшенной обработкой
-    """
+
     try:
         username = request.session.get('username', 'Unknown')
         logger.info(f"🚪 Выход пользователя: {username}")
@@ -172,9 +163,7 @@ def logout_view(request):
 @require_http_methods(["GET"])
 @anonymous_required()
 def login_page_view(request):
-    """
-    Отдельная страница входа (альтернатива модальному окну)
-    """
+
     try:
         form = LoginForm()
 
@@ -203,11 +192,7 @@ def login_page_view(request):
 @require_http_methods(["POST"])
 @never_cache
 def refresh_session_view(request):
-    """
-    Обновление сессии (для AJAX запросов)
 
-    Используется для продления активности сессии без полной перезагрузки страницы
-    """
     try:
         is_auth, user_data = is_user_authenticated(request)
 
