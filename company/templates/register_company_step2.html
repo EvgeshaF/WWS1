@@ -44,7 +44,12 @@
                                         {{ text.commercial_register }} <span class="text-danger">*</span>
                                     </label>
                                     {{ form.commercial_register }}
+                                    <div class="form-text">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Format: HRA12345 oder HRB12345
+                                    </div>
                                 </div>
+
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -53,6 +58,12 @@
                                         {{ text.tax_number }} <span class="text-danger">*</span>
                                     </label>
                                     {{ form.tax_number }}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Steuernummer vom Finanzamt
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Format: 012/345/67890
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -65,6 +76,10 @@
                                         {{ text.vat_id }} <span class="text-danger">*</span>
                                     </label>
                                     {{ form.vat_id }}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Format: DE123456789 (für EU-Geschäfte)
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -74,6 +89,10 @@
                                         {{ text.tax_id }} <span class="text-danger">*</span>
                                     </label>
                                     {{ form.tax_id }}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        11-stellige Steuer-Identifikationsnummer
+                                    </div>
                                 </div>
                             </div>
                         </div>
