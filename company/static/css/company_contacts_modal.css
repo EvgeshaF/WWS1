@@ -1,0 +1,215 @@
+/* company/static/css/company_contacts_modal.css */
+
+/* ==================== МОДАЛЬНЫЕ ОКНА КОНТАКТОВ ==================== */
+
+#additionalContactsModal .modal-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+#contactModal .modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+}
+
+#deleteContactModal .modal-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+/* ==================== ТАБЛИЦА КОНТАКТОВ ==================== */
+
+#additionalContactsTableBody tr {
+    transition: all 0.2s ease;
+}
+
+#additionalContactsTableBody tr:hover {
+    background-color: rgba(23, 162, 184, 0.05);
+    transform: translateX(2px);
+}
+
+.contact-type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: linear-gradient(135deg, #e9ecef, #dee2e6);
+    color: #495057;
+}
+
+.contact-type-badge i {
+    margin-right: 0.5rem;
+}
+
+/* Специфичные стили для разных типов контактов */
+.contact-type-email {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #1565c0;
+}
+
+.contact-type-phone, .contact-type-mobile {
+    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    color: #6a1b9a;
+}
+
+.contact-type-fax {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    color: #e65100;
+}
+
+.contact-type-website {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    color: #2e7d32;
+}
+
+.contact-type-linkedin, .contact-type-xing {
+    background: linear-gradient(135deg, #e1f5fe, #b3e5fc);
+    color: #01579b;
+}
+
+.contact-type-emergency {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    color: #c62828;
+}
+
+.contact-department {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.contact-value {
+    font-family: 'Courier New', monospace;
+    background-color: rgba(0, 123, 255, 0.05);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+/* ==================== EMPTY STATE ==================== */
+
+#emptyAdditionalContactsPlaceholder {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==================== ФОРМА КОНТАКТА ==================== */
+
+#contactForm .form-control:focus,
+#contactForm .form-select:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+#contactForm .is-valid {
+    border-color: #28a745;
+}
+
+#contactForm .is-invalid {
+    border-color: #dc3545;
+}
+
+#contactHint {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* ==================== КНОПКИ ДЕЙСТВИЙ ==================== */
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-outline-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.btn-outline-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    .contact-type-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    #additionalContactsTableBody td {
+        font-size: 0.875rem;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* ==================== АНИМАЦИИ ==================== */
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+/* ==================== УЛУЧШЕНИЯ ACCESSIBILITY ==================== */
+
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid;
+    outline-offset: 2px;
+}
+
+.btn-outline-primary:focus {
+    outline-color: #007bff;
+}
+
+.btn-outline-danger:focus {
+    outline-color: #dc3545;
+}
+
+/* Высокий контраст */
+@media (prefers-contrast: high) {
+    .contact-type-badge {
+        border: 2px solid currentColor;
+        font-weight: 600;
+    }
+
+    .contact-value {
+        border: 1px solid rgba(0, 123, 255, 0.3);
+    }
+}
+
+/* Уменьшенная анимация */
+@media (prefers-reduced-motion: reduce) {
+    #additionalContactsTableBody tr,
+    .btn-outline-primary,
+    .btn-outline-danger,
+    #emptyAdditionalContactsPlaceholder {
+        transition: none;
+        animation: none;
+    }
+}

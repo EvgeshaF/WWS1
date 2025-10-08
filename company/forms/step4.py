@@ -1,4 +1,4 @@
-# company/forms/step4.py - ОБНОВЛЕНО: динамическая загрузка из MongoDB
+# company/forms/step4.py - ОБНОВЛЕНО: динамическая загрузка из MongoDB + дополнительные контакты
 
 from django import forms
 from django.core.validators import RegexValidator, EmailValidator
@@ -7,11 +7,13 @@ from loguru import logger
 from .utils import (
     get_salutations_from_mongodb,
     get_titles_from_mongodb,
+    get_communication_types_from_mongodb,  # НОВОЕ
+    get_communication_config_from_mongodb,  # НОВОЕ
 )
 
 
 class CompanyContactForm(forms.Form):
-    """Шаг 4: Контактные данные - ОБНОВЛЕНО: динамические справочники"""
+    """Шаг 4: Контактные данные - ОБНОВЛЕНО: динамические справочники + дополнительные контакты"""
 
     # Основные обязательные контакты
     email = forms.EmailField(
@@ -76,7 +78,6 @@ class CompanyContactForm(forms.Form):
     )
 
     # Контактное лицо (опционально)
-    # ИЗМЕНЕНО: теперь choices загружаются динамически
     contact_person_salutation = forms.ChoiceField(
         label="Anrede Kontaktperson",
         choices=[],  # Заполняется в __init__
@@ -86,7 +87,6 @@ class CompanyContactForm(forms.Form):
         })
     )
 
-    # ИЗМЕНЕНО: теперь choices загружаются динамически
     contact_person_title = forms.ChoiceField(
         label="Titel Kontaktperson",
         choices=[],  # Заполняется в __init__
@@ -138,3 +138,48 @@ class CompanyContactForm(forms.Form):
         title_choices = get_titles_from_mongodb()
         self.fields['contact_person_title'].choices = title_choices
         logger.info(f"Загружено {len(title_choices)} вариантов Titel для контактного лица")
+
+
+# НОВАЯ ФОРМА: для дополнительных контактов компании
+class CompanyAdditionalContactForm(forms.Form):
+    """Форма для дополнительных контактов компании (используется в модальном окне)"""
+
+    contact_type = forms.ChoiceField(
+        label="Kontakttyp",
+        choices=[],  # Заполняется динамически из MongoDB
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'companyContactType'
+        })
+    )
+
+    contact_value = forms.CharField(
+        label="Kontaktdaten",
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Kontaktdaten eingeben...',
+            'id': 'companyContactValue'
+        })
+    )
+
+    contact_label = forms.CharField(
+        label="Bezeichnung",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'z.B. Zentrale, Filiale, Hotline...',
+            'id': 'companyContactLabel'
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Динамически загружаем типы контактов из MongoDB
+        contact_type_choices = get_communication_types_from_mongodb()
+        self.fields['contact_type'].choices = contact_type_choices
+        logger.info(f"Загружено {len(contact_type_choices)} типов контактов для дополнительных контактов компании")

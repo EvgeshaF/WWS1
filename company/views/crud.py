@@ -12,6 +12,12 @@ from ..company_manager import CompanyManager
 from .session import CompanySessionManager
 from ..company_utils import check_mongodb_availability
 
+from company.forms.utils import (
+    get_communication_types_from_mongodb,
+    get_communication_config_from_mongodb
+)
+import json
+
 def get_display_value_from_db(collection_name, code_field, code_value, name_field='name'):
     """Получает человекочитаемое значение из MongoDB коллекции"""
     try:
@@ -432,7 +438,7 @@ def edit_company_step3(request):
 
 
 def edit_company_step4(request):
-    """НОВОЕ: Редактирование только Kontaktdaten (шаг 4)"""
+    """ОБНОВЛЕНО: Редактирование только Kontaktdaten (шаг 4) с дополнительными контактами из MongoDB"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -443,6 +449,19 @@ def edit_company_step4(request):
     if not company:
         messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
         return redirect('company:register_company_step1')
+
+    # НОВОЕ: Загружаем типы контактов и конфигурацию из MongoDB
+    contact_type_choices = get_communication_types_from_mongodb()
+    communication_config = get_communication_config_from_mongodb()
+
+    # Преобразуем choices в JSON для JavaScript
+    contact_type_choices_json = json.dumps([
+        {'value': choice[0], 'text': choice[1]}
+        for choice in contact_type_choices
+    ])
+
+    # Преобразуем конфигурацию в JSON
+    communication_config_json = json.dumps(communication_config)
 
     # Очищаем сессию и загружаем данные для шага 4
     CompanySessionManager.clear_session_data(request)
@@ -466,6 +485,12 @@ def edit_company_step4(request):
 
     messages.info(request, f"Bearbeitung der Kontaktdaten für '{company.get('company_name', 'Unbekannt')}'")
     logger.info(f"Редактирование шага 4 (Kontaktdaten) для компании '{company.get('company_name')}'")
+
+    # Передаем дополнительные данные в redirect через query параметры или через сессию
+    # Для простоты сохраним в сессии
+    request.session['contact_type_choices_json'] = contact_type_choices_json
+    request.session['communication_config_json'] = communication_config_json
+    request.session.modified = True
 
     return redirect('company:register_company_step4')
 
