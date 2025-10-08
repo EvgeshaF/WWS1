@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/create_admin_step1-3.css' %}">
 {% load company_extras %}
@@ -10,68 +9,118 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-geo-alt me-2"></i>
-                    {{ text.title }}
+                    <i class="bi bi-geo-alt me-2"></i>{{ text.title }}
                 </h5>
                 <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 5</span>
-                <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="closeModal()"></button>
+                <button type="button" class="btn-close btn-close-white ms-3" onclick="closeModal()"></button>
             </div>
 
             <div class="modal-body">
                 <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    {{ text.desc }}
-                    <br><small class="text-muted mt-1">Firma: <strong>{{ company_name }}
-                    {% if legal_form %}
-                        {{ legal_form|legal_form_display }}
-                    {% endif %}
-                </strong></small>
+                    <i class="bi bi-info-circle me-2"></i>{{ text.desc }}
+                    <br><small class="text-muted mt-1">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>Tipp:</strong> Sie können entweder PLZ oder Stadt eingeben - das andere Feld wird automatisch aktualisiert
+                    </small>
                 </div>
 
-                <form method="post"
-                      id="company-step3-form"
-                      action="{% url 'company:register_company_step3' %}"
+                <form method="post" id="company-step3-form"
                       data-url="{% url 'company:register_company_step3' %}"
-                      data-next-url="{% url 'company:register_company_step4' %}">
+                      data-next-url="{% url 'company:register_company_step4' %}"
+                      data-city-by-plz-url="{% url 'company:get_city_by_plz' %}"
+                      data-plz-by-city-url="{% url 'company:get_plz_by_city' %}"
+                      data-cities-autocomplete-url="{% url 'company:search_cities_autocomplete' %}"
+                      data-plz-ajax-url="{% url 'company:search_plz_ajax' %}">
                     {% csrf_token %}
 
-                    <!-- Адрес -->
                     <div class="card mb-4">
                         <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="bi bi-building me-2"></i> Geschäftsadresse (Pflichtfelder)</h6>
+                            <h6 class="mb-0">
+                                <i class="bi bi-building me-2"></i>Geschäftsadresse
+                            </h6>
                         </div>
                         <div class="card-body">
+                            <!-- Street -->
                             <div class="row">
-                                <div class="col-md-8">
+                                <div class="col-md-12">
                                     <div class="mb-3">
                                         <label for="{{ form.street.id_for_label }}" class="form-label">
-                                            <i class="bi bi-signpost me-1"></i> {{ text.street }} <span class="text-danger">*</span>
+                                            <i class="bi bi-signpost me-1"></i>Straße und Hausnummer
+                                            <span class="text-danger">*</span>
                                         </label>
                                         {{ form.street }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.postal_code.id_for_label }}" class="form-label">
-                                            <i class="bi bi-mailbox me-1"></i> {{ text.postal_code }} <span class="text-danger">*</span>
-                                        </label>
-                                        {{ form.postal_code }}
+                                        <div class="form-text">z.B. Hauptstraße 123</div>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- PLZ + City with bidirectional sync -->
                             <div class="row">
-                                <div class="col-md-6">
+                                <!-- PLZ Select2 -->
+                                <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="{{ form.city.id_for_label }}" class="form-label">
-                                            <i class="bi bi-buildings me-1"></i> {{ text.city }} <span class="text-danger">*</span>
+                                        <label for="id_postal_code" class="form-label">
+                                            <i class="bi bi-mailbox me-1"></i>Postleitzahl (PLZ)
+                                            <span class="text-danger">*</span>
                                         </label>
-                                        {{ form.city }}
+                                        <select name="{{ form.postal_code.name }}"
+                                                id="id_postal_code"
+                                                class="form-select"
+                                                required>
+                                            <option></option>
+                                            {% if form.postal_code.value %}
+                                                <option value="{{ form.postal_code.value }}" selected>
+                                                    {{ form.postal_code.value }}
+                                                </option>
+                                            {% endif %}
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="bi bi-search me-1"></i>
+                                            PLZ suchen
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+
+                                <!-- City Select2 with AJAX -->
+                                <div class="col-md-8">
                                     <div class="mb-3">
-                                        <label for="{{ form.country.id_for_label }}" class="form-label">
-                                            <i class="bi bi-globe-europe-africa me-1"></i> {{ text.country }} <span class="text-danger">*</span>
+                                        <label for="id_city" class="form-label">
+                                            <i class="bi bi-buildings me-1"></i>Stadt
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="city"
+                                                id="id_city"
+                                                class="form-select"
+                                                required>
+                                            <option></option>
+                                            {% if form.city.value %}
+                                                <option value="{{ form.city.value }}" selected>
+                                                    {{ form.city.value }}
+                                                </option>
+                                            {% endif %}
+                                        </select>
+                                        <div class="form-text">
+                                            <i class="bi bi-search me-1"></i>
+                                            Stadt eingeben (mind. 2 Zeichen) - PLZ wird gefiltert
+                                        </div>
+                                        <!-- Результаты поиска PLZ по городу -->
+                                        <div id="plz-results" class="mt-2" style="display: none;">
+                                            <small class="text-success">
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                <span id="plz-count"></span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Country -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label for="id_country" class="form-label">
+                                            <i class="bi bi-globe-europe-africa me-1"></i>Land
+                                            <span class="text-danger">*</span>
                                         </label>
                                         <select name="{{ form.country.name }}"
                                                 id="id_country"
@@ -81,7 +130,7 @@
                                             {% for value, text in form.country.field.choices %}
                                                 {% if value %}
                                                     <option value="{{ value }}"
-                                                            {% if form.country.value == value %}selected{% endif %}>
+                                                            {% if form.country.value == value or text == "Deutschland" %}selected{% endif %}>
                                                         {{ text }}
                                                     </option>
                                                 {% endif %}
@@ -95,28 +144,18 @@
 
                     <div class="d-flex justify-content-between align-items-center mt-4">
                         <a href="{% url 'company:register_company_step2' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
+                            <i class="bi bi-arrow-left me-1"></i>Zurück
                         </a>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
-                                <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
+                                <i class="bi bi-check-circle me-1"></i>Sichern & Schließen
                             </button>
                             <button type="submit" class="btn btn-success" id="continue-btn">
-                                <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
+                                <i class="bi bi-arrow-right me-1"></i>Weiter
                             </button>
                         </div>
                     </div>
                 </form>
-            </div>
-
-            <div class="modal-footer">
-                <small class="text-muted">
-                    <i class="bi bi-exclamation-circle me-1"></i> {{ text.notification }}
-                </small>
-                <small class="text-muted ms-3">
-                    <i class="bi bi-info-circle me-1"></i>
-                    <strong>Tipp:</strong> "Sichern & Schließen" speichert Ihre Adressdaten, ohne zum nächsten Schritt zu gehen.
-                </small>
             </div>
         </div>
     </div>
@@ -126,42 +165,393 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        console.log('🚀 Инициализация Select2 для Country в шаге 3');
+// ==================== Глобальные переменные ====================
 
-        // Устанавливаем язык по умолчанию
-        $.fn.select2.defaults.set('language', 'de');
+$(document).ready(function() {
+    console.log('🚀 Инициализация двусторонней связи PLZ ↔ Stadt');
+    $.fn.select2.defaults.set('language', 'de');
 
-        // ==================== Country (как Title - с поиском и очисткой) ====================
-        $('#id_country').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Land suchen oder auswählen...',
-            allowClear: true,
-            width: '100%',
-            dropdownParent: $('#companyModal'),
-            language: {
-                noResults: () => 'Keine Ergebnisse gefunden',
-                searching: () => 'Suche läuft...',
-                removeAllItems: () => 'Alle Elemente entfernen'
-            }
-        }).on('select2:select', function(e) {
-            console.log('✅ Выбрана страна:', e.params.data.id, '-', e.params.data.text);
-            $(this).removeClass('is-invalid').addClass('is-valid');
-            $(this).closest('.mb-3').find('.invalid-feedback').hide();
-        }).on('select2:clear', function() {
-            console.log('🗑️ Страна очищена');
-            $(this).removeClass('is-valid is-invalid');
-        });
+    const form = $('#company-step3-form');
+    const cityByPlzUrl = form.data('city-by-plz-url');
+    const plzByCityUrl = form.data('plz-by-city-url');
+    const citiesAutocompleteUrl = form.data('cities-autocomplete-url');
+    const plzAjaxUrl = form.data('plz-ajax-url');
 
-        console.log('✅ Select2 для Country успешно инициализирован');
+    // ==================== PLZ Select2 с AJAX поиском ====================
+    const plzSelect = $('#id_postal_code').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'PLZ eingeben (mind. 2 Zeichen)...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#companyModal'),
+        minimumInputLength: 2,  // Начинаем поиск с 2 символов
+        language: {
+            noResults: () => 'Keine PLZ gefunden',
+            searching: () => 'Suche läuft...',
+            inputTooShort: () => 'Bitte mindestens 2 Zeichen eingeben',
+            removeAllItems: () => 'Auswahl entfernen',
+            loadingMore: () => 'Weitere Ergebnisse laden...'
+        },
+        ajax: {
+            url: plzAjaxUrl,
+            dataType: 'json',
+            delay: 300,  // Debounce
+            data: function(params) {
+                return {
+                    q: params.term,  // Поисковый запрос
+                    page: params.page || 1
+                };
+            },
+            processResults: function(data, params) {
+                params.page = params.page || 1;
+
+                return {
+                    results: data.results,
+                    pagination: {
+                        more: data.pagination.more
+                    }
+                };
+            },
+            cache: true
+        }
     });
 
-    // Функция закрытия модального окна
-    function closeModal() {
-        if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
-            window.location.href = '/';
+    // При выборе PLZ → получаем город
+    plzSelect.on('select2:select', function(e) {
+        handlePlzSelect(e);
+    });
+
+    // При очистке PLZ → очищаем город
+    plzSelect.on('select2:clear', function() {
+        handlePlzClear();
+    });
+
+    // ==================== Stadt Select2 с AJAX поиском ====================
+    const citySelect = $('#id_city').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Stadt eingeben (mind. 2 Zeichen)...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#companyModal'),
+        minimumInputLength: 2,
+        language: {
+            noResults: () => 'Keine Stadt gefunden',
+            searching: () => 'Suche läuft...',
+            inputTooShort: () => 'Bitte mindestens 2 Zeichen eingeben',
+            removeAllItems: () => 'Auswahl entfernen'
+        },
+        ajax: {
+            url: citiesAutocompleteUrl,
+            dataType: 'json',
+            delay: 300,
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                // Преобразуем массив городов в формат Select2
+                return {
+                    results: data.cities.map(city => ({
+                        id: city,
+                        text: city
+                    }))
+                };
+            },
+            cache: true
+        },
+        // Разрешаем создание новых опций (если город не найден)
+        tags: false
+    });
+
+    // При выборе Stadt → фильтруем PLZ
+    citySelect.on('select2:select', function(e) {
+        handleCitySelect(e);
+    });
+
+    // При очистке Stadt → восстанавливаем все PLZ
+    citySelect.on('select2:clear', function() {
+        handleCityClear();
+    });
+
+    // ==================== Country Select2 ====================
+    $('#id_country').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Land auswählen...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#companyModal'),
+        language: {
+            noResults: () => 'Keine Ergebnisse gefunden',
+            searching: () => 'Suche läuft...'
         }
+    }).on('select2:select', function(e) {
+        $(this).removeClass('is-invalid').addClass('is-valid');
+    });
+
+    console.log('✅ Select2 и двусторонняя связь инициализированы');
+});
+
+// ==================== Функции фильтрации PLZ ====================
+
+function filterPlzByCity(results) {
+    const plzSelect = $('#id_postal_code');
+
+    console.log('🔧 Фильтрация PLZ - переход в статичный режим');
+
+    // Уничтожаем Select2
+    plzSelect.select2('destroy');
+
+    // ВАЖНО: Очищаем все - и опции, и значение
+    plzSelect.empty();
+    plzSelect.val('');  // Очищаем старое значение
+
+    // Добавляем пустую опцию
+    plzSelect.append(new Option('', '', false, false));
+
+    // Добавляем только найденные PLZ
+    results.forEach(item => {
+        plzSelect.append(new Option(
+            item.plz_name_long,
+            item.plz_code,
+            false,  // не выбрано по умолчанию
+            false
+        ));
+    });
+
+    // Инициализируем Select2 БЕЗ AJAX (статичные данные)
+    plzSelect.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'PLZ auswählen...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#companyModal'),
+        language: {
+            noResults: () => 'Keine PLZ in dieser Liste',
+            searching: () => 'Suche läuft...'
+        }
+    }).on('select2:select', function(e) {
+        handlePlzSelect(e);
+    }).on('select2:clear', function() {
+        handlePlzClear();
+    }).val(null).trigger('change');  // Гарантированная очистка значения
+
+    console.log(`✅ PLZ gefiltert: ${results.length} Ergebnisse (statischer Modus, alte Werte gelöscht)`);
+}
+
+function restoreAllPlzOptions() {
+    const plzSelect = $('#id_postal_code');
+    const citySelect = $('#id_city');
+    const form = $('#company-step3-form');
+    const plzAjaxUrl = form.data('plz-ajax-url');
+    const citiesAutocompleteUrl = form.data('cities-autocomplete-url');
+
+    console.log('🔄 Wiederherstellung AJAX-Modus für PLZ und Stadt');
+
+    // === PLZ: Восстанавливаем AJAX режим ===
+    plzSelect.select2('destroy');
+    plzSelect.empty();
+    plzSelect.val('');  // Очищаем значение явно
+    plzSelect.append(new Option('', '', false, false));
+
+    plzSelect.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'PLZ eingeben (mind. 2 Zeichen)...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#companyModal'),
+        minimumInputLength: 2,
+        language: {
+            noResults: () => 'Keine PLZ gefunden',
+            searching: () => 'Suche läuft...',
+            inputTooShort: () => 'Bitte mindestens 2 Zeichen eingeben',
+            removeAllItems: () => 'Auswahl entfernen',
+            loadingMore: () => 'Weitere Ergebnisse laden...'
+        },
+        ajax: {
+            url: plzAjaxUrl,
+            dataType: 'json',
+            delay: 300,
+            data: function(params) {
+                return {
+                    q: params.term,
+                    page: params.page || 1
+                };
+            },
+            processResults: function(data, params) {
+                params.page = params.page || 1;
+                return {
+                    results: data.results,
+                    pagination: {
+                        more: data.pagination.more
+                    }
+                };
+            },
+            cache: true
+        }
+    }).on('select2:select', function(e) {
+        handlePlzSelect(e);
+    }).on('select2:clear', function() {
+        handlePlzClear();
+    }).val(null).trigger('change');  // Очищаем значение после инициализации
+
+    // === Stadt: Восстанавливаем AJAX режим ===
+    citySelect.select2('destroy');
+    citySelect.empty();
+    citySelect.val('');  // Очищаем значение явно
+    citySelect.append(new Option('', '', false, false));
+
+    citySelect.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Stadt eingeben (mind. 2 Zeichen)...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#companyModal'),
+        minimumInputLength: 2,
+        language: {
+            noResults: () => 'Keine Stadt gefunden',
+            searching: () => 'Suche läuft...',
+            inputTooShort: () => 'Bitte mindestens 2 Zeichen eingeben',
+            removeAllItems: () => 'Auswahl entfernen'
+        },
+        ajax: {
+            url: citiesAutocompleteUrl,
+            dataType: 'json',
+            delay: 300,
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data.cities.map(city => ({
+                        id: city,
+                        text: city
+                    }))
+                };
+            },
+            cache: true
+        }
+    }).on('select2:select', function(e) {
+        handleCitySelect(e);
+    }).on('select2:clear', function() {
+        handleCityClear();
+    }).val(null).trigger('change');  // Очищаем значение после инициализации
+
+    // Скрываем результаты
+    $('#plz-results').hide();
+
+    console.log('✅ AJAX-Modus für PLZ und Stadt wiederhergestellt (Werte gelöscht)');
+}
+
+// Обработчики событий PLZ
+function handlePlzSelect(e) {
+    const plzCode = e.params.data.id;
+    const form = $('#company-step3-form');
+    const cityByPlzUrl = form.data('city-by-plz-url');
+
+    console.log('✅ PLZ ausgewählt:', plzCode);
+
+    // Получаем город по PLZ
+    fetch(`${cityByPlzUrl}?plz=${plzCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Устанавливаем значение в Stadt Select2
+                const citySelect = $('#id_city');
+
+                // Создаем новую опцию если её нет
+                if (citySelect.find(`option[value="${data.city}"]`).length === 0) {
+                    const newOption = new Option(data.city, data.city, true, true);
+                    citySelect.append(newOption);
+                } else {
+                    citySelect.val(data.city);
+                }
+
+                citySelect.trigger('change').addClass('is-valid');
+                console.log('✅ Stadt automatisch ausgefüllt:', data.city);
+            }
+        })
+        .catch(error => console.error('Fehler beim Laden der Stadt:', error));
+
+    $('#id_postal_code').removeClass('is-invalid').addClass('is-valid');
+}
+
+function handlePlzClear() {
+    console.log('🗑️ PLZ gelöscht - Stadt wird gelöscht');
+
+    // Очищаем Stadt
+    $('#id_city').val(null).trigger('change').removeClass('is-valid is-invalid');
+    $('#id_postal_code').removeClass('is-valid is-invalid');
+    $('#plz-results').hide();
+
+    // НЕ вызываем restoreAllPlzOptions здесь!
+    // Это вызовет повторную инициализацию и возможные проблемы
+}
+
+// Обработчики событий Stadt
+function handleCitySelect(e) {
+    const cityName = e.params.data.text;
+    const form = $('#company-step3-form');
+    const plzByCityUrl = form.data('plz-by-city-url');
+
+    console.log('✅ Stadt ausgewählt:', cityName);
+
+    // ВАЖНО: Сначала очищаем старый PLZ
+    $('#id_postal_code').val(null).trigger('change').removeClass('is-valid is-invalid');
+
+    // Получаем PLZ по городу
+    fetch(`${plzByCityUrl}?city=${encodeURIComponent(cityName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.results.length > 0) {
+                // Фильтруем PLZ Select2
+                filterPlzByCity(data.results);
+
+                // Показываем результат
+                $('#plz-results').show();
+                $('#plz-count').text(`${data.count} PLZ gefunden für "${cityName}"`);
+
+                // Если только один PLZ - выбираем автоматически
+                if (data.results.length === 1) {
+                    const plzCode = data.results[0].plz_code;
+                    const plzText = data.results[0].plz_name_long;
+
+                    // Выбираем PLZ через Select2 API
+                    $('#id_postal_code').val(plzCode).trigger('change').addClass('is-valid');
+                    showToast(`PLZ ${plzCode} automatisch ausgewählt`, 'success', 3000);
+                }
+
+                $('#id_city').addClass('is-valid');
+            } else {
+                showToast('Keine PLZ für diese Stadt gefunden', 'warning');
+                $('#id_city').removeClass('is-valid');
+            }
+        })
+        .catch(error => {
+            console.error('Fehler bei PLZ-Suche:', error);
+            showToast('Fehler beim Suchen der PLZ', 'error');
+        });
+}
+
+function handleCityClear() {
+    console.log('🗑️ Stadt gelöscht - PLZ wird zurückgesetzt');
+
+    // Очищаем PLZ
+    $('#id_postal_code').val(null).trigger('change').removeClass('is-valid is-invalid');
+    $('#id_city').removeClass('is-valid is-invalid');
+    $('#plz-results').hide();
+
+    // ВАЖНО: Восстанавливаем AJAX режим для PLZ
+    restoreAllPlzOptions();
+}
+
+function closeModal() {
+    if (confirm('Möchten Sie das Fenster schließen? Ungesicherte Änderungen gehen verloren.')) {
+        window.location.href = '/';
     }
+}
 </script>
 
 <script src="{% static 'js/register_company_step3.js' %}"></script>

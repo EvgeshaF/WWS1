@@ -49,6 +49,14 @@ from .extra import (
     import_company_data,
 )
 
+# API Step3
+from .api_step3 import (
+    get_city_by_plz,
+    get_plz_by_city,
+    search_cities_autocomplete,
+    search_plz_ajax
+)
+
 # Экспортируем все для удобства
 __all__ = [
     # Session
@@ -87,4 +95,10 @@ __all__ = [
     'debug_company_data',
     'export_company_data',
     'import_company_data',
+
+    # API Step3
+    'get_city_by_plz',
+    'get_plz_by_city',
+    'search_cities_autocomplete',
+    'search_plz_ajax',
 ]

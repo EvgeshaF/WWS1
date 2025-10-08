@@ -39,4 +39,9 @@ urlpatterns = [
 
     # Debug endpoint
     path('debug/', views.debug_company_data, name='debug_company_data'),
+
+    path('api/get-city-by-plz/', views.get_city_by_plz, name='get_city_by_plz'),
+    path('api/get-plz-by-city/', views.get_plz_by_city, name='get_plz_by_city'),
+    path('api/search-cities/', views.search_cities_autocomplete, name='search_cities_autocomplete'),
+    path('api/search-plz/', views.search_plz_ajax, name='search_plz_ajax'),
 ]

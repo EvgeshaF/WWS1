@@ -54,3 +54,11 @@ from .views.extra import (
     export_company_data,
     import_company_data,
 )
+
+# API Step3
+from .views.api_step3 import (
+    get_city_by_plz,
+    get_plz_by_city,
+    search_cities_autocomplete,
+    search_plz_ajax,
+)
