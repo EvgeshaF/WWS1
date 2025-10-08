@@ -294,32 +294,35 @@ $(document).ready(function() {
 
 // ==================== Функции фильтрации PLZ ====================
 
-function filterPlzByCity(results) {
+function filterPlzByCity(results, autoSelectFirst = false) {
     const plzSelect = $('#id_postal_code');
 
     console.log('🔧 Фильтрация PLZ - переход в статичный режим');
 
-    // Уничтожаем Select2
-    plzSelect.select2('destroy');
+    // ✅ ШАГ 1: Уничтожаем Select2
+    if (plzSelect.data('select2')) {
+        plzSelect.select2('destroy');
+    }
 
-    // ВАЖНО: Очищаем все - и опции, и значение
+    // ✅ ШАГ 2: КРИТИЧНО - очищаем нативный select элемент
     plzSelect.empty();
-    plzSelect.val('');  // Очищаем старое значение
+    plzSelect.val('');
+    plzSelect.prop('selectedIndex', -1);
 
-    // Добавляем пустую опцию
+    // ✅ ШАГ 3: Добавляем пустую опцию
     plzSelect.append(new Option('', '', false, false));
 
-    // Добавляем только найденные PLZ
+    // ✅ ШАГ 4: Добавляем только найденные PLZ
     results.forEach(item => {
         plzSelect.append(new Option(
             item.plz_name_long,
             item.plz_code,
-            false,  // не выбрано по умолчанию
+            false,
             false
         ));
     });
 
-    // Инициализируем Select2 БЕЗ AJAX (статичные данные)
+    // ✅ ШАГ 5: Инициализируем новый Select2 БЕЗ AJAX
     plzSelect.select2({
         theme: 'bootstrap-5',
         placeholder: 'PLZ auswählen...',
@@ -334,9 +337,22 @@ function filterPlzByCity(results) {
         handlePlzSelect(e);
     }).on('select2:clear', function() {
         handlePlzClear();
-    }).val(null).trigger('change');  // Гарантированная очистка значения
+    });
 
-    console.log(`✅ PLZ gefiltert: ${results.length} Ergebnisse (statischer Modus, alte Werte gelöscht)`);
+    // ✅ ШАГ 6: Финальная очистка ТОЛЬКО если НЕ автовыбор
+    if (!autoSelectFirst) {
+        setTimeout(() => {
+            plzSelect.val('').trigger('change.select2');
+            plzSelect.removeClass('is-valid is-invalid');
+        }, 50);
+    }
+
+    console.log(`✅ PLZ gefiltert: ${results.length} Ergebnisse`);
+
+    // ✅ Возвращаем промис для синхронизации
+    return new Promise((resolve) => {
+        setTimeout(() => resolve(), 100);
+    });
 }
 
 function restoreAllPlzOptions() {
@@ -349,10 +365,15 @@ function restoreAllPlzOptions() {
     console.log('🔄 Wiederherstellung AJAX-Modus für PLZ und Stadt');
 
     // === PLZ: Восстанавливаем AJAX режим ===
-    plzSelect.select2('destroy');
+    if (plzSelect.data('select2')) {
+        plzSelect.select2('destroy');
+    }
+
+    // ✅ КРИТИЧНО: Полная очистка нативного элемента
     plzSelect.empty();
-    plzSelect.val('');  // Очищаем значение явно
-    plzSelect.append(new Option('', '', false, false));
+    plzSelect.val('');
+    plzSelect.prop('selectedIndex', -1);
+    plzSelect.append(new Option('', '', true, true));
 
     plzSelect.select2({
         theme: 'bootstrap-5',
@@ -393,13 +414,23 @@ function restoreAllPlzOptions() {
         handlePlzSelect(e);
     }).on('select2:clear', function() {
         handlePlzClear();
-    }).val(null).trigger('change');  // Очищаем значение после инициализации
+    });
+
+    // ✅ ФИНАЛЬНАЯ очистка через небольшой таймаут
+    setTimeout(() => {
+        plzSelect.val('').trigger('change.select2');
+        plzSelect.removeClass('is-valid is-invalid');
+    }, 50);
 
     // === Stadt: Восстанавливаем AJAX режим ===
-    citySelect.select2('destroy');
+    if (citySelect.data('select2')) {
+        citySelect.select2('destroy');
+    }
+
     citySelect.empty();
-    citySelect.val('');  // Очищаем значение явно
-    citySelect.append(new Option('', '', false, false));
+    citySelect.val('');
+    citySelect.prop('selectedIndex', -1);
+    citySelect.append(new Option('', '', true, true));
 
     citySelect.select2({
         theme: 'bootstrap-5',
@@ -437,12 +468,17 @@ function restoreAllPlzOptions() {
         handleCitySelect(e);
     }).on('select2:clear', function() {
         handleCityClear();
-    }).val(null).trigger('change');  // Очищаем значение после инициализации
+    });
+
+    setTimeout(() => {
+        citySelect.val('').trigger('change.select2');
+        citySelect.removeClass('is-valid is-invalid');
+    }, 50);
 
     // Скрываем результаты
     $('#plz-results').hide();
 
-    console.log('✅ AJAX-Modus für PLZ und Stadt wiederhergestellt (Werte gelöscht)');
+    console.log('✅ AJAX-Modus wiederhergestellt (alle Werte ГАРАНТИРОВАННО удалены)');
 }
 
 // Обработчики событий PLZ
@@ -479,15 +515,78 @@ function handlePlzSelect(e) {
 }
 
 function handlePlzClear() {
-    console.log('🗑️ PLZ gelöscht - Stadt wird gelöscht');
+    console.log('🗑️ PLZ gelöscht - восстановление AJAX-режима');
 
-    // Очищаем Stadt
-    $('#id_city').val(null).trigger('change').removeClass('is-valid is-invalid');
-    $('#id_postal_code').removeClass('is-valid is-invalid');
+    const plzSelect = $('#id_postal_code');
+    const form = $('#company-step3-form');
+    const plzAjaxUrl = form.data('plz-ajax-url');
+
+    // Очищаем валидацию
+    plzSelect.removeClass('is-valid is-invalid');
+
+    // Скрываем результаты поиска
     $('#plz-results').hide();
 
-    // НЕ вызываем restoreAllPlzOptions здесь!
-    // Это вызовет повторную инициализацию и возможные проблемы
+    // ✅ КРИТИЧНО: Восстанавливаем AJAX режим для PLZ
+    // Уничтожаем текущий статичный Select2
+    if (plzSelect.data('select2')) {
+        plzSelect.select2('destroy');
+    }
+
+    // Полная очистка нативного элемента
+    plzSelect.empty();
+    plzSelect.val('');
+    plzSelect.prop('selectedIndex', -1);
+    plzSelect.append(new Option('', '', true, true));
+
+    // Восстанавливаем Select2 с AJAX поиском
+    plzSelect.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'PLZ eingeben (mind. 2 Zeichen)...',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#companyModal'),
+        minimumInputLength: 2,
+        language: {
+            noResults: () => 'Keine PLZ gefunden',
+            searching: () => 'Suche läuft...',
+            inputTooShort: () => 'Bitte mindestens 2 Zeichen eingeben',
+            removeAllItems: () => 'Auswahl entfernen',
+            loadingMore: () => 'Weitere Ergebnisse laden...'
+        },
+        ajax: {
+            url: plzAjaxUrl,
+            dataType: 'json',
+            delay: 300,
+            data: function(params) {
+                return {
+                    q: params.term,
+                    page: params.page || 1
+                };
+            },
+            processResults: function(data, params) {
+                params.page = params.page || 1;
+                return {
+                    results: data.results,
+                    pagination: {
+                        more: data.pagination.more
+                    }
+                };
+            },
+            cache: true
+        }
+    }).on('select2:select', function(e) {
+        handlePlzSelect(e);
+    }).on('select2:clear', function() {
+        handlePlzClear();
+    });
+
+    // Финальная очистка значения
+    setTimeout(() => {
+        plzSelect.val('').trigger('change.select2');
+    }, 50);
+
+    console.log('✅ PLZ AJAX-Modus wiederhergestellt');
 }
 
 // Обработчики событий Stadt
@@ -498,32 +597,52 @@ function handleCitySelect(e) {
 
     console.log('✅ Stadt ausgewählt:', cityName);
 
-    // ВАЖНО: Сначала очищаем старый PLZ
-    $('#id_postal_code').val(null).trigger('change').removeClass('is-valid is-invalid');
-
     // Получаем PLZ по городу
     fetch(`${plzByCityUrl}?city=${encodeURIComponent(cityName)}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.results.length > 0) {
-                // Фильтруем PLZ Select2
-                filterPlzByCity(data.results);
+                // ✅ Определяем, нужен ли автовыбор
+                const autoSelect = data.results.length === 1;
 
-                // Показываем результат
-                $('#plz-results').show();
-                $('#plz-count').text(`${data.count} PLZ gefunden für "${cityName}"`);
+                // Фильтруем PLZ и ждем завершения
+                filterPlzByCity(data.results, autoSelect).then(() => {
+                    // Показываем результат
+                    $('#plz-results').show();
+                    $('#plz-count').text(`${data.count} PLZ gefunden für "${cityName}"`);
 
-                // Если только один PLZ - выбираем автоматически
-                if (data.results.length === 1) {
-                    const plzCode = data.results[0].plz_code;
-                    const plzText = data.results[0].plz_name_long;
+                    // ✅ Если только один PLZ - выбираем автоматически
+                    if (autoSelect) {
+                        const plzCode = data.results[0].plz_code;
+                        const plzText = data.results[0].plz_name_long;
 
-                    // Выбираем PLZ через Select2 API
-                    $('#id_postal_code').val(plzCode).trigger('change').addClass('is-valid');
-                    showToast(`PLZ ${plzCode} automatisch ausgewählt`, 'success', 3000);
-                }
+                        console.log('🎯 Автоматический выбор PLZ:', plzCode);
 
-                $('#id_city').addClass('is-valid');
+                        // Даем Select2 время полностью инициализироваться
+                        setTimeout(() => {
+                            const plzSelect = $('#id_postal_code');
+
+                            // Создаем новую опцию если её нет (на всякий случай)
+                            if (plzSelect.find(`option[value="${plzCode}"]`).length === 0) {
+                                const newOption = new Option(plzText, plzCode, true, true);
+                                plzSelect.append(newOption);
+                            }
+
+                            // Устанавливаем значение
+                            plzSelect.val(plzCode).trigger('change');
+
+                            // Добавляем визуальный индикатор
+                            plzSelect.addClass('is-valid');
+
+                            // Показываем уведомление
+                            showToast(`PLZ ${plzCode} automatisch ausgewählt`, 'success', 3000);
+
+                            console.log('✅ PLZ автоматически выбран:', plzCode);
+                        }, 200); // Увеличена задержка для надежности
+                    }
+
+                    $('#id_city').addClass('is-valid');
+                });
             } else {
                 showToast('Keine PLZ für diese Stadt gefunden', 'warning');
                 $('#id_city').removeClass('is-valid');
@@ -536,14 +655,19 @@ function handleCitySelect(e) {
 }
 
 function handleCityClear() {
-    console.log('🗑️ Stadt gelöscht - PLZ wird zurückgesetzt');
+    console.log('🗑️ Stadt gelöscht - восстановление AJAX-режима для обоих полей');
 
-    // Очищаем PLZ
-    $('#id_postal_code').val(null).trigger('change').removeClass('is-valid is-invalid');
-    $('#id_city').removeClass('is-valid is-invalid');
+    const plzSelect = $('#id_postal_code');
+    const citySelect = $('#id_city');
+
+    // Очищаем валидацию
+    plzSelect.removeClass('is-valid is-invalid');
+    citySelect.removeClass('is-valid is-invalid');
+
+    // Скрываем результаты
     $('#plz-results').hide();
 
-    // ВАЖНО: Восстанавливаем AJAX режим для PLZ
+    // ✅ Восстанавливаем AJAX режим для ОБОИХ полей
     restoreAllPlzOptions();
 }
 
