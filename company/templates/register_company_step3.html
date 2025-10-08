@@ -515,31 +515,36 @@ function handlePlzSelect(e) {
 }
 
 function handlePlzClear() {
-    console.log('🗑️ PLZ gelöscht - восстановление AJAX-режима');
+    console.log('🗑️ PLZ gelöscht - полный сброс PLZ und Stadt');
 
     const plzSelect = $('#id_postal_code');
+    const citySelect = $('#id_city');
     const form = $('#company-step3-form');
     const plzAjaxUrl = form.data('plz-ajax-url');
 
-    // Очищаем валидацию
+    // ✅ Очищаем Stadt с уведомлением
+    const hadCity = citySelect.val() !== null && citySelect.val() !== '';
+    if (citySelect.data('select2')) {
+        citySelect.val(null).trigger('change');
+    }
+    citySelect.removeClass('is-valid is-invalid');
+
+    // Очищаем валидацию PLZ
     plzSelect.removeClass('is-valid is-invalid');
 
     // Скрываем результаты поиска
     $('#plz-results').hide();
 
-    // ✅ КРИТИЧНО: Восстанавливаем AJAX режим для PLZ
-    // Уничтожаем текущий статичный Select2
+    // Восстанавливаем AJAX режим для PLZ
     if (plzSelect.data('select2')) {
         plzSelect.select2('destroy');
     }
 
-    // Полная очистка нативного элемента
     plzSelect.empty();
     plzSelect.val('');
     plzSelect.prop('selectedIndex', -1);
     plzSelect.append(new Option('', '', true, true));
 
-    // Восстанавливаем Select2 с AJAX поиском
     plzSelect.select2({
         theme: 'bootstrap-5',
         placeholder: 'PLZ eingeben (mind. 2 Zeichen)...',
@@ -581,12 +586,16 @@ function handlePlzClear() {
         handlePlzClear();
     });
 
-    // Финальная очистка значения
     setTimeout(() => {
         plzSelect.val('').trigger('change.select2');
     }, 50);
 
-    console.log('✅ PLZ AJAX-Modus wiederhergestellt');
+    // ✅ НОВОЕ: Показываем уведомление если город был выбран
+    if (hadCity) {
+        showToast('PLZ und Stadt zurückgesetzt', 'info', 2000);
+    }
+
+    console.log('✅ PLZ und Stadt vollständig zurückgesetzt');
 }
 
 // Обработчики событий Stadt
@@ -655,12 +664,12 @@ function handleCitySelect(e) {
 }
 
 function handleCityClear() {
-    console.log('🗑️ Stadt gelöscht - восстановление AJAX-режима для обоих полей');
+    console.log('🗑️ Stadt gelöscht - полный сброс Stadt und PLZ');
 
     const plzSelect = $('#id_postal_code');
     const citySelect = $('#id_city');
 
-    // Очищаем валидацию
+    // Очищаем валидацию обоих полей
     plzSelect.removeClass('is-valid is-invalid');
     citySelect.removeClass('is-valid is-invalid');
 
@@ -669,6 +678,8 @@ function handleCityClear() {
 
     // ✅ Восстанавливаем AJAX режим для ОБОИХ полей
     restoreAllPlzOptions();
+
+    console.log('✅ Stadt und PLZ vollständig zurückgesetzt');
 }
 
 function closeModal() {
