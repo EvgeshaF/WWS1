@@ -144,19 +144,27 @@
 
                     <div class="d-flex justify-content-between align-items-center mt-4">
                         <a href="{% url 'company:register_company_step2' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i>Zurück
+                            <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
                         </a>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
                                 <i class="bi bi-check-circle me-1"></i>Sichern & Schließen
                             </button>
                             <button type="submit" class="btn btn-success" id="continue-btn">
-                                <i class="bi bi-arrow-right me-1"></i>Weiter
+                                <i class="bi bi-arrow-right me-1"></i>{{ text.btn }}
                             </button>
                         </div>
                     </div>
                 </form>
             </div>
+
+                        <div class="modal-footer">
+                    <small class="text-muted"><i class="bi bi-exclamation-circle me-1"></i> {{ text.notification }}</small>
+                    <small class="text-muted ms-3"><i class="bi bi-info-circle me-1"></i>
+                        <strong>Tipp:</strong> "Sichern & Schließen" speichert alle Kontaktdaten, ohne zum nächsten Schritt zu gehen.
+                    </small>
+                </div>
+
         </div>
     </div>
 </div>
