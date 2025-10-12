@@ -329,15 +329,6 @@ class MongoConnection:
                 except Exception as e:
                     logger.warning(f"Частичная ошибка создания индексов: {e}")
 
-            # Создаем системную коллекцию для информации о БД
-            system_collection_name = f"{db_name}_system_info"
-            db[system_collection_name].insert_one({
-                'database_name': db_name,
-                'created_at': now,
-                'version': '1.0',
-                'status': 'active',
-                'collections_count': len(db.list_collection_names())
-            })
 
             logger.success(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_success2}")
 
@@ -353,6 +344,90 @@ class MongoConnection:
 
         except Exception as e:
             logger.exception(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_error2}: {e}")
+            return False
+
+    @classmethod
+    def create_users_collection(cls, db_name: str):
+        """Создает коллекцию пользователей программно (без users.json)"""
+        logger.warning(f"🚀 Создание коллекции пользователей программно для БД: {db_name}")
+
+        client = cls.get_client()
+        if client is None:
+            logger.error("❌ Нет подключения к MongoDB")
+            return False
+
+        try:
+            db = client[db_name]
+            users_collection_name = f"{db_name}_users"
+
+            # Проверяем, существует ли коллекция
+            if users_collection_name in db.list_collection_names():
+                logger.warning(f"⚠️ Коллекция '{users_collection_name}' уже существует — пропуск создания.")
+                return True
+
+            # JSON Schema валидатор (структура как в users.json)
+            validator = {
+                "$jsonSchema": {
+                    "bsonType": "object",
+                    "required": [
+                        "username", "password", "profile",
+                        "is_active", "created_at", "modified_at", "deleted"
+                    ],
+                    "properties": {
+                        "username": {"bsonType": "string"},
+                        "password": {"bsonType": "string"},
+                        "is_admin": {"bsonType": "bool"},
+                        "is_active": {"bsonType": "bool"},
+                        "created_at": {"bsonType": "date"},
+                        "modified_at": {"bsonType": "date"},
+                        "deleted": {"bsonType": "bool"},
+                        "last_login": {"bsonType": ["date", "null"]},
+                        "password_changed_at": {"bsonType": ["date", "null"]},
+                        "profile": {
+                            "bsonType": "object",
+                            "required": ["first_name", "last_name", "email"],
+                            "properties": {
+                                "salutation": {"bsonType": ["string", "null"]},
+                                "title": {"bsonType": ["string", "null"]},
+                                "first_name": {"bsonType": "string"},
+                                "last_name": {"bsonType": "string"},
+                                "email": {"bsonType": "string"},
+                                "phone": {"bsonType": ["string", "null"]},
+                                "contacts": {
+                                    "bsonType": "array",
+                                    "items": {
+                                        "bsonType": "object",
+                                        "required": ["type", "value", "is_primary"],
+                                        "properties": {
+                                            "type": {"bsonType": "string"},
+                                            "value": {"bsonType": "string"},
+                                            "note": {"bsonType": ["string", "null"]},
+                                            "is_primary": {"bsonType": "bool"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            db.create_collection(users_collection_name, validator=validator)
+            logger.success(f"✅ Коллекция '{users_collection_name}' успешно создана программно")
+
+            # Индексы (как в твоём коде)
+            users_collection = db[users_collection_name]
+            users_collection.create_index("username", unique=True, name="idx_username_unique")
+            users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
+            users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
+            users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
+            users_collection.create_index("created_at", name="idx_created_at")
+
+            logger.success(f"📊 Индексы созданы для коллекции '{users_collection_name}'")
+            return True
+
+        except Exception as e:
+            logger.exception(f"Ошибка при создании коллекции пользователей: {e}")
             return False
 
     @classmethod

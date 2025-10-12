@@ -307,7 +307,7 @@ def register_company_step3(request):
 
 
 def register_company_step4(request):
-    """Шаг 4: Контактные данные - ИСПРАВЛЕНО: правильная обработка ObjectId"""
+    """Шаг 4: Контактные данные - ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -322,20 +322,35 @@ def register_company_step4(request):
     company_name = session_data.get('company_name', '')
     legal_form = session_data.get('legal_form', '')
 
-    # ✅ НОВОЕ: Проверяем временные данные из edit_company_step4
-    contact_type_choices_json = None
-    communication_config_json = None
+    # ✅ ВСЕГДА загружаем типы контактов из MongoDB (нужны для формы)
+    contact_type_choices = get_communication_types_from_mongodb()
+    communication_config_dict = get_communication_config_from_mongodb()
 
+    # Преобразуем в JSON для JavaScript
+    contact_type_choices_json = json.dumps([
+        {'value': choice[0], 'text': choice[1]}
+        for choice in contact_type_choices
+    ], ensure_ascii=False)
+
+    communication_config_json = json.dumps(communication_config_dict, ensure_ascii=False)
+
+    # ✅ Проверяем временные данные из edit_company_step4
     if '_temp_existing_additional_contacts' in request.session:
+        # Данные уже подготовлены из edit_company_step4
         existing_additional_contacts_json = request.session.pop('_temp_existing_additional_contacts')
-        contact_type_choices_json = request.session.pop('_temp_contact_type_choices_json', None)
-        communication_config_json = request.session.pop('_temp_communication_config_json', None)
-        request.session.modified = True
+        # Перезаписываем JSON если он был в временной сессии
+        temp_contact_choices = request.session.pop('_temp_contact_type_choices_json', None)
+        temp_config = request.session.pop('_temp_communication_config_json', None)
 
-        # Если данные уже подготовлены из edit, пропускаем обработку
-        existing_additional_contacts = json.loads(existing_additional_contacts_json)
+        if temp_contact_choices:
+            contact_type_choices_json = temp_contact_choices
+        if temp_config:
+            communication_config_json = temp_config
+
+        request.session.modified = True
+        logger.info("Загружены данные из временной сессии (edit mode)")
     else:
-        # ✅ ИСПРАВЛЕНО: Правильная обработка дополнительных контактов
+        # Обычная обработка дополнительных контактов из сессии
         existing_additional_contacts = session_data.get('additional_contacts_data', '[]')
 
         # Преобразуем в список Python
@@ -363,21 +378,10 @@ def register_company_step4(request):
                         cleaned_contact[key] = value
                 cleaned_contacts.append(cleaned_contact)
 
-        # Загружаем типы контактов и конфигурацию из MongoDB
-        contact_type_choices = get_communication_types_from_mongodb()
-        communication_config_dict = get_communication_config_from_mongodb()
-
-        # ✅ ИСПРАВЛЕНО: Правильное преобразование в JSON для JavaScript
-        contact_type_choices_json = json.dumps([
-            {'value': choice[0], 'text': choice[1]}
-            for choice in contact_type_choices
-        ], ensure_ascii=False)
-
-        communication_config_json = json.dumps(communication_config_dict, ensure_ascii=False)
-
-        # ✅ ИСПРАВЛЕНО: Преобразуем очищенные контакты в JSON
+        # ✅ Преобразуем очищенные контакты в JSON
         existing_additional_contacts_json = json.dumps(cleaned_contacts, ensure_ascii=False)
 
+    # ============== POST REQUEST ==============
     if request.method == 'POST':
         form = CompanyContactForm(request.POST)
 
@@ -403,9 +407,11 @@ def register_company_step4(request):
                     logger.info(f"Обработано {len(cleaned_contacts_for_save)} дополнительных контактов компании")
                 else:
                     step_data['additional_contacts_data'] = '[]'
+                    cleaned_contacts_for_save = []
             except json.JSONDecodeError:
                 logger.warning("Некорректные данные дополнительных контактов компании")
                 step_data['additional_contacts_data'] = '[]'
+                cleaned_contacts_for_save = []
 
             CompanySessionManager.update_session_data(request, step_data)
 
@@ -414,7 +420,7 @@ def register_company_step4(request):
                 full_data = CompanySessionManager.get_session_data(request)
                 success = save_partial_company_data(request, full_data, step=4)
                 if success:
-                    additional_count = len(cleaned_contacts_for_save) if 'cleaned_contacts_for_save' in locals() else 0
+                    additional_count = len(cleaned_contacts_for_save)
                     return JsonResponse({
                         'success': True,
                         'action': 'save_and_close',
@@ -437,7 +443,7 @@ def register_company_step4(request):
 
             # Формируем информацию о контактах для сообщения
             main_contacts = f"{step_data.get('email', '')}, {step_data.get('phone', '')}"
-            additional_count = len(cleaned_contacts_for_save) if 'cleaned_contacts_for_save' in locals() else 0
+            additional_count = len(cleaned_contacts_for_save)
 
             if additional_count > 0:
                 contact_info = f"{main_contacts} + {additional_count} zusätzliche"
@@ -468,15 +474,17 @@ def register_company_step4(request):
         else:
             messages.error(request, company_error_messages['form_submission_error'])
     else:
+        # ============== GET REQUEST ==============
         form = CompanyContactForm(initial=session_data)
 
+    # ✅ Контекст для GET запроса (все переменные определены)
     context = {
         'form': form,
         'step': 4,
         'text': text_company_step4,
         'company_name': company_name,
         'legal_form': legal_form,
-        'existing_additional_contacts': existing_additional_contacts_json,  # ✅ ИСПРАВЛЕНО
+        'existing_additional_contacts': existing_additional_contacts_json,
         'contact_type_choices': contact_type_choices,
         'contact_type_choices_json': contact_type_choices_json,
         'communication_config_json': communication_config_json

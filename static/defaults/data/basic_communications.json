@@ -1,90 +1,20 @@
 [
   {
-    "type": "E-Mail",
-    "icon": "envelope",
-    "required_format": "email",
-    "display_order": 1,
-    "validation_pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
-    "placeholder": "beispiel@domain.com",
-    "hint_de": "Geben Sie eine gültige E-Mail-Adresse ein",
-    "active": true,
-    "deleted": false
+    "type": "E-Mail"
   },
   {
-    "type": "Telefon",
-    "icon": "telephone",
-    "required_format": "phone",
-    "display_order": 2,
-    "validation_pattern": "^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$",
-    "placeholder": "+49 123 456789",
-    "hint_de": "Geben Sie eine Telefonnummer ein",
-    "active": true,
-    "deleted": false
+    "type": "Telefon"
   },
   {
-    "type": "Mobil",
-    "icon": "phone",
-    "required_format": "phone",
-    "display_order": 3,
-    "validation_pattern": "^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$",
-    "placeholder": "+49 170 1234567",
-    "hint_de": "Geben Sie eine Mobilnummer ein",
-    "active": true,
-    "deleted": false
+    "type": "Mobil"
   },
   {
-    "type": "Fax",
-    "icon": "printer",
-    "required_format": "phone",
-    "display_order": 4,
-    "validation_pattern": "^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$",
-    "placeholder": "+49 123 456789",
-    "hint_de": "Geben Sie eine Faxnummer ein",
-    "active": true,
-    "deleted": false
+    "type": "Fax"
   },
   {
-    "type": "Website",
-    "icon": "globe",
-    "required_format": "url",
-    "display_order": 5,
-    "validation_pattern": "^https?:\\/\\/.+\\..+$|^www\\..+\\..+$",
-    "placeholder": "https://www.example.com",
-    "hint_de": "Geben Sie eine Website-URL ein",
-    "active": true,
-    "deleted": false
+    "type": "Website"
   },
   {
-    "type": "LinkedIn",
-    "icon": "linkedin",
-    "required_format": "profile",
-    "display_order": 6,
-    "validation_pattern": "^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$",
-    "placeholder": "linkedin.com/in/username",
-    "hint_de": "Geben Sie Ihr LinkedIn-Profil ein",
-    "active": true,
-    "deleted": false
-  },
-  {
-    "type": "XING",
-    "icon": "person-badge",
-    "required_format": "profile",
-    "display_order": 7,
-    "validation_pattern": "^(https?:\\/\\/)?(www\\.)?xing\\.com\\/profile\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$",
-    "placeholder": "xing.com/profile/username",
-    "hint_de": "Geben Sie Ihr XING-Profil ein",
-    "active": true,
-    "deleted": false
-  },
-  {
-    "type": "Sonstige",
-    "icon": "question-circle",
-    "required_format": "text",
-    "display_order": 8,
-    "validation_pattern": ".{3,}",
-    "placeholder": "Kontaktdaten eingeben...",
-    "hint_de": "Geben Sie die entsprechenden Kontaktdaten ein",
-    "active": true,
-    "deleted": false
+    "type": "Sonstige"
   }
 ]
