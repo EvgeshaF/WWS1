@@ -137,35 +137,17 @@ class MongoConnection:
             return False
 
         client = cls.get_client()
-        if client is None:  # ✅ ИСПРАВЛЕНО: правильная проверка клиента
+        if client is None:
             return False
 
         try:
-            # КРИТИЧЕСКАЯ ПРОВЕРКА: не существует ли уже база данных?
+            # ЕДИНСТВЕННАЯ ПРОВЕРКА существования БД в начале
             existing_databases = client.list_database_names()
             logger.info(f"📋 Существующие базы данных: {existing_databases}")
 
             if db_name in existing_databases:
                 logger.error(f"❌ База данных '{db_name}' уже существует!")
-
-                # Дополнительная проверка коллекций
-                db = client[db_name]
-                existing_collections = db.list_collection_names()
-                logger.error(f"📂 Существующие коллекции в '{db_name}': {existing_collections}")
-
-                # Проверяем основные коллекции
-                users_collection = f"{db_name}_users"
-                titles_collection = f"{db_name}_basic_titles"
-
-                if users_collection in existing_collections and titles_collection in existing_collections:
-                    users_count = db[users_collection].count_documents({})
-                    titles_count = db[titles_collection].count_documents({})
-
-                    logger.error(f"🚫 База данных '{db_name}' уже полностью настроена!")
-                    logger.error(f"📊 {users_collection}: {users_count} записей")
-                    logger.error(f"📊 {titles_collection}: {titles_count} записей")
-                    logger.error("❌ ОТМЕНЯЕМ создание - БД уже существует!")
-                    return False
+                return False
 
             logger.success(f"✅ База данных '{db_name}' не существует, создаем...")
 
@@ -177,61 +159,40 @@ class MongoConnection:
             base_path = os.path.join('static', 'defaults', 'data')
             logger.info(f"📂 Ищем JSON файлы в: {base_path}")
 
+            created_collections = []
+
             if os.path.exists(base_path):
-                # Получаем список всех JSON файлов
                 json_files = [f for f in os.listdir(base_path) if f.endswith('.json')]
                 logger.info(f"📋 Найдено JSON файлов: {json_files}")
 
                 for file_name in json_files:
-                    # Создаем имя коллекции: db_name + "_" + имя_файла_без_расширения
                     base_collection_name = file_name.replace('.json', '')
                     collection_name = f"{db_name}_{base_collection_name}"
                     json_path = os.path.join(base_path, file_name)
 
                     logger.warning(f"🎯 Обрабатываем файл: {file_name} → коллекция: {collection_name}")
 
-                    # КРИТИЧЕСКАЯ ПРОВЕРКА: существует ли уже коллекция?
-                    existing_collections = db.list_collection_names()
-                    if collection_name in existing_collections:
-                        existing_count = db[collection_name].count_documents({})
-                        logger.error(f"🚫 Коллекция '{collection_name}' уже существует с {existing_count} записями!")
-                        logger.error(f"⏭️ ПРОПУСКАЕМ создание коллекции '{collection_name}'")
-                        continue
-
                     try:
+                        # Читаем JSON
                         with open(json_path, 'r', encoding='utf-8') as file:
                             data = json.load(file)
+
                         logger.info(f"📖 Загружено {len(data) if isinstance(data, list) else 1} записей из {file_name}")
 
-                        # Создание коллекции с проверкой существования
-                        try:
-                            logger.info(f"🔨 Создаем коллекцию: {collection_name}")
+                        # Создаем коллекцию
+                        db.create_collection(collection_name)
+                        logger.success(f"✅ Коллекция '{collection_name}' создана")
 
-                            # Двойная проверка перед созданием
-                            if collection_name in db.list_collection_names():
-                                logger.error(f"🚫 Коллекция '{collection_name}' появилась во время создания! Пропускаем...")
-                                continue
-
-                            db.create_collection(collection_name)
-                            logger.success(f"✅ Коллекция '{collection_name}' создана")
-
-                        except Exception as create_error:
-                            if "already exists" in str(create_error).lower():
-                                logger.error(f"🚫 Коллекция '{collection_name}' уже существует (ошибка создания)")
-                                continue
-                            else:
-                                raise create_error
-
-                        # Добавляем метаданные к каждому документу
+                        # Добавляем метаданные и вставляем данные
                         if isinstance(data, list):
                             for item in data:
                                 item['created_at'] = now
                                 item['modified_at'] = now
                                 item['deleted'] = False
-                            if data:  # Проверяем что список не пустой
+
+                            if data:
                                 result = db[collection_name].insert_many(data)
-                                inserted_count = len(result.inserted_ids)
-                                logger.success(f"✅ В коллекцию '{collection_name}' вставлено {inserted_count} документов")
+                                logger.success(f"✅ В коллекцию '{collection_name}' вставлено {len(result.inserted_ids)} документов")
                             else:
                                 logger.success(f"📝 Пустая коллекция '{collection_name}' создана")
                         else:
@@ -239,111 +200,54 @@ class MongoConnection:
                             data['modified_at'] = now
                             data['deleted'] = False
                             result = db[collection_name].insert_one(data)
-                            logger.success(f"✅ В коллекцию '{collection_name}' вставлен 1 документ с ID: {result.inserted_id}")
+                            logger.success(f"✅ В коллекцию '{collection_name}' вставлен 1 документ")
 
-                        # Проверяем финальное количество записей
-                        final_count = db[collection_name].count_documents({})
-                        logger.warning(f"📊 Финальное количество записей в '{collection_name}': {final_count}")
+                        created_collections.append(collection_name)
 
-                    except (FileNotFoundError, json.JSONDecodeError) as e:
-                        logger.error(f"Ошибка обработки файла {file_name}: {e}")
+                        # Создаем индексы для коллекции users
+                        if base_collection_name == 'users':
+                            users_collection = db[collection_name]
+                            try:
+                                users_collection.create_index("username", unique=True, name="idx_username_unique")
+                                users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
+                                users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
+                                users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
+                                users_collection.create_index("created_at", name="idx_created_at")
+                                logger.success(f"📊 Индексы созданы для коллекции '{collection_name}'")
+                            except Exception as e:
+                                logger.warning(f"⚠️ Частичная ошибка создания индексов: {e}")
+
+                    except FileNotFoundError:
+                        logger.error(f"❌ Файл не найден: {json_path}")
+                        continue
+                    except json.JSONDecodeError as e:
+                        logger.error(f"❌ Ошибка JSON в файле {file_name}: {e}")
                         continue
                     except Exception as e:
-                        logger.error(f"Ошибка создания коллекции {collection_name}: {e}")
-                        continue
-
-            # Создаем коллекцию пользователей на основе JSON-файла
-            users_collection_name = f"{db_name}_users"
-            if users_collection_name not in db.list_collection_names():
-                # Ищем JSON-файл с пользователями для получения структуры
-                users_json_path = os.path.join(base_path, 'users.json')
-
-                if os.path.exists(users_json_path):
-                    try:
-                        with open(users_json_path, 'r', encoding='utf-8') as file:
-                            users_data = json.load(file)
-
-                        # Создаем коллекцию и добавляем данные из JSON
-                        db.create_collection(users_collection_name)
-
-                        if isinstance(users_data, list):
-                            # Добавляем метаданные к каждому пользователю
-                            for user in users_data:
-                                user['created_at'] = now
-                                user['modified_at'] = now
-                                if 'deleted' not in user:
-                                    user['deleted'] = False
-
-                            if users_data:  # Если есть данные для вставки
-                                db[users_collection_name].insert_many(users_data)
-                                logger.success(f"Коллекция '{users_collection_name}' создана с {len(users_data)} пользователями из JSON")
-                            else:
-                                logger.success(f"Пустая коллекция '{users_collection_name}' создана (пустой массив в JSON)")
-                        else:
-                            # Если JSON содержит один объект
-                            users_data['created_at'] = now
-                            users_data['modified_at'] = now
-                            if 'deleted' not in users_data:
-                                users_data['deleted'] = False
-                            db[users_collection_name].insert_one(users_data)
-                            logger.success(f"Коллекция '{users_collection_name}' создана с 1 пользователем из JSON")
-
-                    except (FileNotFoundError, json.JSONDecodeError) as e:
-                        logger.error(f"Ошибка чтения {users_json_path}: {e}")
-                        # Создаем пустую коллекцию если JSON недоступен
-                        db.create_collection(users_collection_name)
-                        logger.success(f"Создана пустая коллекция '{users_collection_name}' (JSON недоступен)")
-                    except Exception as e:
-                        logger.error(f"Ошибка создания коллекции пользователей: {e}")
+                        logger.error(f"❌ Ошибка создания коллекции {collection_name}: {e}")
+                        # ROLLBACK: удаляем базу данных при ошибке
+                        client.drop_database(db_name)
+                        logger.error(f"🔄 База данных '{db_name}' удалена из-за ошибки")
                         return False
-                else:
-                    # Если файла users.json нет, создаем пустую коллекцию
-                    db.create_collection(users_collection_name)
-                    logger.success(f"Создана пустая коллекция '{users_collection_name}' (файл users.json не найден)")
-
-                # Создаем базовые индексы для производительности
-                users_collection = db[users_collection_name]
-                try:
-                    # Уникальные индексы (могут не сработать если есть дубликаты в JSON)
-                    try:
-                        users_collection.create_index("username", unique=True, name="idx_username_unique")
-                        logger.success("Создан уникальный индекс для username")
-                    except Exception as e:
-                        users_collection.create_index("username", name="idx_username")
-                        logger.warning(f"Создан обычный индекс для username (не уникальный): {e}")
-
-                    try:
-                        users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
-                        logger.success("Создан уникальный индекс для email")
-                    except Exception as e:
-                        users_collection.create_index("profile.email", name="idx_email")
-                        logger.warning(f"Создан обычный индекс для email (не уникальный): {e}")
-
-                    # Основные индексы
-                    users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
-                    users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
-                    users_collection.create_index("created_at", name="idx_created_at")
-
-                    logger.success(f"Созданы индексы для коллекции '{users_collection_name}'")
-
-                except Exception as e:
-                    logger.warning(f"Частичная ошибка создания индексов: {e}")
-
-
-            logger.success(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_success2}")
 
             # Финальная проверка
             final_collections = db.list_collection_names()
-            logger.warning(f"🏁 ФИНАЛЬНОЕ состояние БД '{db_name}':")
+            logger.warning(f"🏁 ФИНАЛЬНОЕ состояние БД '{db_name}': {len(final_collections)} коллекций")
             for coll_name in final_collections:
-                if 'basic_titles' in coll_name:
-                    count = db[coll_name].count_documents({})
-                    logger.warning(f"📊 {coll_name}: {count} записей")
+                count = db[coll_name].count_documents({})
+                logger.info(f"📊 {coll_name}: {count} записей")
 
+            logger.success(f"✅ База данных '{db_name}' успешно создана с {len(created_collections)} коллекциями")
             return True
 
         except Exception as e:
-            logger.exception(f"{language.mess_server_create_db}{db_name}{language.mess_server_create_db_error2}: {e}")
+            logger.exception(f"❌ Критическая ошибка создания БД '{db_name}': {e}")
+            # ROLLBACK
+            try:
+                client.drop_database(db_name)
+                logger.error(f"🔄 База данных '{db_name}' удалена из-за критической ошибки")
+            except:
+                pass
             return False
 
     @classmethod

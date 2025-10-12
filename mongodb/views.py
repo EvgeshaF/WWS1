@@ -213,7 +213,7 @@ def create_database_step2(request):
     return render(request, 'create_dbconfig_step2.html', context)
 
 
-@ratelimit(key='ip', rate='3/m', method='POST')  # Уменьшено с 3 до 1!
+@ratelimit(key='ip', rate='10/m', method='POST')
 def create_database_step3(request):
     """Форма создания новой базы данных"""
     logger.warning("🎯 === ВХОД В create_database_step3 VIEW ===")
