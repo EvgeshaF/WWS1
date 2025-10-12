@@ -8,333 +8,17 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from loguru import logger
 
-from users.forms import get_communication_types_from_mongodb
+from ..forms.utils import (
+    get_communication_types_from_mongodb,
+    get_communication_config_from_mongodb
+)
+
 from ..company_manager import CompanyManager
 from .session import CompanySessionManager
 from ..company_utils import check_mongodb_availability, render_with_messages
 from ..forms import CompanyBasicDataForm, CompanyRegistrationForm, CompanyAddressForm, CompanyContactForm, CompanyBankingForm
 from ..language import company_success_messages, company_error_messages, text_company_step1, text_company_step2, text_company_step3, text_company_step4, text_company_step5
 
-
-def get_contact_type_choices_from_mongodb():
-    """Получает типы контактов из MongoDB коллекции basic_communication_types"""
-    try:
-        from mongodb.mongodb_utils import MongoConnection
-        from mongodb.mongodb_config import MongoConfig
-
-        db = MongoConnection.get_database()
-        if db is None:
-            return get_default_contact_type_choices()
-
-        config = MongoConfig.read_config()
-        db_name = config.get('db_name')
-        if not db_name:
-            return get_default_contact_type_choices()
-
-        comm_types_collection_name = f"{db_name}_basic_communication_types"
-        collections = db.list_collection_names()
-
-        if comm_types_collection_name not in collections:
-            logger.warning(f"Коллекция '{comm_types_collection_name}' не найдена")
-            return get_default_contact_type_choices()
-
-        comm_types_collection = db[comm_types_collection_name]
-
-        # Получаем активные типы коммуникации
-        types_cursor = comm_types_collection.find(
-            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
-            {'code': 1, 'label': 1, 'icon_class': 1, 'display_order': 1}
-        ).sort('display_order', 1)
-
-        choices = []
-        for type_doc in types_cursor:
-            code = type_doc.get('code', '').strip()
-            label = type_doc.get('label', code).strip()
-            icon = type_doc.get('icon_class', 'bi-question-circle')
-
-            if code:
-                # Добавляем иконку к тексту для визуального отображения
-                display_text = f"{label}"
-                choices.append({
-                    'value': code,
-                    'text': display_text,
-                    'icon': icon
-                })
-
-        if choices:
-            logger.success(f"Загружено {len(choices)} типов контактов из MongoDB")
-            return json.dumps(choices)
-        else:
-            return get_default_contact_type_choices()
-
-    except Exception as e:
-        logger.error(f"Ошибка загрузки типов контактов из MongoDB: {e}")
-        return get_default_contact_type_choices()
-
-
-def get_default_contact_type_choices():
-    """Возвращает статичный список типов контактов как fallback"""
-    default_choices = [
-        {'value': 'email', 'text': 'E-Mail', 'icon': 'bi-envelope'},
-        {'value': 'phone', 'text': 'Telefon', 'icon': 'bi-telephone'},
-        {'value': 'mobile', 'text': 'Mobil', 'icon': 'bi-phone'},
-        {'value': 'fax', 'text': 'Fax', 'icon': 'bi-printer'},
-        {'value': 'website', 'text': 'Website', 'icon': 'bi-globe'},
-        {'value': 'linkedin', 'text': 'LinkedIn', 'icon': 'bi-linkedin'},
-        {'value': 'xing', 'text': 'XING', 'icon': 'bi-person-badge'},
-        {'value': 'emergency', 'text': 'Notfall', 'icon': 'bi-exclamation-triangle'},
-        {'value': 'other', 'text': 'Sonstige', 'icon': 'bi-question-circle'}
-    ]
-    return json.dumps(default_choices)
-
-
-def get_communication_config_from_mongodb():
-    """Получает конфигурацию коммуникаций из MongoDB"""
-    try:
-        from mongodb.mongodb_utils import MongoConnection
-        from mongodb.mongodb_config import MongoConfig
-
-        db = MongoConnection.get_database()
-        if db is None:
-            return get_default_communication_config()
-
-        config = MongoConfig.read_config()
-        db_name = config.get('db_name')
-        if not db_name:
-            return get_default_communication_config()
-
-        comm_types_collection_name = f"{db_name}_basic_communication_types"
-        collections = db.list_collection_names()
-
-        if comm_types_collection_name not in collections:
-            return get_default_communication_config()
-
-        comm_types_collection = db[comm_types_collection_name]
-
-        # Получаем полную конфигурацию для каждого типа
-        types_cursor = comm_types_collection.find(
-            {'deleted': {'$ne': True}, 'active': {'$ne': False}},
-            {
-                'code': 1, 'label': 1, 'icon_class': 1,
-                'validation_pattern': 1, 'placeholder': 1, 'hint': 1
-            }
-        )
-
-        config_dict = {}
-        for type_doc in types_cursor:
-            code = type_doc.get('code', '').strip()
-            if code:
-                config_dict[code] = {
-                    'label': type_doc.get('label', code),
-                    'icon_class': type_doc.get('icon_class', 'bi-question-circle'),
-                    'validation_pattern': type_doc.get('validation_pattern', '.{3,}'),
-                    'placeholder': type_doc.get('placeholder', 'Kontaktdaten eingeben...'),
-                    'hint': type_doc.get('hint', 'Geben Sie die entsprechenden Kontaktdaten ein')
-                }
-
-        if config_dict:
-            logger.success(f"Загружена конфигурация для {len(config_dict)} типов коммуникации")
-            return json.dumps(config_dict)
-        else:
-            return get_default_communication_config()
-
-    except Exception as e:
-        logger.error(f"Ошибка загрузки конфигурации коммуникаций: {e}")
-        return get_default_communication_config()
-
-
-def get_default_communication_config():
-    """Возвращает статичную конфигурацию коммуникаций как fallback"""
-    default_config = {
-        'email': {
-            'label': 'E-Mail',
-            'icon_class': 'bi-envelope',
-            'validation_pattern': r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-            'placeholder': 'abteilung@firma.de',
-            'hint': 'Geben Sie eine E-Mail-Adresse ein'
-        },
-        'phone': {
-            'label': 'Telefon',
-            'icon_class': 'bi-telephone',
-            'validation_pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder': '+49 123 456789',
-            'hint': 'Geben Sie eine Telefonnummer ein'
-        },
-        'mobile': {
-            'label': 'Mobil',
-            'icon_class': 'bi-phone',
-            'validation_pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder': '+49 170 1234567',
-            'hint': 'Geben Sie eine Mobilnummer ein'
-        },
-        'fax': {
-            'label': 'Fax',
-            'icon_class': 'bi-printer',
-            'validation_pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder': '+49 123 456789',
-            'hint': 'Geben Sie eine Faxnummer ein'
-        },
-        'website': {
-            'label': 'Website',
-            'icon_class': 'bi-globe',
-            'validation_pattern': r'^https?:\/\/.+\..+$',
-            'placeholder': 'https://www.firma.de',
-            'hint': 'Geben Sie eine Website-URL ein'
-        },
-        'linkedin': {
-            'label': 'LinkedIn',
-            'icon_class': 'bi-linkedin',
-            'validation_pattern': r'^(https?:\/\/)?(www\.)?linkedin\.com\/company\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$',
-            'placeholder': 'linkedin.com/company/firmenname',
-            'hint': 'Geben Sie das LinkedIn-Unternehmensprofil ein'
-        },
-        'xing': {
-            'label': 'XING',
-            'icon_class': 'bi-person-badge',
-            'validation_pattern': r'^(https?:\/\/)?(www\.)?xing\.com\/companies\/[a-zA-Z0-9\-_]+\/?$|^[a-zA-Z0-9\-_]+$',
-            'placeholder': 'xing.com/companies/firmenname',
-            'hint': 'Geben Sie das XING-Unternehmensprofil ein'
-        },
-        'emergency': {
-            'label': 'Notfall',
-            'icon_class': 'bi-exclamation-triangle',
-            'validation_pattern': r'^[\+]?[0-9\s\-\(\)]{7,20}$',
-            'placeholder': '+49 170 1234567',
-            'hint': 'Geben Sie einen Notfallkontakt ein'
-        },
-        'other': {
-            'label': 'Sonstige',
-            'icon_class': 'bi-question-circle',
-            'validation_pattern': r'.{3,}',
-            'placeholder': 'Kontaktdaten eingeben...',
-            'hint': 'Geben Sie die entsprechenden Kontaktdaten ein'
-        }
-    }
-    return json.dumps(default_config)
-
-
-# ============= ОБНОВЛЕННАЯ ФУНКЦИЯ register_company_step4 =============
-
-def register_company_step4(request):
-    """Шаг 4: Контактные данные - ОБНОВЛЕНО с передачей данных из MongoDB"""
-    if not check_mongodb_availability():
-        messages.error(request, "MongoDB muss zuerst konfiguriert werden")
-        return redirect('home')
-
-    # Проверяем предыдущие шаги
-    completion = CompanySessionManager.get_completion_status(request)
-    if not completion['step1_complete'] or not completion['step3_complete']:
-        messages.warning(request, "Bitte vollenden Sie die vorherigen Schritte")
-        return redirect('company:register_company_step1')
-
-    session_data = CompanySessionManager.get_session_data(request)
-    company_name = session_data.get('company_name', '')
-    legal_form = session_data.get('legal_form', '')
-
-    # Получаем существующие дополнительные контакты из сессии
-    existing_additional_contacts = session_data.get('additional_contacts_data', '[]')
-    if isinstance(existing_additional_contacts, str):
-        try:
-            existing_additional_contacts = json.loads(existing_additional_contacts)
-        except:
-            existing_additional_contacts = []
-
-    # НОВОЕ: Получаем типы контактов и конфигурацию из MongoDB
-    contact_type_choices = get_contact_type_choices_from_mongodb()
-    communication_config = get_communication_config_from_mongodb()
-
-    if request.method == 'POST':
-        form = CompanyContactForm(request.POST)
-
-        # Определяем действие пользователя
-        action = request.POST.get('action', 'continue')
-
-        if form.is_valid():
-            step_data = form.cleaned_data.copy()
-
-            # Обрабатываем дополнительные контакты
-            additional_contacts_data = request.POST.get('additional_contacts_data', '[]')
-            try:
-                contacts = json.loads(additional_contacts_data) if additional_contacts_data else []
-                if isinstance(contacts, list):
-                    step_data['additional_contacts_data'] = additional_contacts_data
-                    logger.info(f"Обработано {len(contacts)} дополнительных контактов")
-                else:
-                    step_data['additional_contacts_data'] = '[]'
-            except json.JSONDecodeError:
-                logger.warning("Некорректные данные дополнительных контактов")
-                step_data['additional_contacts_data'] = '[]'
-
-            CompanySessionManager.update_session_data(request, step_data)
-
-            # Если действие "сохранить и закрыть"
-            if action == 'save_and_close':
-                full_data = CompanySessionManager.get_session_data(request)
-                success = save_partial_company_data(request, full_data, step=4)
-                if success:
-                    additional_count = len(contacts) if contacts else 0
-                    return JsonResponse({
-                        'success': True,
-                        'action': 'save_and_close',
-                        'messages': [{
-                            'text': f"Kontaktdaten für '{company_name}' erfolgreich gespeichert ({additional_count} zusätzliche Kontakte)",
-                            'tags': 'success',
-                            'delay': 3000
-                        }],
-                        'redirect_url': reverse('company:company_info')
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'messages': [{
-                            'text': "Fehler beim Speichern der Kontaktdaten",
-                            'tags': 'error',
-                            'delay': 5000
-                        }]
-                    })
-
-            # Формируем информацию о контактах для сообщения
-            main_contacts = f"{step_data.get('email', '')}, {step_data.get('phone', '')}"
-            additional_count = len(contacts) if contacts else 0
-
-            if additional_count > 0:
-                contact_info = f"{main_contacts} + {additional_count} zusätzliche"
-            else:
-                contact_info = main_contacts
-
-            messages.success(
-                request,
-                company_success_messages['step4_completed'].format(contact_info=contact_info)
-            )
-
-            return render_with_messages(
-                request,
-                'register_company_step4.html',
-                {
-                    'form': form, 'step': 4, 'text': text_company_step4,
-                    'company_name': company_name, 'legal_form': legal_form,
-                    'existing_additional_contacts': json.dumps(contacts) if contacts else '[]',
-                    'contact_type_choices': contact_type_choices,
-                    'communication_config': communication_config
-                },
-                reverse('company:register_company_step5')
-            )
-        else:
-            messages.error(request, company_error_messages['form_submission_error'])
-    else:
-        form = CompanyContactForm(initial=session_data)
-
-    context = {
-        'form': form,
-        'step': 4,
-        'text': text_company_step4,
-        'company_name': company_name,
-        'legal_form': legal_form,
-        'existing_additional_contacts': json.dumps(existing_additional_contacts),
-        'contact_type_choices': contact_type_choices,  # НОВОЕ
-        'communication_config': communication_config  # НОВОЕ
-    }
-    return render(request, 'register_company_step4.html', context)
 
 def register_company(request):
     """Стартовая страница регистрации - перенаправляет на шаг 1"""
@@ -646,18 +330,18 @@ def register_company_step4(request):
         except:
             existing_additional_contacts = []
 
-    # НОВОЕ: Загружаем типы контактов и конфигурацию из MongoDB
+    # ИЗМЕНЕНО: Загружаем типы контактов и конфигурацию из MongoDB (как у users)
     contact_type_choices = get_communication_types_from_mongodb()
-    communication_config = get_communication_config_from_mongodb()
+    communication_config_dict = get_communication_config_from_mongodb()
 
-    # Преобразуем choices в JSON для JavaScript
+    # Преобразуем choices в JSON для JavaScript (как у users)
     contact_type_choices_json = json.dumps([
         {'value': choice[0], 'text': choice[1]}
         for choice in contact_type_choices
     ])
 
     # Преобразуем конфигурацию в JSON
-    communication_config_json = json.dumps(communication_config)
+    communication_config_json = json.dumps(communication_config_dict)
 
     if request.method == 'POST':
         form = CompanyContactForm(request.POST)
@@ -674,11 +358,11 @@ def register_company_step4(request):
                 contacts = json.loads(additional_contacts_data) if additional_contacts_data else []
                 if isinstance(contacts, list):
                     step_data['additional_contacts_data'] = additional_contacts_data
-                    logger.info(f"Обработано {len(contacts)} дополнительных контактов")
+                    logger.info(f"Обработано {len(contacts)} дополнительных контактов компании")
                 else:
                     step_data['additional_contacts_data'] = '[]'
             except json.JSONDecodeError:
-                logger.warning("Некорректные данные дополнительных контактов")
+                logger.warning("Некорректные данные дополнительных контактов компании")
                 step_data['additional_contacts_data'] = '[]'
 
             CompanySessionManager.update_session_data(request, step_data)
@@ -733,9 +417,9 @@ def register_company_step4(request):
                     'company_name': company_name,
                     'legal_form': legal_form,
                     'existing_additional_contacts': json.dumps(contacts) if contacts else '[]',
-                    'contact_type_choices': contact_type_choices,  # НОВОЕ
-                    'contact_type_choices_json': contact_type_choices_json,  # НОВОЕ
-                    'communication_config_json': communication_config_json  # НОВОЕ
+                    'contact_type_choices': contact_type_choices,  # ИЗМЕНЕНО: передаем Django choices
+                    'contact_type_choices_json': contact_type_choices_json,  # НОВОЕ: JSON для JS
+                    'communication_config_json': communication_config_json  # НОВОЕ: JSON для JS
                 },
                 reverse('company:register_company_step5')
             )
@@ -751,12 +435,11 @@ def register_company_step4(request):
         'company_name': company_name,
         'legal_form': legal_form,
         'existing_additional_contacts': json.dumps(existing_additional_contacts),
-        'contact_type_choices': contact_type_choices,  # НОВОЕ
-        'contact_type_choices_json': contact_type_choices_json,  # НОВОЕ
-        'communication_config_json': communication_config_json  # НОВОЕ
+        'contact_type_choices': contact_type_choices,  # ИЗМЕНЕНО: передаем Django choices
+        'contact_type_choices_json': contact_type_choices_json,  # НОВОЕ: JSON для JS
+        'communication_config_json': communication_config_json  # НОВОЕ: JSON для JS
     }
     return render(request, 'register_company_step4.html', context)
-
 
 def register_company_step5(request):
     """ОБНОВЛЕНО: Шаг 5 - Банковские данные и создание компании с обязательными основными полями"""
@@ -1217,6 +900,3 @@ def validate_registration_data(data):
             errors.append("BIC/SWIFT (Zweitbank): Ungültiges Format")
 
     return errors
-
-
-
