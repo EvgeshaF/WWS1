@@ -307,7 +307,7 @@ def register_company_step3(request):
 
 
 def register_company_step4(request):
-    """Шаг 4: Контактные данные - ОБНОВЛЕНО с дополнительными контактами из MongoDB"""
+    """Шаг 4: Контактные данные - ИСПРАВЛЕНО: правильная обработка ObjectId"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -322,26 +322,61 @@ def register_company_step4(request):
     company_name = session_data.get('company_name', '')
     legal_form = session_data.get('legal_form', '')
 
-    # Получаем существующие дополнительные контакты из сессии
-    existing_additional_contacts = session_data.get('additional_contacts_data', '[]')
-    if isinstance(existing_additional_contacts, str):
-        try:
-            existing_additional_contacts = json.loads(existing_additional_contacts)
-        except:
+    # ✅ НОВОЕ: Проверяем временные данные из edit_company_step4
+    contact_type_choices_json = None
+    communication_config_json = None
+
+    if '_temp_existing_additional_contacts' in request.session:
+        existing_additional_contacts_json = request.session.pop('_temp_existing_additional_contacts')
+        contact_type_choices_json = request.session.pop('_temp_contact_type_choices_json', None)
+        communication_config_json = request.session.pop('_temp_communication_config_json', None)
+        request.session.modified = True
+
+        # Если данные уже подготовлены из edit, пропускаем обработку
+        existing_additional_contacts = json.loads(existing_additional_contacts_json)
+    else:
+        # ✅ ИСПРАВЛЕНО: Правильная обработка дополнительных контактов
+        existing_additional_contacts = session_data.get('additional_contacts_data', '[]')
+
+        # Преобразуем в список Python
+        if isinstance(existing_additional_contacts, str):
+            try:
+                existing_additional_contacts = json.loads(existing_additional_contacts)
+            except:
+                existing_additional_contacts = []
+        elif not isinstance(existing_additional_contacts, list):
             existing_additional_contacts = []
 
-    # ИЗМЕНЕНО: Загружаем типы контактов и конфигурацию из MongoDB (как у users)
-    contact_type_choices = get_communication_types_from_mongodb()
-    communication_config_dict = get_communication_config_from_mongodb()
+        # ✅ КРИТИЧНО: Очищаем от ObjectId и других MongoDB типов
+        cleaned_contacts = []
+        for contact in existing_additional_contacts:
+            if isinstance(contact, dict):
+                cleaned_contact = {}
+                for key, value in contact.items():
+                    # Пропускаем _id и другие служебные поля MongoDB
+                    if key == '_id':
+                        continue
+                    # Преобразуем все значения в строки/примитивы
+                    if hasattr(value, '__str__') and not isinstance(value, (str, int, float, bool, list, dict, type(None))):
+                        cleaned_contact[key] = str(value)
+                    else:
+                        cleaned_contact[key] = value
+                cleaned_contacts.append(cleaned_contact)
 
-    # Преобразуем choices в JSON для JavaScript (как у users)
-    contact_type_choices_json = json.dumps([
-        {'value': choice[0], 'text': choice[1]}
-        for choice in contact_type_choices
-    ])
+        # Загружаем типы контактов и конфигурацию из MongoDB
+        contact_type_choices = get_communication_types_from_mongodb()
+        communication_config_dict = get_communication_config_from_mongodb()
 
-    # Преобразуем конфигурацию в JSON
-    communication_config_json = json.dumps(communication_config_dict)
+        # ✅ ИСПРАВЛЕНО: Правильное преобразование в JSON для JavaScript
+        contact_type_choices_json = json.dumps([
+            {'value': choice[0], 'text': choice[1]}
+            for choice in contact_type_choices
+        ], ensure_ascii=False)
+
+        communication_config_json = json.dumps(communication_config_dict, ensure_ascii=False)
+
+        # ✅ ИСПРАВЛЕНО: Преобразуем очищенные контакты в JSON
+        existing_additional_contacts_json = json.dumps(cleaned_contacts, ensure_ascii=False)
 
     if request.method == 'POST':
         form = CompanyContactForm(request.POST)
@@ -357,8 +392,15 @@ def register_company_step4(request):
             try:
                 contacts = json.loads(additional_contacts_data) if additional_contacts_data else []
                 if isinstance(contacts, list):
-                    step_data['additional_contacts_data'] = additional_contacts_data
-                    logger.info(f"Обработано {len(contacts)} дополнительных контактов компании")
+                    # ✅ КРИТИЧНО: Очищаем от _id перед сохранением
+                    cleaned_contacts_for_save = []
+                    for contact in contacts:
+                        if isinstance(contact, dict):
+                            clean_contact = {k: v for k, v in contact.items() if k != '_id'}
+                            cleaned_contacts_for_save.append(clean_contact)
+
+                    step_data['additional_contacts_data'] = json.dumps(cleaned_contacts_for_save)
+                    logger.info(f"Обработано {len(cleaned_contacts_for_save)} дополнительных контактов компании")
                 else:
                     step_data['additional_contacts_data'] = '[]'
             except json.JSONDecodeError:
@@ -372,7 +414,7 @@ def register_company_step4(request):
                 full_data = CompanySessionManager.get_session_data(request)
                 success = save_partial_company_data(request, full_data, step=4)
                 if success:
-                    additional_count = len(contacts) if contacts else 0
+                    additional_count = len(cleaned_contacts_for_save) if 'cleaned_contacts_for_save' in locals() else 0
                     return JsonResponse({
                         'success': True,
                         'action': 'save_and_close',
@@ -395,7 +437,7 @@ def register_company_step4(request):
 
             # Формируем информацию о контактах для сообщения
             main_contacts = f"{step_data.get('email', '')}, {step_data.get('phone', '')}"
-            additional_count = len(contacts) if contacts else 0
+            additional_count = len(cleaned_contacts_for_save) if 'cleaned_contacts_for_save' in locals() else 0
 
             if additional_count > 0:
                 contact_info = f"{main_contacts} + {additional_count} zusätzliche"
@@ -416,10 +458,10 @@ def register_company_step4(request):
                     'text': text_company_step4,
                     'company_name': company_name,
                     'legal_form': legal_form,
-                    'existing_additional_contacts': json.dumps(contacts) if contacts else '[]',
-                    'contact_type_choices': contact_type_choices,  # ИЗМЕНЕНО: передаем Django choices
-                    'contact_type_choices_json': contact_type_choices_json,  # НОВОЕ: JSON для JS
-                    'communication_config_json': communication_config_json  # НОВОЕ: JSON для JS
+                    'existing_additional_contacts': existing_additional_contacts_json,
+                    'contact_type_choices': contact_type_choices,
+                    'contact_type_choices_json': contact_type_choices_json,
+                    'communication_config_json': communication_config_json
                 },
                 reverse('company:register_company_step5')
             )
@@ -434,10 +476,10 @@ def register_company_step4(request):
         'text': text_company_step4,
         'company_name': company_name,
         'legal_form': legal_form,
-        'existing_additional_contacts': json.dumps(existing_additional_contacts),
-        'contact_type_choices': contact_type_choices,  # ИЗМЕНЕНО: передаем Django choices
-        'contact_type_choices_json': contact_type_choices_json,  # НОВОЕ: JSON для JS
-        'communication_config_json': communication_config_json  # НОВОЕ: JSON для JS
+        'existing_additional_contacts': existing_additional_contacts_json,  # ✅ ИСПРАВЛЕНО
+        'contact_type_choices': contact_type_choices,
+        'contact_type_choices_json': contact_type_choices_json,
+        'communication_config_json': communication_config_json
     }
     return render(request, 'register_company_step4.html', context)
 

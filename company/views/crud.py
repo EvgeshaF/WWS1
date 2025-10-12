@@ -438,7 +438,7 @@ def edit_company_step3(request):
 
 
 def edit_company_step4(request):
-    """ОБНОВЛЕНО: Редактирование только Kontaktdaten (шаг 4) с дополнительными контактами из MongoDB"""
+    """ИСПРАВЛЕНО: Редактирование только Kontaktdaten (шаг 4) с правильной обработкой ObjectId"""
     if not check_mongodb_availability():
         messages.error(request, "MongoDB muss zuerst konfiguriert werden")
         return redirect('home')
@@ -450,18 +450,51 @@ def edit_company_step4(request):
         messages.warning(request, "Keine Firma zum Bearbeiten gefunden")
         return redirect('company:register_company_step1')
 
-    # НОВОЕ: Загружаем типы контактов и конфигурацию из MongoDB
+    # Загружаем типы контактов и конфигурацию из MongoDB
     contact_type_choices = get_communication_types_from_mongodb()
     communication_config = get_communication_config_from_mongodb()
+
+    # ✅ ИСПРАВЛЕНО: Правильная обработка дополнительных контактов из MongoDB
+    additional_contacts_data = company.get('additional_contacts_data', '[]')
+
+    # Преобразуем в список
+    if isinstance(additional_contacts_data, str):
+        try:
+            additional_contacts_list = json.loads(additional_contacts_data)
+        except:
+            additional_contacts_list = []
+    elif isinstance(additional_contacts_data, list):
+        additional_contacts_list = additional_contacts_data
+    else:
+        additional_contacts_list = []
+
+    # ✅ КРИТИЧНО: Очищаем от ObjectId и MongoDB типов
+    cleaned_contacts = []
+    for contact in additional_contacts_list:
+        if isinstance(contact, dict):
+            cleaned_contact = {}
+            for key, value in contact.items():
+                # Пропускаем _id
+                if key == '_id':
+                    continue
+                # Преобразуем ObjectId и другие MongoDB типы в строки
+                if hasattr(value, '__str__') and not isinstance(value, (str, int, float, bool, list, dict, type(None))):
+                    cleaned_contact[key] = str(value)
+                else:
+                    cleaned_contact[key] = value
+            cleaned_contacts.append(cleaned_contact)
 
     # Преобразуем choices в JSON для JavaScript
     contact_type_choices_json = json.dumps([
         {'value': choice[0], 'text': choice[1]}
         for choice in contact_type_choices
-    ])
+    ], ensure_ascii=False)
 
     # Преобразуем конфигурацию в JSON
-    communication_config_json = json.dumps(communication_config)
+    communication_config_json = json.dumps(communication_config, ensure_ascii=False)
+
+    # ✅ ИСПРАВЛЕНО: Преобразуем очищенные контакты в JSON
+    existing_additional_contacts_json = json.dumps(cleaned_contacts, ensure_ascii=False)
 
     # Очищаем сессию и загружаем данные для шага 4
     CompanySessionManager.clear_session_data(request)
@@ -475,7 +508,7 @@ def edit_company_step4(request):
         'phone': company.get('phone', ''),
         'fax': company.get('fax', ''),
         'website': company.get('website', ''),
-        'additional_contacts_data': company.get('additional_contacts_data', '[]'),
+        'additional_contacts_data': existing_additional_contacts_json,  # ✅ Используем очищенные
 
         # Остальные данные (шаг 5)
         **_get_step_5_data(company)
@@ -486,10 +519,10 @@ def edit_company_step4(request):
     messages.info(request, f"Bearbeitung der Kontaktdaten für '{company.get('company_name', 'Unbekannt')}'")
     logger.info(f"Редактирование шага 4 (Kontaktdaten) для компании '{company.get('company_name')}'")
 
-    # Передаем дополнительные данные в redirect через query параметры или через сессию
-    # Для простоты сохраним в сессии
-    request.session['contact_type_choices_json'] = contact_type_choices_json
-    request.session['communication_config_json'] = communication_config_json
+    # ✅ ИСПРАВЛЕНО: Сохраняем во временной сессии для передачи в шаблон
+    request.session['_temp_contact_type_choices_json'] = contact_type_choices_json
+    request.session['_temp_communication_config_json'] = communication_config_json
+    request.session['_temp_existing_additional_contacts'] = existing_additional_contacts_json
     request.session.modified = True
 
     return redirect('company:register_company_step4')

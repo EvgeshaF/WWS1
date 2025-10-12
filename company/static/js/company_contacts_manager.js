@@ -1,20 +1,15 @@
 // ==================== ГЛАВНЫЙ КОНТАКТ МЕНЕДЖЕР ДЛЯ КОМПАНИИ ====================
 class CompanyContactManager {
     constructor() {
-        // Используем типы контактов и конфигурацию с сервера (из MongoDB) или fallback
         this.contactTypeLabels = window.contactTypeChoices ?
             this.buildContactTypeLabelsFromServer() :
             this.getDefaultContactTypeLabels();
 
-        // Загружаем конфигурацию из MongoDB или используем fallback
         this.communicationConfig = window.communicationConfig ?
             window.communicationConfig :
             this.getDefaultCommunicationConfig();
 
-        // Строим hints из конфигурации MongoDB
         this.contactHints = this.buildContactHintsFromConfig();
-
-        // Строим иконки из конфигурации MongoDB
         this.contactTypeIcons = this.buildContactTypeIconsFromConfig();
     }
 
@@ -23,7 +18,6 @@ class CompanyContactManager {
         if (window.contactTypeChoices && Array.isArray(window.contactTypeChoices)) {
             window.contactTypeChoices.forEach(choice => {
                 if (choice.value) {
-                    // Убираем эмодзи из текста для использования в качестве лейбла
                     const cleanText = choice.text.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
                     labels[choice.value] = cleanText;
                 }
@@ -48,7 +42,6 @@ class CompanyContactManager {
 
     buildContactHintsFromConfig() {
         const hints = {};
-
         if (this.communicationConfig) {
             Object.keys(this.communicationConfig).forEach(key => {
                 const config = this.communicationConfig[key];
@@ -59,30 +52,23 @@ class CompanyContactManager {
                 };
             });
         }
-
-        // Fallback если конфигурация не загружена
         if (Object.keys(hints).length === 0) {
             return this.getDefaultContactHints();
         }
-
         return hints;
     }
 
     buildContactTypeIconsFromConfig() {
         const icons = {};
-
         if (this.communicationConfig) {
             Object.keys(this.communicationConfig).forEach(key => {
                 const config = this.communicationConfig[key];
                 icons[key] = config.icon_class || 'bi-question-circle';
             });
         }
-
-        // Fallback если конфигурация не загружена
         if (Object.keys(icons).length === 0) {
             return this.getDefaultContactTypeIcons();
         }
-
         return icons;
     }
 
@@ -158,62 +144,6 @@ class CompanyContactManager {
                 'validation_pattern': '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
                 'placeholder': 'abteilung@firma.de',
                 'hint': 'Geben Sie eine E-Mail-Adresse ein'
-            },
-            'phone': {
-                'label': 'Telefon',
-                'icon_class': 'bi-telephone',
-                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-                'placeholder': '+49 123 456789',
-                'hint': 'Geben Sie eine Telefonnummer ein'
-            },
-            'mobile': {
-                'label': 'Mobil',
-                'icon_class': 'bi-phone',
-                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-                'placeholder': '+49 170 1234567',
-                'hint': 'Geben Sie eine Mobilnummer ein'
-            },
-            'fax': {
-                'label': 'Fax',
-                'icon_class': 'bi-printer',
-                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-                'placeholder': '+49 123 456789',
-                'hint': 'Geben Sie eine Faxnummer ein'
-            },
-            'website': {
-                'label': 'Website',
-                'icon_class': 'bi-globe',
-                'validation_pattern': '^https?:\\/\\/.+\\..+$',
-                'placeholder': 'https://www.firma.de',
-                'hint': 'Geben Sie eine Website-URL ein'
-            },
-            'linkedin': {
-                'label': 'LinkedIn',
-                'icon_class': 'bi-linkedin',
-                'validation_pattern': '^(https?:\\/\\/)?(www\\.)?linkedin\\.com\\/company\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
-                'placeholder': 'linkedin.com/company/firmenname',
-                'hint': 'Geben Sie das LinkedIn-Unternehmensprofil ein'
-            },
-            'xing': {
-                'label': 'XING',
-                'icon_class': 'bi-person-badge',
-                'validation_pattern': '^(https?:\\/\\/)?(www\\.)?xing\\.com\\/companies\\/[a-zA-Z0-9\\-_]+\\/?$|^[a-zA-Z0-9\\-_]+$',
-                'placeholder': 'xing.com/companies/firmenname',
-                'hint': 'Geben Sie das XING-Unternehmensprofil ein'
-            },
-            'emergency': {
-                'label': 'Notfall',
-                'icon_class': 'bi-exclamation-triangle',
-                'validation_pattern': '^[\\+]?[0-9\\s\\-\\(\\)]{7,20}$',
-                'placeholder': '+49 170 1234567',
-                'hint': 'Geben Sie einen Notfallkontakt ein'
-            },
-            'other': {
-                'label': 'Sonstige',
-                'icon_class': 'bi-question-circle',
-                'validation_pattern': '.{3,}',
-                'placeholder': 'Kontaktdaten eingeben...',
-                'hint': 'Geben Sie die entsprechenden Kontaktdaten ein'
             }
         };
     }
@@ -222,30 +152,45 @@ class CompanyContactManager {
 // ==================== ДОПОЛНИТЕЛЬНЫЕ КОНТАКТЫ КОМПАНИИ МЕНЕДЖЕР ====================
 class CompanyAdditionalContactManager {
     constructor() {
+        console.log('🏗️ Создание CompanyAdditionalContactManager');
+
         this.additionalContacts = [];
         this.editingIndex = -1;
         this.deletingIndex = -1;
 
-        // ИЗМЕНЕНО: Используем те же названия переменных что и у users
         this.contactTypeLabels = window.contactTypeChoices ?
             this.buildContactTypeLabelsFromServer() :
             this.getDefaultContactTypeLabels();
 
-        // ИЗМЕНЕНО: Используем communicationConfig вместо companyCommunicationConfig
         this.communicationConfig = window.communicationConfig ?
             window.communicationConfig :
             this.getDefaultCommunicationConfig();
 
-        // Строим hints из конфигурации MongoDB
         this.contactHints = this.buildContactHintsFromConfig();
-
-        // Строим иконки из конфигурации MongoDB
         this.contactTypeIcons = this.buildContactTypeIconsFromConfig();
+
+        this.departmentLabels = {
+            'management': 'Geschäftsführung',
+            'sales': 'Vertrieb',
+            'support': 'Kundensupport',
+            'accounting': 'Buchhaltung',
+            'hr': 'Personalabteilung',
+            'it': 'IT-Abteilung',
+            'marketing': 'Marketing',
+            'production': 'Produktion',
+            'logistics': 'Logistik',
+            'purchasing': 'Einkauf',
+            'quality': 'Qualitätsmanagement',
+            'legal': 'Rechtsabteilung',
+            'reception': 'Empfang/Zentrale',
+            'other': 'Sonstige'
+        };
+
+        console.log('✅ CompanyAdditionalContactManager создан');
     }
 
     buildContactTypeLabelsFromServer() {
         const labels = {};
-        // ИЗМЕНЕНО: Используем contactTypeChoices вместо companyContactTypeChoices
         if (window.contactTypeChoices && Array.isArray(window.contactTypeChoices)) {
             window.contactTypeChoices.forEach(choice => {
                 if (choice.value) {
@@ -256,54 +201,154 @@ class CompanyAdditionalContactManager {
         return labels;
     }
 
+    getDefaultContactTypeLabels() {
+        return {
+            'email': 'E-Mail',
+            'phone': 'Telefon',
+            'mobile': 'Mobil',
+            'fax': 'Fax',
+            'website': 'Website',
+            'linkedin': 'LinkedIn',
+            'xing': 'XING',
+            'emergency': 'Notfall',
+            'other': 'Sonstige'
+        };
+    }
+
+    buildContactHintsFromConfig() {
+        const hints = {};
+        if (this.communicationConfig) {
+            Object.keys(this.communicationConfig).forEach(key => {
+                const config = this.communicationConfig[key];
+                hints[key] = {
+                    placeholder: config.placeholder || 'Kontaktdaten eingeben...',
+                    hint: config.hint || 'Geben Sie die entsprechenden Kontaktdaten ein',
+                    pattern: config.validation_pattern || '.{3,}'
+                };
+            });
+        }
+        if (Object.keys(hints).length === 0) {
+            return this.getDefaultContactHints();
+        }
+        return hints;
+    }
+
+    buildContactTypeIconsFromConfig() {
+        const icons = {};
+        if (this.communicationConfig) {
+            Object.keys(this.communicationConfig).forEach(key => {
+                const config = this.communicationConfig[key];
+                icons[key] = config.icon_class || 'bi-question-circle';
+            });
+        }
+        if (Object.keys(icons).length === 0) {
+            return this.getDefaultContactTypeIcons();
+        }
+        return icons;
+    }
+
+    getDefaultContactTypeIcons() {
+        return {
+            'email': 'bi-envelope',
+            'phone': 'bi-telephone',
+            'mobile': 'bi-phone',
+            'fax': 'bi-printer',
+            'website': 'bi-globe',
+            'linkedin': 'bi-linkedin',
+            'xing': 'bi-person-badge',
+            'emergency': 'bi-exclamation-triangle',
+            'other': 'bi-question-circle'
+        };
+    }
+
+    getDefaultContactHints() {
+        return {
+            'email': {
+                placeholder: 'abteilung@firma.de',
+                hint: 'Geben Sie eine E-Mail-Adresse ein',
+                pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'
+            }
+        };
+    }
+
+    getDefaultCommunicationConfig() {
+        return {
+            'email': {
+                'label': 'E-Mail',
+                'icon_class': 'bi-envelope',
+                'validation_pattern': '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
+                'placeholder': 'abteilung@firma.de',
+                'hint': 'Geben Sie eine E-Mail-Adresse ein'
+            }
+        };
+    }
+
     init() {
+        console.log('🔧 Инициализация CompanyAdditionalContactManager');
         this.bindEvents();
         this.updateTable();
         this.updateSummary();
         this.setupFormSubmission();
         this.setupValidation();
-        console.log('CompanyAdditionalContactManager инициализирован');
+        console.log('✅ CompanyAdditionalContactManager инициализирован');
     }
 
     bindEvents() {
+        console.log('🔧 Привязка событий');
+
         // Кнопка открытия модального окна дополнительных контактов
         const openBtn = document.getElementById('openAdditionalContactsBtn');
         if (openBtn) {
             openBtn.addEventListener('click', () => {
+                console.log('🖱️ Клик: открытие модального окна дополнительных контактов');
                 this.openAdditionalContactsModal();
             });
+            console.log('✅ Обработчик openAdditionalContactsBtn установлен');
+        } else {
+            console.error('❌ Кнопка openAdditionalContactsBtn не найдена!');
         }
 
         // Кнопка добавления дополнительного контакта
         const addBtn = document.getElementById('addAdditionalContactBtn');
         if (addBtn) {
             addBtn.addEventListener('click', () => {
+                console.log('🖱️ Клик: добавление нового контакта');
                 this.openContactModal();
             });
+            console.log('✅ Обработчик addAdditionalContactBtn установлен');
+        } else {
+            console.error('❌ Кнопка addAdditionalContactBtn не найдена!');
         }
 
         // Кнопка сохранения в модальном окне
         const saveBtn = document.getElementById('saveContactBtn');
         if (saveBtn) {
             saveBtn.addEventListener('click', () => {
+                console.log('🖱️ Клик: сохранение контакта');
                 this.saveContact();
             });
+            console.log('✅ Обработчик saveContactBtn установлен');
+        } else {
+            console.error('❌ Кнопка saveContactBtn не найдена!');
         }
 
         // Кнопка подтверждения удаления
         const confirmBtn = document.getElementById('confirmDeleteBtn');
         if (confirmBtn) {
             confirmBtn.addEventListener('click', () => {
+                console.log('🖱️ Клик: подтверждение удаления');
                 this.deleteContact();
             });
+            console.log('✅ Обработчик confirmDeleteBtn установлен');
+        } else {
+            console.error('❌ Кнопка confirmDeleteBtn не найдена!');
         }
 
         // Сброс формы при закрытии модального окна
         const modal = document.getElementById('contactModal');
         if (modal) {
-            // Setup Select2 for contact modal
             modal.addEventListener('shown.bs.modal', () => {
-                console.log('Открыта модалка добавления контакта компании');
+                console.log('📖 Модалка contactModal открыта');
 
                 const typeSelect = document.getElementById('contactType');
                 if (typeSelect) {
@@ -312,7 +357,7 @@ class CompanyAdditionalContactManager {
                         $(typeSelect).select2('destroy');
                     }
 
-                    // Initialize Select2 with company-specific options
+                    // Initialize Select2
                     $(typeSelect).select2({
                         theme: 'bootstrap-5',
                         placeholder: 'Kontakttyp auswählen...',
@@ -324,11 +369,10 @@ class CompanyAdditionalContactManager {
                             noResults: () => 'Keine Ergebnisse gefunden'
                         }
                     }).on('select2:select', (e) => {
-                        console.log('Выбран тип контакта:', e.params.data.id, '-', e.params.data.text);
+                        console.log('✅ Выбран тип контакта:', e.params.data.id);
                         $(typeSelect).closest('.mb-3').find('.invalid-feedback').hide();
                         this.updateContactHints(e.params.data.id);
 
-                        // Автофокус на поле контактных данных
                         setTimeout(() => {
                             $('#contactValue').trigger('focus');
                         }, 100);
@@ -337,8 +381,13 @@ class CompanyAdditionalContactManager {
             });
 
             modal.addEventListener('hidden.bs.modal', () => {
+                console.log('📕 Модалка contactModal закрыта');
                 this.resetContactForm();
             });
+
+            console.log('✅ Обработчики модалки contactModal установлены');
+        } else {
+            console.error('❌ Модалка contactModal не найдена!');
         }
 
         // Валидация в реальном времени
@@ -347,23 +396,38 @@ class CompanyAdditionalContactManager {
             valueInput.addEventListener('input', () => {
                 this.validateContactValue();
             });
+            console.log('✅ Обработчик валидации contactValue установлен');
+        } else {
+            console.error('❌ Поле contactValue не найдено!');
         }
+
+        console.log('✅ Все обработчики событий установлены');
     }
 
     openAdditionalContactsModal() {
         const modalElement = document.getElementById('additionalContactsModal');
-        if (!modalElement) return;
+        if (!modalElement) {
+            console.error('❌ Модалка additionalContactsModal не найдена!');
+            return;
+        }
 
+        console.log('🔧 Открытие additionalContactsModal');
         const modal = new bootstrap.Modal(modalElement);
         this.updateTable();
         this.updateModalCounter();
         modal.show();
+        console.log('✅ additionalContactsModal открыта');
     }
 
     openContactModal(index = -1) {
         this.editingIndex = index;
         const modalElement = document.getElementById('contactModal');
-        if (!modalElement) return;
+        if (!modalElement) {
+            console.error('❌ Модалка contactModal не найдена!');
+            return;
+        }
+
+        console.log(`🔧 Открытие contactModal (режим: ${index >= 0 ? 'редактирование' : 'добавление'})`);
 
         const modal = new bootstrap.Modal(modalElement);
         const modalTitle = document.getElementById('contactModalLabel');
@@ -375,7 +439,6 @@ class CompanyAdditionalContactManager {
             modalTitle.innerHTML = '<i class="bi bi-pencil me-2"></i>Firmenkontakt bearbeiten';
             saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Aktualisieren';
 
-            // Заполняем форму данными
             this.setFieldValue('contactType', contact.type);
             this.setFieldValue('contactValue', contact.value);
             this.setFieldValue('contactLabel', contact.department || '');
@@ -391,13 +454,13 @@ class CompanyAdditionalContactManager {
         }
 
         modal.show();
+        console.log('✅ contactModal открыта');
     }
 
     setFieldValue(fieldId, value) {
         const field = document.getElementById(fieldId);
         if (field) {
             field.value = value;
-            // Обновляем Select2 если это select элемент
             if (field.tagName.toLowerCase() === 'select' && $(field).data('select2')) {
                 $(field).val(value).trigger('change');
             }
@@ -417,12 +480,10 @@ class CompanyAdditionalContactManager {
 
         form.reset();
 
-        // Очищаем валидацию
         form.querySelectorAll('.is-invalid, .is-valid').forEach(el => {
             el.classList.remove('is-invalid', 'is-valid');
         });
 
-        // Сбрасываем Select2
         const typeSelect = document.getElementById('contactType');
         if (typeSelect && $(typeSelect).data('select2')) {
             $(typeSelect).val('').trigger('change');
@@ -518,12 +579,10 @@ class CompanyAdditionalContactManager {
 
         const type = typeField.value;
 
-        // Используем конфигурацию из MongoDB или fallback
         if (this.communicationConfig && this.communicationConfig[type]) {
             return this.getValidationErrorFromConfig(type);
         }
 
-        // Fallback ошибки
         const errors = {
             'email': 'Ungültiges E-Mail-Format',
             'phone': 'Ungültiges Telefonformat',
@@ -543,7 +602,6 @@ class CompanyAdditionalContactManager {
         const config = this.communicationConfig[type];
         const label = config.label || type;
 
-        // Создаем сообщение об ошибке на основе типа
         if (type === 'email') {
             return `Ungültiges ${label}-Format`;
         } else if (type === 'phone' || type === 'mobile' || type === 'fax') {
@@ -574,8 +632,13 @@ class CompanyAdditionalContactManager {
     }
 
     saveContact() {
+        console.log('💾 Сохранение контакта...');
+
         const form = document.getElementById('contactForm');
-        if (!form) return;
+        if (!form) {
+            console.error('❌ Форма contactForm не найдена!');
+            return;
+        }
 
         const typeField = document.getElementById('contactType');
         const valueField = document.getElementById('contactValue');
@@ -589,6 +652,7 @@ class CompanyAdditionalContactManager {
 
         if (!isTypeValid || !isValueValid) {
             this.showAlert('Bitte korrigieren Sie die Fehler im Formular', 'error');
+            console.error('❌ Валидация не прошла');
             return;
         }
 
@@ -610,10 +674,12 @@ class CompanyAdditionalContactManager {
             // Обновляем существующий контакт
             this.additionalContacts[this.editingIndex] = contactData;
             this.showAlert('Firmenkontakt erfolgreich aktualisiert', 'success');
+            console.log('✅ Контакт обновлен:', contactData);
         } else {
             // Добавляем новый контакт
             this.additionalContacts.push(contactData);
             this.showAlert('Firmenkontakt erfolgreich hinzugefügt', 'success');
+            console.log('✅ Контакт добавлен:', contactData);
         }
 
         this.updateTable();
@@ -632,6 +698,7 @@ class CompanyAdditionalContactManager {
     }
 
     confirmDelete(index) {
+        console.log('🗑️ Подтверждение удаления контакта:', index);
         this.deletingIndex = index;
         const modalElement = document.getElementById('deleteContactModal');
         if (modalElement) {
@@ -641,6 +708,8 @@ class CompanyAdditionalContactManager {
     }
 
     deleteContact() {
+        console.log('🗑️ Удаление контакта:', this.deletingIndex);
+
         if (this.deletingIndex >= 0) {
             this.additionalContacts.splice(this.deletingIndex, 1);
             this.updateTable();
@@ -648,6 +717,7 @@ class CompanyAdditionalContactManager {
             this.updateSummary();
             this.updateContactsDataInput();
             this.showAlert('Firmenkontakt erfolgreich gelöscht', 'info');
+            console.log('✅ Контакт удален');
 
             const modalElement = document.getElementById('deleteContactModal');
             if (modalElement) {
@@ -664,12 +734,16 @@ class CompanyAdditionalContactManager {
         const modalTableContainer = document.querySelector('#additionalContactsModal .table-responsive');
         const modalPlaceholder = document.querySelector('#additionalContactsModal #emptyAdditionalContactsPlaceholder');
 
-        if (!tableBody) return;
+        if (!tableBody) {
+            console.error('❌ Таблица additionalContactsTableBody не найдена!');
+            return;
+        }
 
         if (this.additionalContacts.length === 0) {
             if (modalTableContainer) modalTableContainer.style.display = 'none';
             if (modalPlaceholder) modalPlaceholder.style.display = 'block';
             tableBody.innerHTML = '';
+            console.log('📋 Таблица пуста, показан placeholder');
             return;
         }
 
@@ -679,6 +753,8 @@ class CompanyAdditionalContactManager {
         tableBody.innerHTML = this.additionalContacts.map((contact, index) => {
             return this.createContactRow(contact, index);
         }).join('');
+
+        console.log(`📋 Таблица обновлена: ${this.additionalContacts.length} контактов`);
     }
 
     updateModalCounter() {
@@ -753,7 +829,7 @@ class CompanyAdditionalContactManager {
         const input = document.getElementById('additionalContactsDataInput');
         if (input) {
             input.value = JSON.stringify(this.additionalContacts);
-            console.log('Обновлены данные дополнительных контактов компании:', this.additionalContacts.length);
+            console.log('💾 Обновлены данные:', this.additionalContacts.length, 'контактов');
         }
     }
 
@@ -797,8 +873,6 @@ class CompanyAdditionalContactManager {
                 }
             })
             .then(response => {
-                console.log('Response status:', response.status);
-
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -814,8 +888,6 @@ class CompanyAdditionalContactManager {
                 return response.json();
             })
             .then(data => {
-                console.log('JSON response:', data);
-
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Weiter zu Schritt 5';
@@ -832,8 +904,6 @@ class CompanyAdditionalContactManager {
                             window.location.href = '/company/register/step5/';
                         }, 1500);
                     }
-                } else {
-                    console.warn('No messages in response:', data);
                 }
             })
             .catch(error => {
@@ -844,11 +914,7 @@ class CompanyAdditionalContactManager {
                     submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Weiter zu Schritt 5';
                 }
 
-                if (error.message.includes('non-JSON')) {
-                    this.showAlert('Server hat eine ungültige Antwort gesendet. Bitte versuchen Sie es erneut.', 'error');
-                } else {
-                    this.showAlert('Fehler beim Speichern der Kontaktdaten: ' + error.message, 'error');
-                }
+                this.showAlert('Fehler beim Speichern der Kontaktdaten: ' + error.message, 'error');
             });
         });
     }
@@ -974,23 +1040,32 @@ class CompanyAdditionalContactManager {
 
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM загружен, инициализация менеджеров контактов...');
+
     if (document.getElementById('company-step4-form')) {
+        console.log('✅ Найдена форма company-step4-form');
+
         window.companyAdditionalContactManager = new CompanyAdditionalContactManager();
         companyAdditionalContactManager.init();
 
         // Загружаем существующие контакты если есть
         const existingContacts = window.initialAdditionalContactsData || [];
         if (existingContacts.length > 0) {
+            console.log(`📥 Загрузка ${existingContacts.length} существующих контактов`);
             companyAdditionalContactManager.loadAdditionalContacts(existingContacts);
+        } else {
+            console.log('📋 Нет существующих контактов для загрузки');
         }
 
-        console.log('Company Additional Contact Manager успешно инициализирован');
-        console.log('Доступные типы контактов:', window.contactTypeChoices);
-        console.log('Конфигурация коммуникации:', window.communicationConfig);
+        console.log('✅ Company Additional Contact Manager успешно инициализирован');
+        console.log('📋 Доступные типы контактов:', window.contactTypeChoices);
+        console.log('⚙️ Конфигурация коммуникации:', window.communicationConfig);
+    } else {
+        console.warn('⚠️ Форма company-step4-form не найдена на странице');
     }
 });
 
-// Глобальная функция для показа тостов (если не определена)
+// Глобальная функция для показа тостов
 if (typeof window.showToast === 'undefined') {
     window.showToast = function(message, type = 'info', delay = 5000) {
         const toast = document.createElement('div');
@@ -1010,4 +1085,3 @@ if (typeof window.showToast === 'undefined') {
         }, delay);
     };
 }
-
