@@ -6,17 +6,17 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => bar.style.width = width, 500);
     });
 
-    // Подтверждение удаления
-    const deleteForm = document.querySelector('#deleteCompanyModal form');
-    if (deleteForm) {
-        deleteForm.addEventListener('submit', function (e) {
-            const companyNameElement = document.querySelector('[data-company-name]');
-            const companyName = companyNameElement ? companyNameElement.dataset.companyName : 'diese Firma';
-            if (!confirm(`Sind Sie sicher, dass Sie "${companyName}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-                e.preventDefault();
-            }
-        });
-    }
+    // // Подтверждение удаления
+    // const deleteForm = document.querySelector('#deleteCompanyModal form');
+    // if (deleteForm) {
+    //     deleteForm.addEventListener('submit', function (e) {
+    //         const companyNameElement = document.querySelector('[data-company-name]');
+    //         const companyName = companyNameElement ? companyNameElement.dataset.companyName : 'diese Firma';
+    //         if (!confirm(`Sind Sie sicher, dass Sie "${companyName}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+    //             e.preventDefault();
+    //         }
+    //     });
+    // }
 
     // Клик по контактам для копирования
     document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]').forEach(link => {
@@ -145,37 +145,37 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function (e) {
-        // Ctrl+E для Bearbeiten
-        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-            e.preventDefault();
-            const editButton = document.querySelector('a[href*="edit_company"]');
-            if (editButton) {
-                editButton.click();
-            }
-        }
-
-        // Ctrl+D для Download/Export
-        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-            e.preventDefault();
-            const exportButton = document.querySelector('a[href*="export_company"]');
-            if (exportButton) {
-                exportButton.click();
-            }
-        }
-    });
-
-    // Показать подсказки о горячих клавишах
-    const showKeyboardHints = () => {
-        showToast('Tastenkombinationen: Strg+E (Bearbeiten), Strg+D (Export)', 'info', 4000);
-    };
-
-    // Показать подсказку через 10 секунд после загрузки
-    setTimeout(showKeyboardHints, 10000);
+    // // Keyboard shortcuts
+    // document.addEventListener('keydown', function (e) {
+    //     // Ctrl+E для Bearbeiten
+    //     if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+    //         e.preventDefault();
+    //         const editButton = document.querySelector('a[href*="edit_company"]');
+    //         if (editButton) {
+    //             editButton.click();
+    //         }
+    //     }
+    //
+    //     // Ctrl+D для Download/Export
+    //     if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+    //         e.preventDefault();
+    //         const exportButton = document.querySelector('a[href*="export_company"]');
+    //         if (exportButton) {
+    //             exportButton.click();
+    //         }
+    //     }
+    // });
+    //
+    // // Показать подсказки о горячих клавишах
+    // const showKeyboardHints = () => {
+    //     showToast('Tastenkombinationen: Strg+E (Bearbeiten), Strg+D (Export)', 'info', 4000);
+    // };
+    //
+    // // Показать подсказку через 10 секунд после загрузки
+    // setTimeout(showKeyboardHints, 10000);
 
     // Добавляем CSS анимации динамически
-    addDynamicStyles();
+    // addDynamicStyles();
 });
 
 // Функция уведомлений с улучшенными стилями
