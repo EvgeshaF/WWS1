@@ -263,15 +263,30 @@ class MongoConnection:
             db = client[db_name]
             now = datetime.datetime.now()
 
-            # Путь к JSON файлам
+            # ✅ ПРОГРАММНОЕ СОЗДАНИЕ: Создаем коллекцию users программно (без JSON)
+            logger.warning("🎯 Создаем коллекцию users программно...")
+            if not cls.create_users_collection(db_name):
+                logger.error("❌ Не удалось создать коллекцию users программно")
+                # ROLLBACK
+                try:
+                    client.drop_database(db_name)
+                    logger.error(f"🔄 База данных '{db_name}' удалена из-за ошибки")
+                except:
+                    pass
+                return False
+
+            created_collections = [f"{db_name}_users"]
+            logger.success(f"✅ Коллекция users создана программно")
+
+            # Путь к JSON файлам для остальных коллекций
             base_path = os.path.join('static', 'defaults', 'data')
             logger.info(f"📂 Ищем JSON файлы в: {base_path}")
 
-            created_collections = []
-
             if os.path.exists(base_path):
                 json_files = [f for f in os.listdir(base_path) if f.endswith('.json')]
-                logger.info(f"📋 Найдено JSON файлов: {json_files}")
+                # ✅ ИСКЛЮЧАЕМ users.json из обработки
+                json_files = [f for f in json_files if f != 'users.json']
+                logger.info(f"📋 Найдено JSON файлов (без users.json): {json_files}")
 
                 for file_name in json_files:
                     base_collection_name = file_name.replace('.json', '')
@@ -311,19 +326,6 @@ class MongoConnection:
                             logger.success(f"✅ В коллекцию '{collection_name}' вставлен 1 документ")
 
                         created_collections.append(collection_name)
-
-                        # Создаем индексы для коллекции users
-                        if base_collection_name == 'users':
-                            users_collection = db[collection_name]
-                            try:
-                                users_collection.create_index("username", unique=True, name="idx_username_unique")
-                                users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
-                                users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
-                                users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
-                                users_collection.create_index("created_at", name="idx_created_at")
-                                logger.success(f"📊 Индексы созданы для коллекции '{collection_name}'")
-                            except Exception as e:
-                                logger.warning(f"⚠️ Частичная ошибка создания индексов: {e}")
 
                     except FileNotFoundError:
                         logger.error(f"❌ Файл не найден: {json_path}")
