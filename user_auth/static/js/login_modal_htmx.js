@@ -39,6 +39,7 @@
             this.loader = null;
             this.attemptsAlert = null;
             this.currentAttempts = 0;
+            this.lockoutInterval = null;
 
             this.init();
         }
@@ -84,6 +85,12 @@
             if (window.isAuthenticated === false && window.requiresAuth === true) {
                 setTimeout(() => {
                     this.showModal();
+
+                    // Проверяем блокировку при открытии модального окна
+                    if (this.isLockedOut()) {
+                        this.showLockoutMessage();
+                        this.startLockoutTimer();
+                    }
                 }, 1000);
             }
         }
@@ -167,27 +174,53 @@
 
             this.modal.addEventListener('hidden.bs.modal', () => {
                 this.saveFormData();
+
+                // Очищаем таймер блокировки при закрытии модального окна
+                if (this.lockoutInterval) {
+                    clearInterval(this.lockoutInterval);
+                    this.lockoutInterval = null;
+                }
             });
         }
 
         handleLoginSuccess(data) {
             console.log('✅ Успешный вход');
+            console.log('📊 Login success data:', data);
+            console.log('🔗 Redirect URL:', data.redirect_url);
 
             this.clearAttempts();
             this.clearFormData();
 
-            // Toast будет показан глобальным обработчиком toasts.js
-            // Здесь не нужно вызывать showToast, чтобы избежать дублирования
+            // Показываем toast вручную, так как используем stopImmediatePropagation()
+            // и глобальный обработчик не сработает
+            if (data.messages && Array.isArray(data.messages)) {
+                console.log('📬 Showing messages from array:', data.messages);
+                data.messages.forEach(msg => {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(msg.text, msg.tags, msg.delay || 5000);
+                    }
+                });
+            } else if (data.message) {
+                // Fallback: показываем message напрямую
+                console.log('📬 Showing message:', data.message);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(data.message, 'success', 5000);
+                }
+            }
 
             this.hideModalWithSuccess();
 
+            console.log('⏰ Установлен таймер редиректа на 1500ms');
             setTimeout(() => {
+                console.log('🚀 Выполняем редирект...');
                 if (data.redirect_url) {
+                    console.log('➡️ Редирект на:', data.redirect_url);
                     window.location.href = data.redirect_url;
                 } else {
+                    console.log('🔄 Перезагрузка страницы');
                     window.location.reload();
                 }
-            }, 1000);
+            }, 1500);
         }
 
         handleLoginError(data) {
@@ -197,18 +230,25 @@
             this.storeAttempts();
             this.updateAttemptsDisplay();
 
-            // Toast будет показан глобальным обработчиком toasts.js
-            // Здесь не нужно вызывать showToast, чтобы избежать дублирования
+            // Показываем toast вручную, так как используем stopImmediatePropagation()
+            // и глобальный обработчик не сработает
+            if (data.messages && Array.isArray(data.messages)) {
+                data.messages.forEach(msg => {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(msg.text, msg.tags, msg.delay || 5000);
+                    }
+                });
+            } else if (data.message) {
+                // Fallback: показываем message напрямую
+                if (typeof window.showToast === 'function') {
+                    window.showToast(data.message, 'error', 5000);
+                }
+            }
 
             if (this.currentAttempts >= CONFIG.maxAttempts) {
                 this.setLockout();
                 this.showLockoutMessage();
-            } else {
-                const remainingAttempts = CONFIG.maxAttempts - this.currentAttempts;
-                const message = `Noch ${remainingAttempts} Versuche übrig`;
-                if (typeof window.showToast === 'function') {
-                    window.showToast(message, 'warning');
-                }
+                this.startLockoutTimer();
             }
 
             if (this.passwordInput) {
@@ -345,13 +385,91 @@
         }
 
         showLockoutMessage() {
-            const message = `Zu viele fehlgeschlagene Anmeldeversuche. Konto für 15 Minuten gesperrt.`;
-            if (typeof window.showToast === 'function') {
-                window.showToast(message, 'error', 10000);
-            }
+            const lockout = localStorage.getItem(CONFIG.storageKeys.lockout);
+            if (!lockout) return;
+
+            const lockoutTime = parseInt(lockout);
+            const remainingMs = lockoutTime - Date.now();
+            const remainingMinutes = Math.ceil(remainingMs / 60000);
+
+            // НЕ показываем toast - информация отображается на самой форме
+            // const message = `Zu viele fehlgeschlagene Anmeldeversuche. Konto für ${remainingMinutes} Minuten gesperrt.`;
 
             this.form.style.pointerEvents = 'none';
             this.form.style.opacity = '0.5';
+
+            // Показываем сообщение на форме с таймером
+            if (this.attemptsAlert) {
+                const attemptsText = document.getElementById('authAttemptsText');
+                if (attemptsText) {
+                    attemptsText.innerHTML = `<strong>Konto gesperrt.</strong> Versuchen Sie es erneut in: <span id="lockoutTimer"></span>`;
+                }
+                this.attemptsAlert.classList.remove('alert-warning');
+                this.attemptsAlert.classList.add('alert-danger');
+                this.attemptsAlert.style.display = 'block';
+            }
+        }
+
+        startLockoutTimer() {
+            const timerElement = document.getElementById('lockoutTimer');
+            if (!timerElement) return;
+
+            // Очищаем предыдущий интервал, если есть
+            if (this.lockoutInterval) {
+                clearInterval(this.lockoutInterval);
+            }
+
+            const updateTimer = () => {
+                const lockout = localStorage.getItem(CONFIG.storageKeys.lockout);
+                if (!lockout) {
+                    // Блокировка снята
+                    this.clearLockoutDisplay();
+                    return;
+                }
+
+                const lockoutTime = parseInt(lockout);
+                const remainingMs = lockoutTime - Date.now();
+
+                if (remainingMs <= 0) {
+                    // Время истекло
+                    this.clearLockoutDisplay();
+                    this.clearAttempts();
+                    return;
+                }
+
+                const minutes = Math.floor(remainingMs / 60000);
+                const seconds = Math.floor((remainingMs % 60000) / 1000);
+                timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            // Обновляем сразу
+            updateTimer();
+
+            // Обновляем каждую секунду
+            this.lockoutInterval = setInterval(updateTimer, 1000);
+        }
+
+        clearLockoutDisplay() {
+            if (this.lockoutInterval) {
+                clearInterval(this.lockoutInterval);
+                this.lockoutInterval = null;
+            }
+
+            if (this.attemptsAlert) {
+                this.attemptsAlert.classList.remove('alert-danger');
+                this.attemptsAlert.classList.add('alert-warning');
+                this.attemptsAlert.style.display = 'none';
+            }
+
+            this.form.style.pointerEvents = '';
+            this.form.style.opacity = '';
+
+            // НЕ показываем toast - разблокировка происходит автоматически
+            // Пользователь увидит это по исчезновению сообщения на форме
+
+            // Обновляем отображение попыток
+            this.currentAttempts = 0;
+            this.updateAttemptsDisplay();
         }
 
         // ==================== STORAGE ====================

@@ -22,8 +22,14 @@ def login_view(request):
         if request.method == "POST":
             logger.info("🔐 Обработка POST запроса для входа")
 
+            # Детальное логирование заголовков
+            logger.info(f"📋 Все заголовки: {dict(request.headers)}")
+
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             is_htmx = request.headers.get('HX-Request') == 'true'
+
+            logger.info(f"🔍 X-Requested-With: {request.headers.get('X-Requested-With')}")
+            logger.info(f"🔍 HX-Request: {request.headers.get('HX-Request')}")
 
             username = request.POST.get("username", "").strip()
             password = request.POST.get("password", "")

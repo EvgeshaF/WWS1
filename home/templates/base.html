@@ -1,6 +1,7 @@
 {#base.html#}
 
 {% load static %}
+{% load json_filters %}
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -110,11 +111,11 @@
 
 <script>
     // Информация о текущем пользователе
-    window.currentUser = {% if current_user %}{{ current_user|safe }}{% else %}null{% endif %};
-    window.isAuthenticated = {{ is_authenticated|yesno:"true,false" }};
-    window.requiresAuth = {{ requires_auth|yesno:"true,false" }};
-    window.systemInfo = {{ system_info|safe }};
-    window.showLoginModal = {{ show_login_modal|yesno:"true,false" }};
+    window.currentUser = {% if current_user %}{{ current_user|to_json }}{% else %}null{% endif %};
+    window.isAuthenticated = {% if is_authenticated %}true{% else %}false{% endif %};
+    window.requiresAuth = {% if requires_auth %}true{% else %}false{% endif %};
+    window.systemInfo = {{ system_info|to_json }};
+    window.showLoginModal = {% if show_login_modal %}true{% else %}false{% endif %};
 
     // Глобальная функция для показа модального окна
     function showLoginModal() {

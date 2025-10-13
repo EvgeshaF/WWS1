@@ -141,8 +141,14 @@ if not DEBUG:
     # Session security
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # По умолчанию сессия истекает при закрытии браузера
+    SESSION_COOKIE_AGE = 1209600  # 2 недели в секундах (если remember_me=True)
+    SESSION_SAVE_EVERY_REQUEST = False  # Не обновлять cookie на каждый запрос
+
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_SAMESITE = 'Lax'
 
     # Redirect HTTP to HTTPS
     SECURE_SSL_REDIRECT = True
