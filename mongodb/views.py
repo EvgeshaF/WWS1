@@ -13,8 +13,21 @@ from . import language
 from django_ratelimit.decorators import ratelimit
 
 
-def render_toast_response(request):
-    """JSON ответ с сообщениями для HTMX"""
+def render_toast_response(request, redirect_url=None):
+    """JSON ответ с сообщениями для HTMX toast-системы"""
+
+    # Если есть редирект, НЕ извлекаем сообщения - они покажутся на следующей странице
+    if redirect_url:
+        response_data = {
+            'messages': [],
+            'redirect_url': redirect_url
+        }
+        response = JsonResponse(response_data)
+        response['Content-Type'] = 'application/json'
+        response['HX-Redirect'] = redirect_url
+        return response
+
+    # Если нет редиректа, извлекаем и отправляем сообщения для показа на текущей странице
     storage = messages.get_messages(request)
     messages_list = []
     for message in storage:
@@ -24,8 +37,10 @@ def render_toast_response(request):
             'delay': 5000
         })
 
-    response = JsonResponse({'messages': messages_list})
+    response_data = {'messages': messages_list}
+    response = JsonResponse(response_data)
     response['Content-Type'] = 'application/json'
+
     return response
 
 
@@ -34,10 +49,8 @@ def render_with_messages(request, template_name, context, success_redirect=None)
     is_htmx = request.headers.get('HX-Request') == 'true'
 
     if is_htmx:
-        response = render_toast_response(request)
-        if success_redirect:
-            response['HX-Redirect'] = success_redirect
-        return response
+        # Для HTMX возвращаем JSON с сообщениями и редиректом
+        return render_toast_response(request, success_redirect)
     else:
         if success_redirect:
             # Извлекаем имя URL из полного пути

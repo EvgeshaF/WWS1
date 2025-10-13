@@ -37,7 +37,7 @@ text_login_form = {
     'notification': "* Nach einer erfolgreichen Verbindung können Sie eine neue Datenbank erstellen."
 }
 
-mess_login_success1 = "Der Benutzer "
+mess_login_success1 = "Der Datenbankadministrator "
 mess_login_success2 = " hat sich erfolgreich angemeldet."
 mess_user_login_error = "Falscher Benutzername oder falsches Passwort."
 mess_login_parameter_info = mess_server_configuration_info

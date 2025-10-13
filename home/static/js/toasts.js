@@ -156,6 +156,12 @@
 
     // Обработчик для HTMX событий
     document.body.addEventListener('htmx:afterRequest', function(event) {
+        // Пропускаем события, которые уже обработаны специализированными модулями
+        if (event.detail.mongodbHandled) {
+            console.log('🔵 Toast system: событие уже обработано MongoDB модулем, пропускаем');
+            return;
+        }
+
         // Если ответ содержит JSON с сообщениями
         try {
             const response = JSON.parse(event.detail.xhr.response);

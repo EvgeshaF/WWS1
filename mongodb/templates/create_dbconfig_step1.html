@@ -26,8 +26,7 @@
 
                     <form id="mongo-form" method="post"
                           hx-post="{% url 'create_database_step1' %}"
-                          hx-target="#toast-container"
-                          hx-swap="beforeend">
+                          hx-swap="none">
                         {% csrf_token %}
 
                         <div class="mb-3">
@@ -93,8 +92,8 @@
     <!-- Полупрозрачный фон -->
     <div class="modal-backdrop fade show"></div>
 
-    {# Подключаем JS файл #}
+    {# Подключаем JS файл для HTMX #}
     {% load static %}
-    <script src="{% static 'js/create_dbconfig_step1.js' %}"></script>
+    <script src="{% static 'js/mongodb_forms_htmx.js' %}"></script>
 
 {% endblock %}
