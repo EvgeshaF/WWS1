@@ -58,10 +58,25 @@ class MongoConnection:
         return cls._client
 
     @classmethod
+    def reset_client(cls):
+        """
+        ✅ НОВЫЙ МЕТОД: Принудительно сбрасывает кешированный клиент
+        Используется после изменения конфигурации (например, после authenticate_admin)
+        """
+        if cls._client is not None:
+            try:
+                cls._client.close()
+                logger.info("🔌 MongoDB клиент закрыт")
+            except:
+                pass
+        cls._client = None
+        logger.info("🔄 Кеш MongoDB клиента сброшен")
+
+    @classmethod
     def get_database(cls):
         """Возвращает объект базы данных"""
         client = cls.get_client()
-        if client is not None:  # ✅ ИСПРАВЛЕНО: правильная проверка клиента
+        if client is not None:
             config = MongoConfig.read_config()
             db_name = config.get('db_name')
             if db_name:
@@ -110,9 +125,20 @@ class MongoConnection:
                 # Пытаемся получить список баз данных (требует админских прав)
                 databases = auth_client.list_database_names()
                 logger.success(f"Администратор '{username}' успешно авторизован. Доступных БД: {len(databases)}")
+
+                # ✅ КРИТИЧНО: Сбрасываем кеш клиента после успешной аутентификации
+                # Это заставит get_client() пересоздать клиент с новыми учетными данными
+                cls._client = None
+                logger.info("🔄 Кеш клиента сброшен - клиент будет пересоздан с правами администратора")
+
                 return True
             except OperationFailure as e:
                 logger.warning(f"Пользователь '{username}' авторизован, но без админских прав: {e}")
+
+                # ✅ КРИТИЧНО: Сбрасываем кеш клиента даже если нет полных прав
+                cls._client = None
+                logger.info("🔄 Кеш клиента сброшен")
+
                 return True  # Возвращаем True, так как авторизация прошла
 
         except OperationFailure as e:
@@ -130,8 +156,46 @@ class MongoConnection:
             return False
 
     @classmethod
+    def database_exists(cls, db_name):
+        """
+        ✅ ИСПРАВЛЕНО: Безопасная проверка существования базы данных
+        Проверяет наличие коллекций вместо использования list_database_names()
+        """
+        client = cls.get_client()
+        if client is None:
+            logger.error("Не удалось получить клиент MongoDB")
+            return False
+
+        try:
+            # ✅ БЕЗОПАСНЫЙ МЕТОД: проверяем через коллекции
+            db = client[db_name]
+            collections = db.list_collection_names()
+
+            exists = len(collections) > 0
+
+            if exists:
+                logger.info(f"✅ База данных '{db_name}' существует ({len(collections)} коллекций)")
+            else:
+                logger.info(f"📋 База данных '{db_name}' не существует или пуста")
+
+            return exists
+
+        except OperationFailure as e:
+            if e.code == 13:  # Unauthorized
+                logger.error(f"❌ Нет прав для проверки базы '{db_name}'")
+            else:
+                logger.error(f"❌ Ошибка при проверке базы '{db_name}': {e}")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Ошибка при проверке существования базы '{db_name}': {e}")
+            return False
+
+    @classmethod
     def create_database_step3(cls, db_name):
-        """Создает базу данных с коллекциями из JSON файлов"""
+        """
+        ✅ ИСПРАВЛЕНО: Создает базу данных с коллекциями из JSON файлов
+        Использует безопасные методы без list_database_names()
+        """
         logger.warning(f"🚀 === НАЧАЛО create_database_step3 для БД: {db_name} ===")
 
         if not db_name:
@@ -143,7 +207,7 @@ class MongoConnection:
             logger.error("Не удалось получить клиент MongoDB")
             return False
 
-        # ✅ ДОБАВЛЕНО: Проверка наличия администратора в конфиге
+        # ✅ ДОБАВЛЕНО: Проверка администратора
         config = MongoConfig.read_config()
         admin_user = config.get('admin_user') if config else None
 
@@ -155,7 +219,7 @@ class MongoConnection:
         logger.info(f"🔐 Работаем с администратором: {admin_user}")
 
         try:
-            # ✅ ИСПРАВЛЕНО: Безопасная проверка через коллекции (не требует listDatabases)
+            # ✅ ИСПРАВЛЕНО: Безопасная проверка существования через коллекции
             db = client[db_name]
 
             try:
@@ -171,40 +235,19 @@ class MongoConnection:
                 logger.info(f"📋 База данных '{db_name}' пуста или не существует")
                 existing_collections = []
 
+            # Если база существует и имеет коллекции - отменяем создание
             if existing_collections:
-                logger.warning(f"⚠️ База данных '{db_name}' уже существует ({len(existing_collections)} коллекций)")
+                logger.error(f"❌ База данных '{db_name}' уже существует ({len(existing_collections)} коллекций)!")
 
-                # Проверяем обязательные коллекции
+                # Проверяем основные коллекции
                 users_collection = f"{db_name}_users"
                 titles_collection = f"{db_name}_basic_titles"
 
-                required_collections = [users_collection, titles_collection]
-                missing_collections = [col for col in required_collections if col not in existing_collections]
-
-                if not missing_collections:
-                    # Дополнительная проверка: есть ли данные в коллекциях
-                    users_count = db[users_collection].count_documents({})
-                    titles_count = db[titles_collection].count_documents({})
-
-                    if users_count > 0 or titles_count > 0:
-                        logger.error(f"🚫 База данных '{db_name}' уже полностью настроена!")
-                        logger.error(f"📊 {users_collection}: {users_count} записей")
-                        logger.error(f"📊 {titles_collection}: {titles_count} записей")
-                        logger.error("❌ ОТМЕНЯЕМ создание - БД уже существует!")
-                        return False
-                    else:
-                        logger.warning(f"⚠️ База существует, но коллекции пусты. Удаляем и создаем заново...")
-                        try:
-                            client.drop_database(db_name)
-                            logger.success(f"✅ Пустая база '{db_name}' удалена")
-                        except OperationFailure as e:
-                            if e.code == 13:
-                                logger.error("❌ Недостаточно прав для удаления базы")
-                                return False
-                            raise
+                if users_collection in existing_collections or titles_collection in existing_collections:
+                    logger.error(f"🚫 База данных '{db_name}' уже полностью настроена!")
+                    return False
                 else:
-                    logger.warning(f"⚠️ Отсутствуют коллекции: {missing_collections}")
-                    logger.warning(f"⚠️ Удаляем неполную базу '{db_name}' для чистого старта...")
+                    logger.warning(f"⚠️ База имеет коллекции, но не основные. Удаляем для чистого старта...")
                     try:
                         client.drop_database(db_name)
                         logger.success(f"✅ Неполная база '{db_name}' удалена")
@@ -214,8 +257,9 @@ class MongoConnection:
                             return False
                         raise
 
-            # Теперь создаем базу с нуля
-            logger.success(f"✅ Создаем новую базу данных '{db_name}'...")
+            logger.success(f"✅ База данных '{db_name}' не существует, создаем...")
+
+            # Создаем базу данных
             db = client[db_name]
             now = datetime.datetime.now()
 
@@ -237,8 +281,10 @@ class MongoConnection:
                     logger.warning(f"🎯 Обрабатываем файл: {file_name} → коллекция: {collection_name}")
 
                     try:
+                        # Читаем JSON
                         with open(json_path, 'r', encoding='utf-8') as file:
                             data = json.load(file)
+
                         logger.info(f"📖 Загружено {len(data) if isinstance(data, list) else 1} записей из {file_name}")
 
                         # Создаем коллекцию
@@ -247,93 +293,62 @@ class MongoConnection:
 
                         # Добавляем метаданные и вставляем данные
                         if isinstance(data, list):
-                            if data:  # Только если список не пустой
-                                for item in data:
-                                    item['created_at'] = now
-                                    item['modified_at'] = now
-                                    item['deleted'] = False
+                            for item in data:
+                                item['created_at'] = now
+                                item['modified_at'] = now
+                                item['deleted'] = False
+
+                            if data:
                                 result = db[collection_name].insert_many(data)
-                                inserted_count = len(result.inserted_ids)
-                                logger.success(f"✅ Вставлено {inserted_count} документов в '{collection_name}'")
+                                logger.success(f"✅ В коллекцию '{collection_name}' вставлено {len(result.inserted_ids)} документов")
                             else:
-                                logger.info(f"📝 Пустая коллекция '{collection_name}' создана")
+                                logger.success(f"📝 Пустая коллекция '{collection_name}' создана")
                         else:
                             data['created_at'] = now
                             data['modified_at'] = now
                             data['deleted'] = False
                             result = db[collection_name].insert_one(data)
-                            logger.success(f"✅ Вставлен 1 документ в '{collection_name}'")
+                            logger.success(f"✅ В коллекцию '{collection_name}' вставлен 1 документ")
 
                         created_collections.append(collection_name)
 
-                        # Проверяем финальное количество
-                        final_count = db[collection_name].count_documents({})
-                        logger.info(f"📊 Финальное количество записей в '{collection_name}': {final_count}")
+                        # Создаем индексы для коллекции users
+                        if base_collection_name == 'users':
+                            users_collection = db[collection_name]
+                            try:
+                                users_collection.create_index("username", unique=True, name="idx_username_unique")
+                                users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
+                                users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
+                                users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
+                                users_collection.create_index("created_at", name="idx_created_at")
+                                logger.success(f"📊 Индексы созданы для коллекции '{collection_name}'")
+                            except Exception as e:
+                                logger.warning(f"⚠️ Частичная ошибка создания индексов: {e}")
 
+                    except FileNotFoundError:
+                        logger.error(f"❌ Файл не найден: {json_path}")
+                        continue
+                    except json.JSONDecodeError as e:
+                        logger.error(f"❌ Ошибка JSON в файле {file_name}: {e}")
+                        continue
                     except Exception as e:
-                        logger.error(f"❌ Ошибка при обработке {file_name}: {e}")
-                        # В случае ошибки откатываем всё
-                        logger.error("🔄 Откатываем создание базы данных...")
+                        logger.error(f"❌ Ошибка создания коллекции {collection_name}: {e}")
+                        # ROLLBACK: удаляем базу данных при ошибке
                         try:
                             client.drop_database(db_name)
+                            logger.error(f"🔄 База данных '{db_name}' удалена из-за ошибки")
                         except:
                             pass
                         return False
 
-            # Создаем коллекцию пользователей с индексами
-            users_collection_name = f"{db_name}_users"
-            if users_collection_name not in created_collections:
-                logger.warning(f"⚠️ Коллекция users не создана из JSON, создаем вручную...")
-                db.create_collection(users_collection_name)
-                logger.success(f"✅ Создана пустая коллекция '{users_collection_name}'")
-
-            # Создаем индексы для пользователей
-            users_collection = db[users_collection_name]
-            try:
-                # Уникальные индексы
-                try:
-                    users_collection.create_index("username", unique=True, name="idx_username_unique")
-                    logger.success("✅ Создан уникальный индекс для username")
-                except Exception as e:
-                    users_collection.create_index("username", name="idx_username")
-                    logger.warning(f"⚠️ Создан обычный индекс для username: {e}")
-
-                try:
-                    users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
-                    logger.success("✅ Создан уникальный индекс для email")
-                except Exception as e:
-                    users_collection.create_index("profile.email", name="idx_email")
-                    logger.warning(f"⚠️ Создан обычный индекс для email: {e}")
-
-                # Основные индексы
-                users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
-                users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
-                users_collection.create_index("created_at", name="idx_created_at")
-                logger.success(f"✅ Созданы индексы для '{users_collection_name}'")
-
-            except Exception as e:
-                logger.warning(f"⚠️ Частичная ошибка создания индексов: {e}")
-
-            # Создаем системную коллекцию
-            system_collection_name = f"{db_name}_system_info"
-            db[system_collection_name].insert_one({
-                'database_name': db_name,
-                'created_at': now,
-                'version': '1.0',
-                'status': 'active',
-                'collections_count': len(db.list_collection_names())
-            })
-            logger.success(f"✅ Создана системная коллекция '{system_collection_name}'")
-
             # Финальная проверка
             final_collections = db.list_collection_names()
-            logger.success(f"🎉 База данных '{db_name}' успешно создана!")
-            logger.info(f"📊 Всего коллекций: {len(final_collections)}")
-
+            logger.warning(f"🏁 ФИНАЛЬНОЕ состояние БД '{db_name}': {len(final_collections)} коллекций")
             for coll_name in final_collections:
                 count = db[coll_name].count_documents({})
-                logger.info(f"  📂 {coll_name}: {count} записей")
+                logger.info(f"📊 {coll_name}: {count} записей")
 
+            logger.success(f"✅ База данных '{db_name}' успешно создана с {len(created_collections)} коллекциями")
             return True
 
         except OperationFailure as e:
@@ -343,7 +358,7 @@ class MongoConnection:
             else:
                 logger.error(f"❌ Ошибка MongoDB: {e}")
 
-            # Пытаемся откатить
+            # ROLLBACK
             try:
                 client.drop_database(db_name)
                 logger.warning(f"🔄 База данных '{db_name}' удалена из-за ошибки")
@@ -352,13 +367,97 @@ class MongoConnection:
             return False
 
         except Exception as e:
-            logger.exception(f"❌ Критическая ошибка при создании БД '{db_name}': {e}")
-            # Пытаемся откатить изменения
+            logger.exception(f"❌ Критическая ошибка создания БД '{db_name}': {e}")
+            # ROLLBACK
             try:
                 client.drop_database(db_name)
-                logger.warning(f"🔄 База данных '{db_name}' удалена из-за ошибки")
+                logger.error(f"🔄 База данных '{db_name}' удалена из-за критической ошибки")
             except:
                 pass
+            return False
+
+    @classmethod
+    def create_users_collection(cls, db_name: str):
+        """Создает коллекцию пользователей программно (без users.json)"""
+        logger.warning(f"🚀 Создание коллекции пользователей программно для БД: {db_name}")
+
+        client = cls.get_client()
+        if client is None:
+            logger.error("❌ Нет подключения к MongoDB")
+            return False
+
+        try:
+            db = client[db_name]
+            users_collection_name = f"{db_name}_users"
+
+            # Проверяем, существует ли коллекция
+            if users_collection_name in db.list_collection_names():
+                logger.warning(f"⚠️ Коллекция '{users_collection_name}' уже существует — пропуск создания.")
+                return True
+
+            # JSON Schema валидатор (структура как в users.json)
+            validator = {
+                "$jsonSchema": {
+                    "bsonType": "object",
+                    "required": [
+                        "username", "password", "profile",
+                        "is_active", "created_at", "modified_at", "deleted"
+                    ],
+                    "properties": {
+                        "username": {"bsonType": "string"},
+                        "password": {"bsonType": "string"},
+                        "is_admin": {"bsonType": "bool"},
+                        "is_active": {"bsonType": "bool"},
+                        "created_at": {"bsonType": "date"},
+                        "modified_at": {"bsonType": "date"},
+                        "deleted": {"bsonType": "bool"},
+                        "last_login": {"bsonType": ["date", "null"]},
+                        "password_changed_at": {"bsonType": ["date", "null"]},
+                        "profile": {
+                            "bsonType": "object",
+                            "required": ["first_name", "last_name", "email"],
+                            "properties": {
+                                "salutation": {"bsonType": ["string", "null"]},
+                                "title": {"bsonType": ["string", "null"]},
+                                "first_name": {"bsonType": "string"},
+                                "last_name": {"bsonType": "string"},
+                                "email": {"bsonType": "string"},
+                                "phone": {"bsonType": ["string", "null"]},
+                                "contacts": {
+                                    "bsonType": "array",
+                                    "items": {
+                                        "bsonType": "object",
+                                        "required": ["type", "value", "is_primary"],
+                                        "properties": {
+                                            "type": {"bsonType": "string"},
+                                            "value": {"bsonType": "string"},
+                                            "note": {"bsonType": ["string", "null"]},
+                                            "is_primary": {"bsonType": "bool"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            db.create_collection(users_collection_name, validator=validator)
+            logger.success(f"✅ Коллекция '{users_collection_name}' успешно создана программно")
+
+            # Индексы
+            users_collection = db[users_collection_name]
+            users_collection.create_index("username", unique=True, name="idx_username_unique")
+            users_collection.create_index("profile.email", unique=True, name="idx_email_unique")
+            users_collection.create_index([("is_active", 1), ("deleted", 1)], name="idx_active_not_deleted")
+            users_collection.create_index([("is_admin", 1), ("deleted", 1)], name="idx_admin_not_deleted")
+            users_collection.create_index("created_at", name="idx_created_at")
+
+            logger.success(f"📊 Индексы созданы для коллекции '{users_collection_name}'")
+            return True
+
+        except Exception as e:
+            logger.exception(f"Ошибка при создании коллекции пользователей: {e}")
             return False
 
     @classmethod
@@ -370,7 +469,7 @@ class MongoConnection:
             return False
 
         client = cls.get_client()
-        if client is None:  # ✅ ИСПРАВЛЕНО: правильная проверка клиента
+        if client is None:
             return False
 
         db_name = config.get('db_name')
@@ -385,7 +484,7 @@ class MongoConnection:
             users_collection_name = f"{db_name}_users"
             user = db[users_collection_name].find_one({'username': username, 'deleted': False})
 
-            if user is not None and verify_password(password, user['password']):  # ✅ ИСПРАВЛЕНО
+            if user is not None and verify_password(password, user['password']):
                 logger.success(f"Пользователь '{username}' успешно авторизован.")
                 return user
             else:
@@ -393,31 +492,4 @@ class MongoConnection:
                 return None
         except Exception as e:
             logger.error(f"Ошибка аутентификации пользователя '{username}': {e}")
-            return False
-
-    @classmethod
-    def database_exists(cls, db_name):
-        """Проверяет наличие базы данных (безопасный метод без прав listDatabases)"""
-        client = cls.get_client()
-        if client is None:
-            logger.error("Не удалось получить клиент MongoDB")
-            return False
-
-        try:
-            # Вместо list_database_names() проверяем наличие коллекций
-            db = client[db_name]
-            collections = db.list_collection_names()
-
-            # Если есть хоть одна коллекция, база существует
-            exists = len(collections) > 0
-
-            if exists:
-                logger.info(f"✅ База данных '{db_name}' существует ({len(collections)} коллекций)")
-            else:
-                logger.info(f"❌ База данных '{db_name}' не существует или пуста")
-
-            return exists
-
-        except Exception as e:
-            logger.error(f"❌ Ошибка при проверке существования базы '{db_name}': {e}")
             return False

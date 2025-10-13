@@ -150,7 +150,7 @@ def create_database_step1(request):
     return render(request, 'create_dbconfig_step1.html', context)
 
 
-@ratelimit(key='ip', rate='5/m', method='POST')
+@ratelimit(key='ip', rate='30/m', method='POST')
 def create_database_step2(request):
     """Форма авторизации администратора MongoDB"""
     is_htmx = request.headers.get('HX-Request') == 'true'
@@ -171,6 +171,7 @@ def create_database_step2(request):
             db_name = form.cleaned_data['db_name']
 
             logger.info(f"Проверяем авторизацию администратора: {admin_user}")
+
             # Проверяем авторизацию администратора
             if MongoConnection.authenticate_admin(admin_user, admin_password):
                 # Сохраняем данные авторизации в конфигурацию
@@ -180,6 +181,11 @@ def create_database_step2(request):
                     'db_name': db_name,
                     'auth_source': 'admin'
                 })
+
+                # ✅ КРИТИЧНО: Сбрасываем клиент после обновления конфига
+                # Метод authenticate_admin уже сбросил клиент, но на всякий случай
+                MongoConnection.reset_client()
+                logger.info("✅ Конфигурация обновлена, клиент будет пересоздан с новыми учетными данными")
 
                 success_msg = f"{language.mess_login_success1}{admin_user}{language.mess_login_success2}"
                 logger.success(success_msg)
