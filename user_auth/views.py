@@ -23,18 +23,19 @@ def login_view(request):
             logger.info("🔐 Обработка POST запроса для входа")
 
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            is_htmx = request.headers.get('HX-Request') == 'true'
 
             username = request.POST.get("username", "").strip()
             password = request.POST.get("password", "")
             remember_me = request.POST.get("remember_me") == "on"
 
-            logger.info(f"Попытка входа: {username}, AJAX: {is_ajax}")
+            logger.info(f"Попытка входа: {username}, AJAX: {is_ajax}, HTMX: {is_htmx}")
 
             # Валидация
             if not username:
                 error_message = "Benutzername ist erforderlich"
-                if is_ajax:
-                    return JsonResponse({'success': False, 'message': error_message})
+                if is_ajax or is_htmx:
+                    return JsonResponse({'success': False, 'message': error_message, 'messages': [{'tags': 'error', 'text': error_message, 'delay': 5000}]})
                 else:
                     messages.error(request, error_message)
                     form = LoginForm(request.POST)
@@ -42,8 +43,8 @@ def login_view(request):
 
             if not password:
                 error_message = "Passwort ist erforderlich"
-                if is_ajax:
-                    return JsonResponse({'success': False, 'message': error_message})
+                if is_ajax or is_htmx:
+                    return JsonResponse({'success': False, 'message': error_message, 'messages': [{'tags': 'error', 'text': error_message, 'delay': 5000}]})
                 else:
                     messages.error(request, error_message)
                     form = LoginForm(request.POST)
@@ -66,10 +67,11 @@ def login_view(request):
 
                 success_message = f"Willkommen, {display_name}!"
 
-                if is_ajax:
+                if is_ajax or is_htmx:
                     return JsonResponse({
                         'success': True,
                         'message': success_message,
+                        'messages': [{'tags': 'success', 'text': success_message, 'delay': 5000}],
                         'redirect_url': reverse('home')
                     })
                 else:
@@ -80,8 +82,12 @@ def login_view(request):
                 error_message = "Ungültiger Benutzername oder Passwort"
                 logger.warning(f"❌ Неудачная попытка входа для '{username}'")
 
-                if is_ajax:
-                    return JsonResponse({'success': False, 'message': error_message})
+                if is_ajax or is_htmx:
+                    return JsonResponse({
+                        'success': False,
+                        'message': error_message,
+                        'messages': [{'tags': 'error', 'text': error_message, 'delay': 5000}]
+                    })
                 else:
                     messages.error(request, error_message)
                     form = LoginForm(request.POST)

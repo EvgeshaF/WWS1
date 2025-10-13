@@ -161,6 +161,10 @@
             console.log('🔵 Toast system: событие уже обработано MongoDB модулем, пропускаем');
             return;
         }
+        if (event.detail.loginHandled) {
+            console.log('🔵 Toast system: событие уже обработано Login модулем, пропускаем');
+            return;
+        }
 
         // Если ответ содержит JSON с сообщениями
         try {
@@ -183,16 +187,28 @@
 
     // Обработчик ошибок HTMX
     document.body.addEventListener('htmx:responseError', function(event) {
+        // Пропускаем события, которые уже обработаны специализированными модулями
+        if (event.detail.mongodbHandled || event.detail.loginHandled) {
+            return;
+        }
         console.error('HTMX Response Error:', event.detail);
         showToast('Serverfehler aufgetreten', 'error');
     });
 
     document.body.addEventListener('htmx:sendError', function(event) {
+        // Пропускаем события, которые уже обработаны специализированными модулями
+        if (event.detail.mongodbHandled || event.detail.loginHandled) {
+            return;
+        }
         console.error('HTMX Send Error:', event.detail);
         showToast('Verbindungsfehler', 'error');
     });
 
     document.body.addEventListener('htmx:timeout', function(event) {
+        // Пропускаем события, которые уже обработаны специализированными модулями
+        if (event.detail.mongodbHandled || event.detail.loginHandled) {
+            return;
+        }
         console.error('HTMX Timeout:', event.detail);
         showToast('Anfrage-Zeitüberschreitung', 'warning');
     });

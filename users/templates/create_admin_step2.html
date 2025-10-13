@@ -44,7 +44,7 @@
                                                 <div class="mb-3">
                                                     <label for="{{ form.salutation.id_for_label }}" class="form-label">
                                                         <i class="bi bi-person me-1"></i>
-                                                        Anrede *
+                                                        Anrede <span class="text-danger">*</span>
                                                     </label>
                                                     <select name="{{ form.salutation.name }}"
                                                             id="{{ form.salutation.id_for_label }}"
@@ -67,8 +67,7 @@
                                                 <div class="mb-3">
                                                     <label for="{{ form.title.id_for_label }}" class="form-label">
                                                         <i class="bi bi-mortarboard me-1"></i>
-                                                        Titel
-                                                        <small class="text-muted">(Optional)</small>
+                                                        Titel <small class="text-muted">(Optional)</small>
                                                     </label>
                                                     <select name="{{ form.title.name }}"
                                                             id="{{ form.title.id_for_label }}"
@@ -101,7 +100,7 @@
                                                 <div class="mb-3">
                                                     <label for="{{ form.first_name.id_for_label }}" class="form-label">
                                                         <i class="bi bi-person-badge me-1"></i>
-                                                        Vorname *
+                                                        Vorname <span class="text-danger">*</span>
                                                     </label>
                                                     {{ form.first_name }}
                                                     {% if form.first_name.errors %}
@@ -113,7 +112,7 @@
                                                 <div class="mb-3">
                                                     <label for="{{ form.last_name.id_for_label }}" class="form-label">
                                                         <i class="bi bi-person-badge-fill me-1"></i>
-                                                        Nachname *
+                                                        Nachname <span class="text-danger">*</span>
                                                     </label>
                                                     {{ form.last_name }}
                                                     {% if form.last_name.errors %}
@@ -129,7 +128,7 @@
                                                 <div class="mb-3">
                                                     <label for="{{ form.email.id_for_label }}" class="form-label">
                                                         <i class="bi bi-envelope me-1"></i>
-                                                        E-Mail *
+                                                        E-Mail <span class="text-danger">*</span>
                                                     </label>
                                                     {{ form.email }}
                                                     {% if form.email.errors %}
@@ -145,7 +144,7 @@
                                                 <div class="mb-3">
                                                     <label for="{{ form.phone.id_for_label }}" class="form-label">
                                                         <i class="bi bi-telephone me-1"></i>
-                                                        Telefon *
+                                                        Telefon <span class="text-danger">*</span>
                                                     </label>
                                                     {{ form.phone }}
                                                     {% if form.phone.errors %}

@@ -1,4 +1,4 @@
-// auth/static/js/auth_login_modal.js - JavaScript для модального окна авторизации
+// user_auth/static/js/login_modal_htmx.js - HTMX версия для модального окна авторизации
 
 (function() {
     'use strict';
@@ -10,32 +10,11 @@
                                (window.isAdminCreationPage === true);
 
     if (isAdminCreationPage) {
-        console.log('🚫 Auth Login Modal System ОТКЛЮЧЕН на странице:', currentPath);
-
-        document.addEventListener('DOMContentLoaded', function() {
-            var modal = document.getElementById('authLoginModal');
-            var loader = document.getElementById('authModalLoader');
-
-            if (modal) {
-                modal.remove();
-                console.log('🗑️ Auth login modal удален');
-            }
-
-            if (loader) {
-                loader.remove();
-                console.log('🗑️ Auth modal loader удален');
-            }
-
-            var allBackdrops = document.querySelectorAll('.modal-backdrop');
-            allBackdrops.forEach(function(el) {
-                el.remove();
-            });
-        });
-
+        console.log('🚫 Auth Login Modal HTMX System ОТКЛЮЧЕН на странице:', currentPath);
         return;
     }
 
-    console.log('🔐 Auth Login Modal System загружен на странице:', currentPath);
+    console.log('🔐 Auth Login Modal HTMX System загружен на странице:', currentPath);
 
     // Конфигурация
     const CONFIG = {
@@ -48,7 +27,7 @@
         }
     };
 
-    class AuthLoginModal {
+    class AuthLoginModalHTMX {
         constructor() {
             this.modal = null;
             this.modalInstance = null;
@@ -59,7 +38,6 @@
             this.submitBtn = null;
             this.loader = null;
             this.attemptsAlert = null;
-            this.isSubmitting = false;
             this.currentAttempts = 0;
 
             this.init();
@@ -74,7 +52,7 @@
         }
 
         setup() {
-            console.log('🔧 Инициализация Auth Login Modal');
+            console.log('🔧 Инициализация Auth Login Modal HTMX');
 
             this.modal = document.getElementById('authLoginModal');
             if (!this.modal) {
@@ -99,7 +77,7 @@
             this.checkAuthStatus();
             this.restoreFormData();
 
-            console.log('✅ Auth Login Modal инициализирован');
+            console.log('✅ Auth Login Modal HTMX инициализирован');
         }
 
         checkAuthStatus() {
@@ -111,23 +89,69 @@
         }
 
         bindEvents() {
-            // Обработка отправки формы
-            this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+            // HTMX события для формы
+            this.form.addEventListener('htmx:beforeRequest', (e) => {
+                console.log('📤 HTMX: Отправка формы логина');
+                if (this.isLockedOut()) {
+                    e.preventDefault();
+                    this.showLockoutMessage();
+                    return;
+                }
+                this.showLoader();
+            });
+
+            this.form.addEventListener('htmx:afterRequest', (e) => {
+                console.log('📥 HTMX: Ответ получен');
+
+                // Помечаем событие как обработанное
+                e.detail.loginHandled = true;
+                e.stopImmediatePropagation();
+
+                this.hideLoader();
+
+                try {
+                    const response = JSON.parse(e.detail.xhr.response);
+                    console.log('📦 Parsed login response:', response);
+
+                    if (response.success) {
+                        this.handleLoginSuccess(response);
+                    } else {
+                        this.handleLoginError(response);
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка парсинга ответа:', error);
+                }
+            });
+
+            this.form.addEventListener('htmx:responseError', (e) => {
+                console.error('❌ HTMX Response Error:', e.detail);
+
+                // Помечаем событие как обработанное и останавливаем распространение
+                e.detail.loginHandled = true;
+                e.stopImmediatePropagation();
+
+                this.hideLoader();
+                if (window.showToast) {
+                    window.showToast('Serverfehler aufgetreten', 'error');
+                }
+            });
+
+            this.form.addEventListener('htmx:sendError', (e) => {
+                console.error('❌ HTMX Send Error:', e.detail);
+
+                // Помечаем событие как обработанное и останавливаем распространение
+                e.detail.loginHandled = true;
+                e.stopImmediatePropagation();
+
+                this.hideLoader();
+                if (window.showToast) {
+                    window.showToast('Verbindungsfehler', 'error');
+                }
+            });
 
             // Toggle password visibility
             if (this.togglePasswordBtn) {
                 this.togglePasswordBtn.addEventListener('click', () => this.togglePasswordVisibility());
-            }
-
-            // Валидация в реальном времени
-            if (this.usernameInput) {
-                this.usernameInput.addEventListener('input', () => this.validateField(this.usernameInput));
-                this.usernameInput.addEventListener('blur', () => this.validateField(this.usernameInput));
-            }
-
-            if (this.passwordInput) {
-                this.passwordInput.addEventListener('input', () => this.validateField(this.passwordInput));
-                this.passwordInput.addEventListener('blur', () => this.validateField(this.passwordInput));
             }
 
             // События модального окна
@@ -144,80 +168,6 @@
             this.modal.addEventListener('hidden.bs.modal', () => {
                 this.saveFormData();
             });
-
-            // Ctrl+Enter для быстрой отправки
-            this.form.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    this.handleSubmit(e);
-                }
-            });
-        }
-
-        async handleSubmit(e) {
-            e.preventDefault();
-
-            if (this.isSubmitting) {
-                console.log('⏳ Форма уже отправляется');
-                return;
-            }
-
-            if (this.isLockedOut()) {
-                this.showLockoutMessage();
-                return;
-            }
-
-            console.log('📤 Отправка формы входа');
-
-            if (!this.validateForm()) {
-                console.warn('⚠️ Форма не прошла валидацию');
-                return;
-            }
-
-            this.showLoader();
-            this.isSubmitting = true;
-
-            try {
-                const formData = new FormData(this.form);
-
-                const response = await fetch(this.form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': this.getCSRFToken()
-                    }
-                });
-
-                console.log('📨 Получен ответ:', response.status);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('Получен не-JSON ответ:', text);
-                    throw new Error('Server returned non-JSON response');
-                }
-
-                const data = await response.json();
-                console.log('📊 Данные ответа:', data);
-
-                if (data.success) {
-                    this.handleLoginSuccess(data);
-                } else {
-                    this.handleLoginError(data);
-                }
-
-            } catch (error) {
-                console.error('❌ Ошибка входа:', error);
-                this.handleNetworkError(error);
-            } finally {
-                this.hideLoader();
-                this.isSubmitting = false;
-            }
         }
 
         handleLoginSuccess(data) {
@@ -226,9 +176,8 @@
             this.clearAttempts();
             this.clearFormData();
 
-            if (typeof window.showToast === 'function') {
-                window.showToast(data.message || 'Erfolgreich angemeldet', 'success');
-            }
+            // Toast будет показан глобальным обработчиком toasts.js
+            // Здесь не нужно вызывать showToast, чтобы избежать дублирования
 
             this.hideModalWithSuccess();
 
@@ -248,142 +197,23 @@
             this.storeAttempts();
             this.updateAttemptsDisplay();
 
-            const message = data.message || 'Ungültiger Benutzername oder Passwort';
-            this.showFieldError('password', message);
-
-            if (typeof window.showToast === 'function') {
-                window.showToast(message, 'error');
-            }
+            // Toast будет показан глобальным обработчиком toasts.js
+            // Здесь не нужно вызывать showToast, чтобы избежать дублирования
 
             if (this.currentAttempts >= CONFIG.maxAttempts) {
                 this.setLockout();
                 this.showLockoutMessage();
             } else {
                 const remainingAttempts = CONFIG.maxAttempts - this.currentAttempts;
-                this.showRemainingAttempts(remainingAttempts);
+                const message = `Noch ${remainingAttempts} Versuche übrig`;
+                if (typeof window.showToast === 'function') {
+                    window.showToast(message, 'warning');
+                }
             }
 
             if (this.passwordInput) {
                 this.passwordInput.value = '';
                 this.passwordInput.focus();
-            }
-        }
-
-        handleNetworkError(error) {
-            console.error('🌐 Сетевая ошибка:', error);
-
-            let message = 'Verbindungsfehler. Bitte versuchen Sie es später erneut.';
-
-            if (error.message.includes('non-JSON')) {
-                message = 'Server hat eine ungültige Antwort gesendet. Bitte versuchen Sie es erneut.';
-            } else if (error.message.includes('Network')) {
-                message = 'Netzwerkfehler. Überprüfen Sie Ihre Internetverbindung.';
-            }
-
-            this.showFieldError('password', message);
-
-            if (typeof window.showToast === 'function') {
-                window.showToast(message, 'error');
-            }
-        }
-
-        validateForm() {
-            let isValid = true;
-
-            if (!this.validateField(this.usernameInput)) {
-                isValid = false;
-            }
-
-            if (!this.validateField(this.passwordInput)) {
-                isValid = false;
-            }
-
-            return isValid;
-        }
-
-        validateField(field) {
-            if (!field) return false;
-
-            const value = field.value.trim();
-            let isValid = true;
-            let message = '';
-
-            this.clearFieldError(field);
-
-            if (field === this.usernameInput) {
-                if (!value) {
-                    isValid = false;
-                    message = 'Benutzername ist erforderlich';
-                } else if (value.length < 3) {
-                    isValid = false;
-                    message = 'Benutzername muss mindestens 3 Zeichen lang sein';
-                }
-            } else if (field === this.passwordInput) {
-                if (!value) {
-                    isValid = false;
-                    message = 'Passwort ist erforderlich';
-                } else if (value.length < 3) {
-                    isValid = false;
-                    message = 'Passwort ist zu kurz';
-                }
-            }
-
-            if (isValid) {
-                this.setFieldSuccess(field);
-            } else {
-                this.setFieldError(field, message);
-            }
-
-            return isValid;
-        }
-
-        setFieldError(field, message) {
-            field.classList.remove('is-valid');
-            field.classList.add('is-invalid');
-
-            const wrapper = field.closest('.input-icon-wrapper');
-            if (wrapper) {
-                const existingFeedback = wrapper.parentNode.querySelector('.invalid-feedback');
-                if (existingFeedback) {
-                    existingFeedback.remove();
-                }
-
-                const feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback';
-                feedback.textContent = message;
-                wrapper.parentNode.appendChild(feedback);
-            }
-        }
-
-        setFieldSuccess(field) {
-            field.classList.remove('is-invalid');
-            field.classList.add('is-valid');
-
-            const wrapper = field.closest('.input-icon-wrapper');
-            if (wrapper) {
-                const existingFeedback = wrapper.parentNode.querySelector('.invalid-feedback');
-                if (existingFeedback) {
-                    existingFeedback.remove();
-                }
-            }
-        }
-
-        clearFieldError(field) {
-            field.classList.remove('is-invalid', 'is-valid');
-
-            const wrapper = field.closest('.input-icon-wrapper');
-            if (wrapper) {
-                const existingFeedback = wrapper.parentNode.querySelector('.invalid-feedback');
-                if (existingFeedback) {
-                    existingFeedback.remove();
-                }
-            }
-        }
-
-        showFieldError(fieldName, message) {
-            const field = this.form.querySelector(`input[name="${fieldName}"]`);
-            if (field) {
-                this.setFieldError(field, message);
             }
         }
 
@@ -514,13 +344,6 @@
             }
         }
 
-        showRemainingAttempts(remaining) {
-            const message = `Noch ${remaining} Versuche übrig`;
-            if (typeof window.showToast === 'function') {
-                window.showToast(message, 'warning');
-            }
-        }
-
         showLockoutMessage() {
             const message = `Zu viele fehlgeschlagene Anmeldeversuche. Konto für 15 Minuten gesperrt.`;
             if (typeof window.showToast === 'function') {
@@ -557,16 +380,11 @@
         clearFormData() {
             localStorage.removeItem(CONFIG.storageKeys.username);
         }
-
-        getCSRFToken() {
-            const token = document.querySelector('[name=csrfmiddlewaretoken]');
-            return token ? token.value : '';
-        }
     }
 
     // Создаем глобальный экземпляр
     if (!isAdminCreationPage) {
-        window.authLoginModal = new AuthLoginModal();
+        window.authLoginModal = new AuthLoginModalHTMX();
 
         // Экспортируем функции
         window.showAuthLoginModal = function() {
@@ -581,17 +399,7 @@
             }
         };
 
-        console.log('✅ Auth Login Modal System готов к работе');
-    } else {
-        console.log('🚫 Auth Login Modal System НЕ инициализирован (admin creation page)');
-
-        window.showAuthLoginModal = function() {
-            console.log('🚫 showAuthLoginModal заблокирован на admin creation page');
-        };
-
-        window.hideAuthLoginModal = function() {
-            console.log('🚫 hideAuthLoginModal заблокирован на admin creation page');
-        };
+        console.log('✅ Auth Login Modal HTMX System готов к работе');
     }
 
 })();

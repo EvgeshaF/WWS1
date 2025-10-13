@@ -68,7 +68,9 @@
                 </div>
 
                 <!-- Login Form -->
-                <form method="post" id="authLoginForm" action="{% url 'users:login' %}" novalidate>
+                <form method="post" id="authLoginForm" action="{% url 'users:login' %}" novalidate
+                      hx-post="{% url 'users:login' %}"
+                      hx-swap="none">
                     {% csrf_token %}
 
                     <div class="row">
@@ -190,4 +192,4 @@
 
 <!-- Подключаем стили и скрипты модального окна -->
 <link rel="stylesheet" href="{% static 'css/login_modal.css' %}">
-<script src="{% static 'js/login_modal.js' %}"></script>
+<script src="{% static 'js/login_modal_htmx.js' %}"></script>
