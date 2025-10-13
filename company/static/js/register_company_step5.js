@@ -49,14 +49,31 @@ document.addEventListener('DOMContentLoaded', function () {
         field.addEventListener('blur', () => validateIBAN(field));
     });
 
-    // Кнопка сохранить & закрыть
+    // ✅ ОТКЛЮЧЕНО: HTMX обрабатывает отправку формы
+    // Оставляем только валидацию перед отправкой через HTMX
     if (saveBankingAndCloseBtn) {
-        saveBankingAndCloseBtn.addEventListener('click', () => submitForm('save_and_close'));
+        // HTMX сам обработает клик через hx-post
     }
 
     form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        submitForm('complete');
+        // Проверяем валидацию перед отправкой через HTMX
+        const validation = validateAllRequiredFields();
+
+        if (!validation.allValid) {
+            e.preventDefault();
+            showToast('Bitte füllen Sie alle Pflichtfelder korrekt aus', 'error');
+
+            // Показываем первое поле с ошибкой
+            const firstErrorField = form.querySelector('.is-invalid');
+            if (firstErrorField) {
+                firstErrorField.focus();
+                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
+        }
+
+        // Валидация прошла - позволяем HTMX отправить форму
+        // HTMX обработчик покажет прогресс и перенаправит
     });
 
     // НОВАЯ ФУНКЦИЯ: Валидация обязательных полей
@@ -200,76 +217,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (feedback) feedback.remove();
     }
 
-    // --- Отправка формы с валидацией ---
-    function submitForm(action) {
-        // НОВОЕ: Валидируем все обязательные поля перед отправкой
-        const validation = validateAllRequiredFields();
-
-        if (!validation.allValid) {
-            showToast('Bitte füllen Sie alle Pflichtfelder korrekt aus', 'error');
-
-            // Показываем первое поле с ошибкой
-            const firstErrorField = form.querySelector('.is-invalid');
-            if (firstErrorField) {
-                firstErrorField.focus();
-                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            return;
-        }
-
-        const activeBtn = action === 'save_and_close' ? saveBankingAndCloseBtn : completeRegistrationBtn;
-
-        if (action === 'complete') showProgress();
-        else if (activeBtn) {
-            activeBtn.disabled = true;
-            activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Wird gesichert...';
-        }
-
-        const formData = new FormData(form);
-        formData.append('action', action);
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {'X-Requested-With':'XMLHttpRequest','HX-Request':'true'}
-        })
-        .then(r => {
-            if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
-            return r.json();
-        })
-        .then(data => {
-            if (action === 'complete') hideProgress();
-            else if (activeBtn) {
-                activeBtn.disabled = false;
-                activeBtn.innerHTML = '<i class="bi bi-bank me-1"></i>Bankdaten sichern & Schließen';
-            }
-
-            if (data.success && data.action === 'save_and_close') {
-                if (data.messages) data.messages.forEach(m=>showToast(m.text,m.tags,m.delay));
-                setTimeout(()=>window.location.href=data.redirect_url || '/',1500);
-                return;
-            }
-
-            if (data.messages) {
-                data.messages.forEach(m=>showToast(m.text,m.tags,m.delay));
-                if (data.messages.some(m=>m.tags==='success') && action==='complete') {
-                    if (currentStep) currentStep.textContent='Firma erfolgreich registriert!';
-                    setTimeout(()=>window.location.href='/',2000);
-                }
-            }
-        })
-        .catch(e=>{
-            console.error('Fehler:', e);
-            if (action==='complete') hideProgress();
-            if (activeBtn) {
-                activeBtn.disabled=false;
-                activeBtn.innerHTML = action === 'save_and_close'
-                    ? '<i class="bi bi-bank me-1"></i>Bankdaten sichern & Schließen'
-                    : '<i class="bi bi-building me-1"></i>Firma registrieren';
-            }
-            showToast('Kritischer Fehler beim Verarbeiten der Bankdaten','error');
-        });
-    }
+    // ✅ УДАЛЕНО: submitForm() больше не используется, HTMX обрабатывает отправку
+    // Прогресс-бар и редирект обрабатываются через HTMX events
 
     function showProgress() {
         if (!completeRegistrationBtn) return;

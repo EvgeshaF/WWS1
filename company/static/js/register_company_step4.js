@@ -14,15 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const postUrl = form.dataset.url;
     const nextUrl = form.dataset.nextUrl;
 
+    // ✅ ОТКЛЮЧЕНО: HTMX обрабатывает отправку формы
+    // Оставляем только валидацию перед отправкой через HTMX
     if (saveAndCloseBtn) {
-        saveAndCloseBtn.addEventListener('click', () => submitForm('save_and_close'));
+        // HTMX сам обработает клик через hx-post
     }
     form.addEventListener('submit', e => {
-        e.preventDefault();
-        submitForm('continue');
-    });
-
-    function submitForm(action) {
+        // Проверяем валидацию, но не отправляем через fetch
         const email = form.querySelector('input[name="email"]');
         const phone = form.querySelector('input[name="phone"]');
 
@@ -33,70 +31,23 @@ document.addEventListener('DOMContentLoaded', () => {
             validatePhone(phone);
 
         if (!valid) {
+            e.preventDefault();
             showToast('Bitte korrigieren Sie die Fehler im Formular', 'error');
-            return;
+            return false;
         }
 
-        const activeBtn = action === 'save_and_close' ? saveAndCloseBtn : continueBtn;
-        if (activeBtn) {
-            activeBtn.disabled = true;
-            activeBtn.innerHTML =
-                action === 'save_and_close'
-                    ? '<span class="spinner-border spinner-border-sm me-2"></span>Wird gesichert...'
-                    : '<span class="spinner-border spinner-border-sm me-2"></span>Wird gespeichert...';
-        }
-
-        const formData = new FormData(form);
+        // Добавляем дополнительные контакты в hidden поле перед отправкой HTMX
         const contacts = companyAdditionalContactManager.getAdditionalContactsData();
-        formData.append('additional_contacts_data', JSON.stringify(contacts));
-        formData.append('action', action);
+        const hiddenInput = form.querySelector('input[name="additional_contacts_data"]');
+        if (hiddenInput) {
+            hiddenInput.value = JSON.stringify(contacts);
+        }
 
-        fetch(postUrl, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'HX-Request': 'true' }
-        })
-            .then(r => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-            })
-            .then(data => {
-                if (activeBtn) {
-                    activeBtn.disabled = false;
-                    activeBtn.innerHTML =
-                        action === 'save_and_close'
-                            ? '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen'
-                            : '<i class="bi bi-arrow-right me-1"></i>Weiter';
-                }
+        // Валидация прошла - позволяем HTMX отправить форму
+    });
 
-                if (data.success !== undefined && data.action === 'save_and_close') {
-                    if (data.messages) data.messages.forEach(m => showToast(m.text, m.tags, m.delay));
-                    if (data.success) {
-                        setTimeout(() => (window.location.href = data.redirect_url || '/'), 1500);
-                    }
-                    return;
-                }
-
-                if (data.messages) {
-                    data.messages.forEach(m => showToast(m.text, m.tags, m.delay));
-                    const hasSuccess = data.messages.some(m => m.tags === 'success');
-                    if (hasSuccess && action === 'continue') {
-                        setTimeout(() => (window.location.href = nextUrl), 1500);
-                    }
-                }
-            })
-            .catch(err => {
-                console.error('Fehler:', err);
-                if (activeBtn) {
-                    activeBtn.disabled = false;
-                    activeBtn.innerHTML =
-                        action === 'save_and_close'
-                            ? '<i class="bi bi-check-circle me-1"></i>Sichern & Schließen'
-                            : '<i class="bi bi-arrow-right me-1"></i>Weiter';
-                }
-                showToast('Fehler beim Speichern der Kontaktdaten', 'error');
-            });
-    }
+    // ✅ УДАЛЕНО: submitForm() больше не используется, HTMX обрабатывает отправку
+    // Функция оставлена для совместимости, но не вызывается
 
     // Валидация
     function validateRequired(field, msg) {

@@ -54,6 +54,8 @@
                     <form id="company-step4-form"
                           method="post"
                           action="{% url 'company:register_company_step4' %}"
+                          hx-post="{% url 'company:register_company_step4' %}"
+                          hx-swap="none"
                           data-url="{% url 'company:register_company_step4' %}"
                           data-next-url="{% url 'company:register_company_step5' %}">
                         {% csrf_token %}
@@ -120,7 +122,13 @@
                                 <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
                             </a>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                <button type="button"
+                                        class="btn btn-outline-success"
+                                        id="save-and-close-btn"
+                                        hx-post="{% url 'company:register_company_step4' %}"
+                                        hx-include="#company-step4-form"
+                                        hx-swap="none"
+                                        hx-vals='{"action": "save_and_close"}'>
                                     <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
                                 </button>
                                 <button type="submit" class="btn btn-success" id="continue-btn">
@@ -439,6 +447,7 @@
     console.log('Initial contacts:', window.initialAdditionalContactsData);
 </script>
 
-<script src="{% static 'js/register_company_step4.js' %}"></script>
-<script src="{% static 'js/company_contacts_manager.js' %}"></script>
+<script src="{% static 'js/register_company_htmx.js' %}?v=2"></script>
+<script src="{% static 'js/register_company_step4.js' %}?v=2"></script>
+<script src="{% static 'js/company_contacts_manager.js' %}?v=2"></script>
 {% endblock %}

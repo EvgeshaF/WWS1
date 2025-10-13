@@ -87,6 +87,41 @@ class CompanyManager:
             if company is not None:  # ✅ ИСПРАВЛЕНО: Правильная проверка
                 logger.info(f"🔍 get_company() найдена компания: {company.get('company_name', 'Без названия')}")
                 logger.info(f"🔍 Основные поля: email={company.get('email')}, phone={company.get('phone')}")
+
+                # ✅ ОБРАТНОЕ ПРЕОБРАЗОВАНИЕ: Конвертируем массив дополнительных контактов в JSON-строку для совместимости
+                if 'additional_contacts' in company and isinstance(company['additional_contacts'], list):
+                    company['additional_contacts_data'] = json.dumps(company['additional_contacts'])
+                    logger.info(f"Преобразовано {len(company['additional_contacts'])} дополнительных контактов в JSON-строку")
+
+                # ✅ ОБРАТНОЕ ПРЕОБРАЗОВАНИЕ: Конвертируем массив банковских счетов в плоские поля для совместимости
+                if 'banking_accounts' in company and isinstance(company['banking_accounts'], list):
+                    banking_accounts = company['banking_accounts']
+
+                    # Находим основной счёт
+                    primary_account = next((acc for acc in banking_accounts if acc.get('is_primary')), None)
+                    if not primary_account and banking_accounts:
+                        primary_account = banking_accounts[0]
+
+                    if primary_account:
+                        company['bank_name'] = primary_account.get('bank_name', '')
+                        company['iban'] = primary_account.get('iban', '')
+                        company['bic'] = primary_account.get('bic', '')
+                        company['account_holder'] = primary_account.get('account_holder', '')
+                        company['bank_address'] = primary_account.get('bank_address', '')
+                        company['account_type'] = primary_account.get('account_type', '')
+                        company['banking_notes'] = primary_account.get('notes', '')
+
+                    # Находим вторичный счёт
+                    secondary_accounts = [acc for acc in banking_accounts if not acc.get('is_primary')]
+                    if secondary_accounts:
+                        secondary_account = secondary_accounts[0]
+                        company['secondary_bank_name'] = secondary_account.get('bank_name', '')
+                        company['secondary_iban'] = secondary_account.get('iban', '')
+                        company['secondary_bic'] = secondary_account.get('bic', '')
+                        company['secondary_account_holder'] = secondary_account.get('account_holder', '')
+
+                    logger.info(f"Преобразовано {len(banking_accounts)} банковских счетов в плоские поля")
+
             else:
                 logger.info("🔍 get_company() компания не найдена")
 
@@ -108,6 +143,92 @@ class CompanyManager:
             if collection is None:
                 logger.error("Коллекция недоступна")
                 return False
+
+            # ✅ ПРЕОБРАЗОВАНИЕ: Конвертируем дополнительные контакты из JSON-строки в массив
+            if 'additional_contacts_data' in company_data:
+                additional_contacts_str = company_data.get('additional_contacts_data', '[]')
+                try:
+                    if isinstance(additional_contacts_str, str):
+                        additional_contacts = json.loads(additional_contacts_str)
+                    elif isinstance(additional_contacts_str, list):
+                        additional_contacts = additional_contacts_str
+                    else:
+                        additional_contacts = []
+
+                    # Очищаем от _id и других MongoDB полей
+                    cleaned_contacts = []
+                    for contact in additional_contacts:
+                        if isinstance(contact, dict):
+                            clean_contact = {k: v for k, v in contact.items() if k != '_id'}
+                            cleaned_contacts.append(clean_contact)
+
+                    company_data['additional_contacts'] = cleaned_contacts
+                    logger.info(f"Преобразовано {len(cleaned_contacts)} дополнительных контактов")
+
+                    # Удаляем старое поле со строкой
+                    del company_data['additional_contacts_data']
+                except json.JSONDecodeError:
+                    logger.warning("Не удалось распарсить additional_contacts_data")
+                    company_data['additional_contacts'] = []
+                    if 'additional_contacts_data' in company_data:
+                        del company_data['additional_contacts_data']
+
+            # ✅ ПРЕОБРАЗОВАНИЕ: Конвертируем банковские данные из плоских полей в массив
+            banking_accounts = []
+
+            # Основной банковский счёт
+            if company_data.get('bank_name') or company_data.get('iban'):
+                main_account = {}
+                if company_data.get('bank_name'):
+                    main_account['bank_name'] = company_data.get('bank_name')
+                if company_data.get('iban'):
+                    main_account['iban'] = company_data.get('iban')
+                if company_data.get('bic'):
+                    main_account['bic'] = company_data.get('bic')
+                if company_data.get('account_holder'):
+                    main_account['account_holder'] = company_data.get('account_holder')
+                if company_data.get('bank_address'):
+                    main_account['bank_address'] = company_data.get('bank_address')
+                if company_data.get('account_type'):
+                    main_account['account_type'] = company_data.get('account_type')
+
+                main_account['is_primary'] = True
+                main_account['notes'] = company_data.get('banking_notes', '')
+
+                if 'bank_name' in main_account and 'iban' in main_account:
+                    banking_accounts.append(main_account)
+
+                # Удаляем старые плоские поля основного счёта
+                for field in ['bank_name', 'iban', 'bic', 'account_holder', 'bank_address', 'account_type', 'banking_notes']:
+                    if field in company_data:
+                        del company_data[field]
+
+            # Вторичный банковский счёт
+            if company_data.get('secondary_bank_name') or company_data.get('secondary_iban'):
+                secondary_account = {}
+                if company_data.get('secondary_bank_name'):
+                    secondary_account['bank_name'] = company_data.get('secondary_bank_name')
+                if company_data.get('secondary_iban'):
+                    secondary_account['iban'] = company_data.get('secondary_iban')
+                if company_data.get('secondary_bic'):
+                    secondary_account['bic'] = company_data.get('secondary_bic')
+                if company_data.get('secondary_account_holder'):
+                    secondary_account['account_holder'] = company_data.get('secondary_account_holder')
+
+                secondary_account['is_primary'] = False
+                secondary_account['notes'] = ''
+
+                if 'bank_name' in secondary_account and 'iban' in secondary_account:
+                    banking_accounts.append(secondary_account)
+
+                # Удаляем старые плоские поля вторичного счёта
+                for field in ['secondary_bank_name', 'secondary_iban', 'secondary_bic', 'secondary_account_holder']:
+                    if field in company_data:
+                        del company_data[field]
+
+            if banking_accounts:
+                company_data['banking_accounts'] = banking_accounts
+                logger.info(f"Преобразовано {len(banking_accounts)} банковских счетов")
 
             # Добавляем служебные поля
             now = datetime.datetime.now()

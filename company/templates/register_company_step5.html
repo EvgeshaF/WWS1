@@ -30,6 +30,8 @@
                     <form id="company-step5-form"
                           method="post"
                           action="{% url 'company:register_company_step5' %}"
+                          hx-post="{% url 'company:register_company_step5' %}"
+                          hx-swap="none"
                           data-iban-id="{{ form.iban.id_for_label }}"
                           data-secondary-iban-id="{{ form.secondary_iban.id_for_label }}">
                         {% csrf_token %}
@@ -68,7 +70,7 @@
                                             {% endif %}
                                             <div class="form-text">
                                                 <i class="bi bi-lightbulb me-1"></i>
-                                                Internationale Bankkontonummer (wird automatisch validiert)
+                                                Internationale Bankkontonummer (wird automatisch validiert, z.B. DE89370400440532013000)
                                             </div>
                                         </div>
 
@@ -84,7 +86,7 @@
         {% endif %}
         <div class="form-text">
             <i class="bi bi-lightbulb me-1"></i>
-            Bank Identifier Code
+            Bank Identifier Code (z.B. DEUTDEFF)
         </div>
     </div>
 
@@ -154,10 +156,16 @@
                                 <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
                             </a>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-success" id="save-banking-and-close-btn">
+                                <button type="button"
+                                        class="btn btn-outline-success"
+                                        id="save-and-close-btn"
+                                        hx-post="{% url 'company:register_company_step5' %}"
+                                        hx-include="#company-step5-form"
+                                        hx-swap="none"
+                                        hx-vals='{"action": "save_and_close"}'>
                                     <i class="bi bi-bank me-1"></i>Bankdaten sichern & Schließen
                                 </button>
-                                <button type="submit" class="btn btn-success" id="complete-registration-btn">
+                                <button type="submit" class="btn btn-success" id="complete-btn">
                                     <i class="bi bi-building me-1"></i>{{ text.btn }}
                                 </button>
                             </div>
@@ -183,5 +191,6 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script src="{% static 'js/register_company_htmx.js' %}"></script>
     <script src="{% static 'js/register_company_step5.js' %}"></script>
 {% endblock %}

@@ -275,8 +275,22 @@ class MongoConnection:
                     pass
                 return False
 
-            created_collections = [f"{db_name}_users"]
             logger.success(f"✅ Коллекция users создана программно")
+
+            # ✅ ПРОГРАММНОЕ СОЗДАНИЕ: Создаем коллекцию company программно (без JSON)
+            logger.warning("🎯 Создаем коллекцию company программно...")
+            if not cls.create_company_collection(db_name):
+                logger.error("❌ Не удалось создать коллекцию company программно")
+                # ROLLBACK
+                try:
+                    client.drop_database(db_name)
+                    logger.error(f"🔄 База данных '{db_name}' удалена из-за ошибки")
+                except:
+                    pass
+                return False
+
+            created_collections = [f"{db_name}_users", f"{db_name}_company_info"]
+            logger.success(f"✅ Коллекции users и company созданы программно")
 
             # Путь к JSON файлам для остальных коллекций
             base_path = os.path.join('static', 'defaults', 'data')
@@ -284,9 +298,9 @@ class MongoConnection:
 
             if os.path.exists(base_path):
                 json_files = [f for f in os.listdir(base_path) if f.endswith('.json')]
-                # ✅ ИСКЛЮЧАЕМ users.json из обработки
-                json_files = [f for f in json_files if f != 'users.json']
-                logger.info(f"📋 Найдено JSON файлов (без users.json): {json_files}")
+                # ✅ ИСКЛЮЧАЕМ users.json и company.json из обработки
+                json_files = [f for f in json_files if f not in ['users.json', 'company.json']]
+                logger.info(f"📋 Найдено JSON файлов (без users.json и company.json): {json_files}")
 
                 for file_name in json_files:
                     base_collection_name = file_name.replace('.json', '')
@@ -376,6 +390,135 @@ class MongoConnection:
                 logger.error(f"🔄 База данных '{db_name}' удалена из-за критической ошибки")
             except:
                 pass
+            return False
+
+    @classmethod
+    def create_company_collection(cls, db_name: str):
+        """Создает коллекцию компании программно (без company.json)"""
+        logger.warning(f"🚀 Создание коллекции компании программно для БД: {db_name}")
+
+        client = cls.get_client()
+        if client is None:
+            logger.error("❌ Нет подключения к MongoDB")
+            return False
+
+        try:
+            db = client[db_name]
+            company_collection_name = f"{db_name}_company_info"
+
+            # Проверяем, существует ли коллекция
+            if company_collection_name in db.list_collection_names():
+                logger.warning(f"⚠️ Коллекция '{company_collection_name}' уже существует — пропуск создания.")
+                return True
+
+            # JSON Schema валидатор для структуры компании
+            validator = {
+                "$jsonSchema": {
+                    "bsonType": "object",
+                    "required": [
+                        "type", "company_name", "legal_form",
+                        "email", "phone", "created_at", "modified_at"
+                    ],
+                    "properties": {
+                        "type": {"bsonType": "string", "enum": ["company_info"]},
+
+                        # Шаг 1: Основные данные
+                        "company_name": {"bsonType": "string"},
+                        "legal_form": {"bsonType": "string"},
+                        "ceo_salutation": {"bsonType": ["string", "null"]},
+                        "ceo_title": {"bsonType": ["string", "null"]},
+                        "ceo_first_name": {"bsonType": ["string", "null"]},
+                        "ceo_last_name": {"bsonType": ["string", "null"]},
+
+                        # Шаг 2: Регистрационные данные
+                        "commercial_register": {"bsonType": ["string", "null"]},
+                        "tax_number": {"bsonType": ["string", "null"]},
+                        "vat_id": {"bsonType": ["string", "null"]},
+                        "tax_id": {"bsonType": ["string", "null"]},
+
+                        # Шаг 3: Адресные данные
+                        "street": {"bsonType": ["string", "null"]},
+                        "postal_code": {"bsonType": ["string", "null"]},
+                        "city": {"bsonType": ["string", "null"]},
+                        "country": {"bsonType": ["string", "null"]},
+                        "address_addition": {"bsonType": ["string", "null"]},
+                        "po_box": {"bsonType": ["string", "null"]},
+
+                        # Шаг 4: Контактные данные (основные)
+                        "email": {"bsonType": "string"},
+                        "phone": {"bsonType": "string"},
+                        "fax": {"bsonType": ["string", "null"]},
+                        "website": {"bsonType": ["string", "null"]},
+                        "contact_person_salutation": {"bsonType": ["string", "null"]},
+                        "contact_person_title": {"bsonType": ["string", "null"]},
+                        "contact_person_first_name": {"bsonType": ["string", "null"]},
+                        "contact_person_last_name": {"bsonType": ["string", "null"]},
+                        "contact_person_email": {"bsonType": ["string", "null"]},
+                        "contact_person_phone": {"bsonType": ["string", "null"]},
+
+                        # ✅ ВЛОЖЕННАЯ СТРУКТУРА: Дополнительные контакты (массив объектов)
+                        "additional_contacts": {
+                            "bsonType": ["array", "null"],
+                            "items": {
+                                "bsonType": "object",
+                                "required": ["type", "value"],
+                                "properties": {
+                                    "type": {"bsonType": "string"},
+                                    "value": {"bsonType": "string"},
+                                    "note": {"bsonType": ["string", "null"]},
+                                    "is_primary": {"bsonType": ["bool", "null"]}
+                                }
+                            }
+                        },
+
+                        # ✅ ВЛОЖЕННАЯ СТРУКТУРА: Банковские данные (массив объектов)
+                        "banking_accounts": {
+                            "bsonType": ["array", "null"],
+                            "items": {
+                                "bsonType": "object",
+                                "required": ["bank_name", "iban", "bic", "account_holder"],
+                                "properties": {
+                                    "bank_name": {"bsonType": "string"},
+                                    "iban": {"bsonType": "string"},
+                                    "bic": {"bsonType": "string"},
+                                    "account_holder": {"bsonType": "string"},
+                                    "bank_address": {"bsonType": ["string", "null"]},
+                                    "account_type": {"bsonType": ["string", "null"]},
+                                    "is_primary": {"bsonType": ["bool", "null"]},
+                                    "notes": {"bsonType": ["string", "null"]}
+                                }
+                            }
+                        },
+
+                        # Служебные поля
+                        "is_primary": {"bsonType": ["bool", "null"]},
+                        "enable_notifications": {"bsonType": ["bool", "null"]},
+                        "enable_marketing": {"bsonType": ["bool", "null"]},
+                        "data_protection_consent": {"bsonType": ["bool", "null"]},
+                        "partial_save": {"bsonType": ["bool", "null"]},
+                        "last_saved_step": {"bsonType": ["int", "null"]},
+                        "created_at": {"bsonType": "date"},
+                        "modified_at": {"bsonType": "date"}
+                    }
+                }
+            }
+
+            db.create_collection(company_collection_name, validator=validator)
+            logger.success(f"✅ Коллекция '{company_collection_name}' успешно создана программно")
+
+            # Индексы
+            company_collection = db[company_collection_name]
+            company_collection.create_index("type", unique=True, name="idx_type_unique")
+            company_collection.create_index("company_name", name="idx_company_name")
+            company_collection.create_index("email", name="idx_email")
+            company_collection.create_index("is_primary", name="idx_is_primary")
+            company_collection.create_index("created_at", name="idx_created_at")
+
+            logger.success(f"📊 Индексы созданы для коллекции '{company_collection_name}'")
+            return True
+
+        except Exception as e:
+            logger.exception(f"Ошибка при создании коллекции компании: {e}")
             return False
 
     @classmethod

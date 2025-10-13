@@ -25,8 +25,9 @@
                     </div>
 
                     <form method="post" id="company-step3-form"
-                          data-url="{% url 'company:register_company_step3' %}"
-                          data-next-url="{% url 'company:register_company_step4' %}"
+                          action="{% url 'company:register_company_step3' %}"
+                          hx-post="{% url 'company:register_company_step3' %}"
+                          hx-swap="none"
                           data-city-by-plz-url="{% url 'company:get_city_by_plz' %}"
                           data-plz-by-city-url="{% url 'company:get_plz_by_city' %}"
                           data-cities-autocomplete-url="{% url 'company:search_cities_autocomplete' %}"
@@ -147,7 +148,13 @@
                                 <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
                             </a>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                <button type="button"
+                                        class="btn btn-outline-success"
+                                        id="save-and-close-btn"
+                                        hx-post="{% url 'company:register_company_step3' %}"
+                                        hx-include="#company-step3-form"
+                                        hx-swap="none"
+                                        hx-vals='{"action": "save_and_close"}'>
                                     <i class="bi bi-check-circle me-1"></i>Sichern & Schließen
                                 </button>
                                 <button type="submit" class="btn btn-success" id="continue-btn">
@@ -697,5 +704,5 @@
         }
     </script>
 
-    <script src="{% static 'js/register_company_step3.js' %}"></script>
+    <script src="{% static 'js/register_company_htmx.js' %}"></script>
 {% endblock %}

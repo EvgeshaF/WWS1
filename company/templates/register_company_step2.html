@@ -32,8 +32,8 @@
                     <form method="post"
                           id="company-step2-form"
                           action="{% url 'company:register_company_step2' %}"
-                          data-url="{% url 'company:register_company_step2' %}"
-                          data-next-url="{% url 'company:register_company_step3' %}">
+                          hx-post="{% url 'company:register_company_step2' %}"
+                          hx-swap="none">
                         {% csrf_token %}
 
                         <div class="row">
@@ -102,7 +102,13 @@
                                 <i class="bi bi-arrow-left me-1"></i>{{ text.btn_back }}
                             </a>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-success" id="save-and-close-btn">
+                                <button type="button"
+                                        class="btn btn-outline-success"
+                                        id="save-and-close-btn"
+                                        hx-post="{% url 'company:register_company_step2' %}"
+                                        hx-include="#company-step2-form"
+                                        hx-swap="none"
+                                        hx-vals='{"action": "save_and_close"}'>
                                     <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
                                 </button>
                                 <button type="submit" class="btn btn-success" id="continue-btn">
@@ -131,5 +137,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/register_company_step2.js' %}"></script>
+    <script src="{% static 'js/register_company_htmx.js' %}"></script>
 {% endblock %}

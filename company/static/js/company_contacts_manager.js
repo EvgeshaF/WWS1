@@ -834,89 +834,9 @@ class CompanyAdditionalContactManager {
     }
 
     setupFormSubmission() {
-        const form = document.getElementById('company-step4-form');
-        if (!form) return;
-
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            const emailInput = form.querySelector('input[name="email"]');
-            const phoneInput = form.querySelector('input[name="phone"]');
-
-            const isValid = this.validateRequired(emailInput, 'Haupt-E-Mail ist erforderlich') &&
-                            this.validateEmail(emailInput) &&
-                            this.validateRequired(phoneInput, 'Haupttelefon ist erforderlich') &&
-                            this.validatePhone(phoneInput);
-
-            if (!isValid) {
-                this.showAlert('Bitte korrigieren Sie die Fehler im Formular', 'error');
-                return;
-            }
-
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Wird gespeichert...';
-            }
-
-            const formData = new FormData(form);
-
-            const additionalContactsData = this.getAdditionalContactsData();
-            formData.append('additional_contacts_data', JSON.stringify(additionalContactsData));
-
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'HX-Request': 'true'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const contentType = response.headers.get('Content-Type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    return response.text().then(text => {
-                        console.error('Non-JSON response:', text);
-                        throw new Error('Server returned non-JSON response');
-                    });
-                }
-
-                return response.json();
-            })
-            .then(data => {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Weiter zu Schritt 5';
-                }
-
-                if (data.messages && Array.isArray(data.messages)) {
-                    data.messages.forEach(message => {
-                        this.showAlert(message.text, message.tags);
-                    });
-
-                    const hasSuccess = data.messages.some(msg => msg.tags === 'success');
-                    if (hasSuccess) {
-                        setTimeout(() => {
-                            window.location.href = '/company/register/step5/';
-                        }, 1500);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
-
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Weiter zu Schritt 5';
-                }
-
-                this.showAlert('Fehler beim Speichern der Kontaktdaten: ' + error.message, 'error');
-            });
-        });
+        // ✅ ОТКЛЮЧЕНО: HTMX обрабатывает отправку формы
+        // Этот метод больше не нужен, так как используется универсальный HTMX обработчик
+        console.log('ℹ️ setupFormSubmission отключен - используется HTMX');
     }
 
     validateRequired(field, errorMessage) {
