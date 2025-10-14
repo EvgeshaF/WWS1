@@ -4,9 +4,9 @@
 # Create Admin Step 1 (Benutzerdaten)
 # ========================================
 text_create_admin_step1 = {
-    'title': "Administrator erstellen",
-    'header': "Neuen Administrator anlegen",
-    'desc': "Geben Sie die Benutzerdaten für den neuen Administrator ein:",
+    'title': "Benutzer erstellen",
+    'header': "Neuen Benutzer anlegen",
+    'desc': "Geben Sie die Benutzerdaten für den neuen Benutzer ein:",
     'username': "Benutzername:",
     'password': "Passwort:",
     'password_confirm': "Passwort bestätigen:",
@@ -18,7 +18,7 @@ text_create_admin_step1 = {
 # Create Admin Step 2 (Enhanced Modal Version)
 # ========================================
 text_create_admin_step2 = {
-    'title': "Administrator Profil",
+    'title': "Benutzerprofil",
     'header': "Profildaten und Kontakte verwalten",
     'desc': "Vervollständigen Sie das Profil und geben Sie die Kontaktdaten ein:",
     'salutation': "Anrede:",
@@ -132,12 +132,12 @@ text_delete_confirmation = {
 # Create Admin Step 3 (Permissions)
 # ========================================
 text_create_admin_step3 = {
-    'title': "Administrator Berechtigungen",
+    'title': "Benutzerrechte",
     'header': "Berechtigungen und Sicherheit festlegen",
-    'desc': "Definieren Sie die Berechtigungen und Sicherheitseinstellungen:",
+    'desc': "Definieren Sie die Berechtigungen und Sicherheitseinstellungen für den Benutzer:",
     'permissions_title': "Systemberechtigungen",
     'security_title': "Sicherheitseinstellungen",
-    'btn': "Administrator erstellen",
+    'btn': "Benutzer erstellen",
     'btn_back': "Zurück zu Schritt 2",
     'notification': "* Diese Berechtigungen können später in den Benutzereinstellungen geändert werden."
 }
@@ -199,7 +199,7 @@ validation_messages = {
 success_messages = {
     'step1_completed': "Benutzerdaten für '{username}' erfolgreich validiert",
     'step2_completed': "Profildaten und Kontakte erfolgreich erfasst ({contact_info})",
-    'admin_created': "Administrator '{username}' wurde erfolgreich erstellt! Kontakte: {contact_info}",
+    'admin_created': "Benutzer '{username}' wurde erfolgreich erstellt! Kontakte: {contact_info}",
 
     # Contact summary formats
     'contacts_system_only': "System-E-Mail, System-Telefon",
@@ -219,7 +219,7 @@ success_messages = {
 error_messages = {
     'mongodb_not_configured': "MongoDB muss zuerst konfiguriert werden",
     'user_exists': "Ein Benutzer mit diesem Namen existiert bereits",
-    'user_creation_error': "Fehler beim Erstellen des Administrators",
+    'user_creation_error': "Fehler beim Erstellen des Benutzers",
     'session_expired': "Die Sitzung ist abgelaufen. Bitte beginnen Sie erneut",
     'step_incomplete': "Bitte vollenden Sie die vorherigen Schritte",
     'contact_processing_error': "Fehler beim Verarbeiten der Kontaktdaten",
@@ -352,9 +352,9 @@ help_texts = {
     'contact_label': "Kurze Beschreibung oder Kategorie für diesen Kontakt",
 
     # Security help texts
-    'super_admin': "Hat vollständigen Zugriff auf alle Systemfunktionen",
+    'super_admin': "Hat vollständigen Zugriff auf alle Systemfunktionen (nur für Administratoren)",
     'password_expires': "Passwort muss regelmäßig geändert werden (empfohlen: 90 Tage)",
-    'two_factor': "Erhöht die Sicherheit erheblich (empfohlen für alle Administratoren)",
+    'two_factor': "Erhöht die Sicherheit erheblich (empfohlen für alle Benutzer mit erweiterten Rechten)",
 
     # Permission help texts
     'manage_users': "Kann Benutzer erstellen, bearbeiten und löschen",

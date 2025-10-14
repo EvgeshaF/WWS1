@@ -13,6 +13,7 @@ import json
 
 from user_auth import is_user_authenticated, should_show_login_modal
 from user_auth.session import clear_user_session
+from user_auth.decorators import admin_required
 
 from  user_auth.forms import LoginForm  # LoginForm в auth/forms.py
 from .forms import (  # Остальные формы из users/forms.py
@@ -255,13 +256,25 @@ def render_with_messages(request, template_name, context, success_redirect=None)
         return render(request, template_name, context)
 
 
+@admin_required()
 @ratelimit(key='ip', rate='10/m', method='POST')
 def create_admin_step1(request):
     """Шаг 1: Создание базовых учетных данных администратора"""
     logger.info("🚀 === ВХОД В create_admin_step1 ===")
 
+    # Проверяем количество администраторов для определения режима
+    user_manager = UserManager()
+    admin_count = user_manager.get_admin_count()
+    is_first_admin = admin_count == 0
+
+    # Определяем, создаем ли мы администратора
+    is_creating_admin = request.GET.get('admin', 'true') == 'true'
+
     if request.method == 'POST':
         logger.info("📥 POST запрос для создания учетных данных")
+
+        # Проверяем action
+        action = request.POST.get('action', 'continue')
 
         form = CreateAdminUserForm(request.POST)
         if form.is_valid():
@@ -271,7 +284,6 @@ def create_admin_step1(request):
             logger.info(f"✅ Форма валидна для пользователя: {username}")
 
             # Проверяем, что пользователь не существует
-            user_manager = UserManager()
             existing_user = user_manager.find_user_by_username(username)
 
             if existing_user:
@@ -279,7 +291,13 @@ def create_admin_step1(request):
                 logger.error(f"❌ {error_msg}: {username}")
                 messages.error(request, error_msg)
 
-                context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
+                context = {
+                    'form': form,
+                    'text': language.text_create_admin_step1,
+                    'step': 1,
+                    'is_first_admin': is_first_admin,
+                    'is_creating_admin': is_creating_admin
+                }
                 return render_with_messages(request, 'create_admin_step1.html', context)
 
             # Сохраняем данные в сессию
@@ -287,6 +305,7 @@ def create_admin_step1(request):
                 'username': username,
                 'password': make_password(password),  # Хешируем пароль
                 'step': 1,
+                'is_admin': is_creating_admin,
                 'created_at': datetime.datetime.now().isoformat()
             }
             request.session.modified = True
@@ -295,10 +314,26 @@ def create_admin_step1(request):
             logger.success(f"✅ {success_msg}")
             messages.success(request, success_msg)
 
+            # Если action = save_and_close, очищаем сессию и возвращаемся на главную
+            if action == 'save_and_close':
+                # Очищаем временные данные
+                if 'admin_creation' in request.session:
+                    del request.session['admin_creation']
+                    request.session.modified = True
+
+                messages.info(request, "Erstellung abgebrochen")
+                return render_with_messages(request, 'create_admin_step1.html', {}, reverse('home'))
+
             return render_with_messages(
                 request,
                 'create_admin_step1.html',
-                {'form': form, 'text': language.text_create_admin_step1, 'step': 1},
+                {
+                    'form': form,
+                    'text': language.text_create_admin_step1,
+                    'step': 1,
+                    'is_first_admin': is_first_admin,
+                    'is_creating_admin': is_creating_admin
+                },
                 reverse('users:create_admin_step2')
             )
         else:
@@ -307,10 +342,17 @@ def create_admin_step1(request):
 
     # GET запрос
     form = CreateAdminUserForm()
-    context = {'form': form, 'text': language.text_create_admin_step1, 'step': 1}
+    context = {
+        'form': form,
+        'text': language.text_create_admin_step1,
+        'step': 1,
+        'is_first_admin': is_first_admin,
+        'is_creating_admin': is_creating_admin
+    }
     return render(request, 'create_admin_step1.html', context)
 
 
+@admin_required()
 @ratelimit(key='ip', rate='10/m', method='POST')
 def create_admin_step2(request):
     """Шаг 2: Профильные данные и контакты администратора"""
@@ -324,10 +366,19 @@ def create_admin_step2(request):
         return redirect('users:create_admin_step1')
 
     username = admin_creation['username']
+    is_creating_admin = admin_creation.get('is_admin', True)
     logger.info(f"📝 Шаг 2 для пользователя: {username}")
+
+    # Проверяем количество администраторов
+    user_manager = UserManager()
+    admin_count = user_manager.get_admin_count()
+    is_first_admin = admin_count == 0
 
     if request.method == 'POST':
         logger.info("📥 POST запрос для профильных данных")
+
+        # Проверяем action
+        action = request.POST.get('action', 'continue')
 
         form = AdminProfileForm(request.POST)
         if form.is_valid():
@@ -377,10 +428,26 @@ def create_admin_step2(request):
             logger.success(f"✅ {success_msg}")
             messages.success(request, success_msg)
 
+            # Если action = save_and_close, очищаем сессию и возвращаемся на главную
+            if action == 'save_and_close':
+                if 'admin_creation' in request.session:
+                    del request.session['admin_creation']
+                    request.session.modified = True
+
+                messages.info(request, "Erstellung abgebrochen")
+                return render_with_messages(request, 'create_admin_step2.html', {}, reverse('home'))
+
             return render_with_messages(
                 request,
                 'create_admin_step2.html',
-                {'form': form, 'text': language.text_create_admin_step2, 'step': 2, 'username': username},
+                {
+                    'form': form,
+                    'text': language.text_create_admin_step2,
+                    'step': 2,
+                    'username': username,
+                    'is_first_admin': is_first_admin,
+                    'is_creating_admin': is_creating_admin
+                },
                 reverse('users:create_admin_step3')
             )
         else:
@@ -399,6 +466,8 @@ def create_admin_step2(request):
         'text': language.text_create_admin_step2,
         'step': 2,
         'username': username,
+        'is_first_admin': is_first_admin,
+        'is_creating_admin': is_creating_admin,
         'contact_type_choices': contact_type_choices,
         'contact_type_choices_json': json.dumps([{'value': choice[0], 'text': choice[1]} for choice in contact_type_choices]),
         'communication_config': communication_config,
@@ -408,6 +477,40 @@ def create_admin_step2(request):
     return render(request, 'create_admin_step2.html', context)
 
 
+@require_http_methods(["GET"])
+def user_list_view(request):
+    """Просмотр всех пользователей (доступно всем авторизованным)"""
+    try:
+        # Проверяем авторизацию
+        is_auth, user_data = is_user_authenticated(request)
+
+        if not is_auth:
+            messages.warning(request, "Bitte melden Sie sich an, um Benutzer anzusehen")
+            return redirect('users:login_page')
+
+        # Получаем список пользователей
+        user_manager = UserManager()
+        users = user_manager.list_users(include_deleted=False, active_only=False)
+
+        # Проверяем, является ли текущий пользователь администратором
+        is_admin = user_data.get('is_admin', False)
+
+        context = {
+            'users': users,
+            'total_users': len(users),
+            'is_admin': is_admin,
+            'current_username': user_data.get('username')
+        }
+
+        return render(request, 'users/user_list.html', context)
+
+    except Exception as e:
+        logger.error(f"Ошибка в user_list_view: {e}")
+        messages.error(request, "Ein Fehler ist beim Laden der Benutzerliste aufgetreten")
+        return redirect('home')
+
+
+@admin_required()
 @ratelimit(key='ip', rate='5/m', method='POST')
 def create_admin_step3(request):
     """Шаг 3: Права доступа и создание администратора"""
@@ -421,13 +524,22 @@ def create_admin_step3(request):
         return redirect('users:create_admin_step1')
 
     username = admin_creation['username']
+    is_creating_admin = admin_creation.get('is_admin', True)
     profile = admin_creation.get('profile', {})
     full_name = f"{profile.get('first_name', '')} {profile.get('last_name', '')}".strip()
 
     logger.info(f"🔐 Шаг 3 для пользователя: {username} ({full_name})")
 
+    # Проверяем количество администраторов
+    user_manager = UserManager()
+    admin_count = user_manager.get_admin_count()
+    is_first_admin = admin_count == 0
+
     if request.method == 'POST':
-        logger.info("📥 POST запрос для создания администратора")
+        logger.info("📥 POST запрос для создания пользователя")
+
+        # Проверяем action
+        action = request.POST.get('action', 'continue')
 
         form = AdminPermissionsForm(request.POST)
         if form.is_valid():
@@ -446,20 +558,20 @@ def create_admin_step3(request):
                 'contacts': admin_creation['contacts'],
 
                 # Права доступа
-                'is_admin': True,
+                'is_admin': form.cleaned_data.get('is_super_admin', False) if not is_creating_admin else True,
                 'is_active': True,
-                'is_super_admin': form.cleaned_data.get('is_super_admin', True),
+                'is_super_admin': form.cleaned_data.get('is_super_admin', False) if is_creating_admin else False,
                 'permissions': {
-                    'can_manage_users': form.cleaned_data.get('can_manage_users', True),
-                    'can_manage_database': form.cleaned_data.get('can_manage_database', True),
-                    'can_view_logs': form.cleaned_data.get('can_view_logs', True),
-                    'can_manage_settings': form.cleaned_data.get('can_manage_settings', True),
+                    'can_manage_users': form.cleaned_data.get('can_manage_users', is_creating_admin),
+                    'can_manage_database': form.cleaned_data.get('can_manage_database', is_creating_admin),
+                    'can_view_logs': form.cleaned_data.get('can_view_logs', is_creating_admin),
+                    'can_manage_settings': form.cleaned_data.get('can_manage_settings', is_creating_admin),
                 },
 
                 # Настройки безопасности
                 'security': {
                     'password_expires': form.cleaned_data.get('password_expires', True),
-                    'two_factor_required': form.cleaned_data.get('two_factor_required', True),
+                    'two_factor_required': form.cleaned_data.get('two_factor_required', is_creating_admin),
                 },
 
                 # Системные поля
@@ -472,8 +584,16 @@ def create_admin_step3(request):
                 'password_changed_at': datetime.datetime.now()
             }
 
+            # Если action = save_and_close, очищаем сессию и возвращаемся
+            if action == 'save_and_close':
+                if 'admin_creation' in request.session:
+                    del request.session['admin_creation']
+                    request.session.modified = True
+
+                messages.info(request, "Erstellung abgebrochen")
+                return render_with_messages(request, 'create_admin_step3.html', {}, reverse('home'))
+
             # Создаем пользователя
-            user_manager = UserManager()
             success = user_manager.create_user(user_data)
 
             if success:
@@ -500,7 +620,15 @@ def create_admin_step3(request):
                 return render_with_messages(
                     request,
                     'create_admin_step3.html',
-                    {'form': form, 'text': language.text_create_admin_step3, 'step': 3, 'username': username, 'full_name': full_name},
+                    {
+                        'form': form,
+                        'text': language.text_create_admin_step3,
+                        'step': 3,
+                        'username': username,
+                        'full_name': full_name,
+                        'is_first_admin': is_first_admin,
+                        'is_creating_admin': is_creating_admin
+                    },
                     reverse('home')
                 )
             else:
@@ -518,7 +646,9 @@ def create_admin_step3(request):
         'text': language.text_create_admin_step3,
         'step': 3,
         'username': username,
-        'full_name': full_name
+        'full_name': full_name,
+        'is_first_admin': is_first_admin,
+        'is_creating_admin': is_creating_admin
     }
 
     return render(request, 'create_admin_step3.html', context)

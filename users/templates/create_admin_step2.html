@@ -13,9 +13,16 @@
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="adminModalLabel">
                         <i class="bi bi-person-vcard me-2"></i>
-                        {{ text.title }}
+                        {% if is_creating_admin %}
+                            Administrator Profil
+                        {% else %}
+                            Benutzerprofil
+                        {% endif %}
                     </h5>
                     <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 3</span>
+                    {% if not is_first_admin %}
+                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="window.location.href='{% url 'home' %}'"></button>
+                    {% endif %}
                 </div>
                 <div class="modal-body">
 
@@ -179,12 +186,22 @@
                                     <span class="badge bg-primary ms-1" id="additionalContactsCount">0</span>
                                 </button>
 
+                                {% if not is_first_admin %}
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        id="save-and-close-btn"
+                                        onclick="document.getElementById('action-input-step2').value='save_and_close'; document.getElementById('admin-step2-form').submit();">
+                                    <i class="bi bi-x-circle me-1"></i> Abbrechen
+                                </button>
+                                {% endif %}
+
                                 <button type="submit" class="btn btn-primary" id="submitBtn">
                                     <i class="bi bi-arrow-right me-1"></i>
                                     {{ text.btn }}
                                 </button>
                             </div>
                         </div>
+                        <input type="hidden" name="action" id="action-input-step2" value="continue">
 
                     </form>
 

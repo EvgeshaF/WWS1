@@ -9,6 +9,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),           # AJAX + обычная форма
     path('login-page/', views.login_page_view, name='login_page'), # Отдельная страница
     path('logout/', views.logout_view, name='logout'),
+    path('list/', views.user_list_view, name='user_list'),    # Просмотр всех пользователей
     path('create-admin/step1/', views.create_admin_step1, name='create_admin_step1'),
     path('create-admin/step2/', views.create_admin_step2, name='create_admin_step2'),
     path('create-admin/step3/', views.create_admin_step3, name='create_admin_step3'),

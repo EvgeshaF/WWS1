@@ -33,7 +33,7 @@
     <div class="modal fade show" id="companyModal" tabindex="-1" aria-modal="true" role="dialog" style="display:block;">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
                         <i class="bi bi-telephone me-2"></i>
                         {{ text.title }}
@@ -106,9 +106,9 @@
 
                                 <!-- Кнопка справа -->
                                 <div class="d-flex">
-                                    <button type="button" class="btn btn-outline-info ms-auto" id="openAdditionalContactsBtn">
+                                    <button type="button" class="btn btn-outline-primary ms-auto" id="openAdditionalContactsBtn">
                                         <i class="bi bi-plus-circle me-1"></i> Zusätzliche Kontakte
-                                        <span class="badge bg-info ms-1" id="additionalContactsCount">0</span>
+                                        <span class="badge bg-primary ms-1" id="additionalContactsCount">0</span>
                                     </button>
                                 </div>
                             </div>
@@ -123,7 +123,7 @@
                             </a>
                             <div class="d-flex gap-2">
                                 <button type="button"
-                                        class="btn btn-outline-success"
+                                        class="btn btn-outline-primary"
                                         id="save-and-close-btn"
                                         hx-post="{% url 'company:register_company_step4' %}"
                                         hx-include="#company-step4-form"
@@ -131,7 +131,7 @@
                                         hx-vals='{"action": "save_and_close"}'>
                                     <i class="bi bi-check-circle me-1"></i> Sichern & Schließen
                                 </button>
-                                <button type="submit" class="btn btn-success" id="continue-btn">
+                                <button type="submit" class="btn btn-primary" id="continue-btn">
                                     <i class="bi bi-arrow-right me-1"></i> {{ text.btn }}
                                 </button>
                             </div>
@@ -157,126 +157,79 @@
 
 <!-- ==================== МОДАЛЬНОЕ ОКНО: Управление дополнительными контактами ==================== -->
     <div class="modal fade" id="additionalContactsModal" tabindex="-1" aria-labelledby="additionalContactsModalLabel" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
                     <h5 class="modal-title" id="additionalContactsModalLabel">
                         <i class="bi bi-person-lines-fill me-2"></i>
-                        Zusätzliche Firmenkontakte verwalten
+                        Zusätzliche Kontakte
                     </h5>
-                    <span class="badge bg-light text-dark ms-2">
-                        <span id="modalContactsCount">0</span> Kontakte
-                    </span>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <span class="badge bg-light text-dark ms-auto">Schritt 4.1 (Optional)</span>
                 </div>
-
                 <div class="modal-body">
-                    <!-- Информационный блок -->
-                    <div class="alert alert-info mb-4">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="alert-heading mb-2">
-                                    <i class="bi bi-lightbulb me-2"></i>
-                                    Erweitern Sie die Kommunikationsmöglichkeiten
-                                </h6>
-                                <p class="mb-0 small">
-                                    Fügen Sie weitere Kontaktmöglichkeiten hinzu (z.B. separate E-Mails für Abteilungen, Mobilnummern, Social Media).
-                                    <br><strong>Alle zusätzlichen Kontakte sind optional.</strong>
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <button type="button" class="btn btn-success" id="addAdditionalContactBtn">
-                                    <i class="bi bi-plus-circle me-1"></i>
-                                    Kontakt hinzufügen
-                                </button>
-                            </div>
-                        </div>
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Hier können Sie zusätzliche Kontaktmöglichkeiten hinzufügen (optional).
+                        <br><small class="text-muted">Beispiel: Weitere E-Mails, Mobile, Fax, Website, etc.</small>
+                    </div>
+
+                    <!-- Кнопка добавления контакта -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="mb-0">
+                            <i class="bi bi-collection me-1"></i>
+                            Kontaktliste
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-primary" id="addAdditionalContactBtn">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Kontakt hinzufügen
+                        </button>
                     </div>
 
                     <!-- Таблица с контактами -->
-                    <div class="table-responsive" style="display: none;">
-                        <table class="table table-hover">
+                    <div class="table-responsive">
+                        <table class="table table-hover contacts-table" id="additionalContactsTable" style="display: none;">
                             <thead class="table-light">
                             <tr>
-                                <th style="width: 25%">
+                                <th width="30%">
                                     <i class="bi bi-tag me-1"></i>
                                     Kontakttyp
                                 </th>
-                                <th style="width: 40%">
+                                <th width="40%">
                                     <i class="bi bi-info-circle me-1"></i>
                                     Kontaktdaten
                                 </th>
-                                <th style="width: 20%">
-                                    <i class="bi bi-building me-1"></i>
-                                    Abteilung
+                                <th width="20%">
+                                    <i class="bi bi-bookmark me-1"></i>
+                                    Bezeichnung
                                 </th>
-                                <th style="width: 15%" class="text-center">
+                                <th width="10%" class="text-center">
                                     <i class="bi bi-gear me-1"></i>
                                     Aktionen
                                 </th>
                             </tr>
                             </thead>
                             <tbody id="additionalContactsTableBody">
-                            <!-- Строки контактов добавляются через JavaScript -->
+                            <!-- Контакты добавляются динамически -->
                             </tbody>
                         </table>
-                    </div>
 
-                    <!-- Empty state (показывается когда контактов нет) -->
-                    <div id="emptyAdditionalContactsPlaceholder" class="text-center py-5">
-                        <i class="bi bi-person-plus display-1 text-muted mb-3"></i>
-                        <h5 class="text-muted">Noch keine zusätzlichen Firmenkontakte</h5>
-                        <p class="text-muted mb-4">
-                            Klicken Sie auf "Kontakt hinzufügen", um zusätzliche Kommunikationswege zu hinterlegen.
-                            <br><small>Zusätzliche Kontakte sind optional und können übersprungen werden.</small>
-                        </p>
-                        <button type="button" class="btn btn-success" onclick="document.getElementById('addAdditionalContactBtn').click()">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            Ersten Kontakt hinzufügen
-                        </button>
-                    </div>
-
-                    <!-- Подсказки -->
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="card border-primary">
-                                <div class="card-body">
-                                    <h6 class="card-title text-primary">
-                                        <i class="bi bi-lightbulb me-2"></i>Tipps
-                                    </h6>
-                                    <ul class="small mb-0">
-                                        <li>E-Mail: Für verschiedene Abteilungen (Vertrieb, Support, etc.)</li>
-                                        <li>Mobil: Für Notfallkontakt oder Außendienst</li>
-                                        <li>LinkedIn/XING: Für Unternehmensprofile</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card border-info">
-                                <div class="card-body">
-                                    <h6 class="card-title text-info">
-                                        <i class="bi bi-info-circle me-2"></i>Hinweise
-                                    </h6>
-                                    <ul class="small mb-0">
-                                        <li>Alle zusätzlichen Kontakte sind optional</li>
-                                        <li>Können nach Abteilungen kategorisiert werden</li>
-                                        <li>Änderungen werden automatisch gespeichert</li>
-                                    </ul>
-                                </div>
-                            </div>
+                        <!-- Плейсхолдер для пустой таблицы -->
+                        <div id="emptyAdditionalContactsPlaceholder" class="text-center">
+                            <i class="bi bi-inbox display-4 text-muted"></i>
+                            <p class="mt-3 mb-2"><strong>Noch keine zusätzlichen Kontakte hinzugefügt</strong></p>
+                            <p class="text-muted mb-0">Diese sind optional und können übersprungen werden</p>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Zusätzliche Kontakte verbessern die Kommunikationsmöglichkeiten
+                            </small>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <small class="text-muted me-auto" id="contactsSummaryText">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Keine zusätzlichen Firmenkontakte hinzugefügt
-                    </small>
-                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-check-circle me-1"></i>
-                        Fertig
+                        Zurück
                     </button>
                 </div>
             </div>
@@ -287,110 +240,68 @@
     <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="contactModalLabel">
                         <i class="bi bi-person-vcard me-2"></i>
-                        Firmenkontakt hinzufügen
+                        Kontakt hinzufügen
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body">
-                    <form id="contactForm">
-                        <!-- Kontakttyp -->
+                    <form id="contactForm" novalidate>
                         <div class="mb-3">
                             <label for="contactType" class="form-label">
                                 <i class="bi bi-tag me-1"></i>
-                                Kontakttyp <span class="text-danger">*</span>
+                                Kontakttyp *
                             </label>
-                            <select class="form-select" id="contactType" name="contact_type" required>
-                                <option value="">-- Auswählen --</option>
+                            <select name="contact_type"
+                                    id="contactType"
+                                    class="form-select select2-basic"
+                                    data-placeholder="Kontakttyp auswählen..."
+                                    required>
+                                <option></option>
                                 {% for value, text in contact_type_choices %}
                                     {% if value %}
                                         <option value="{{ value }}">{{ text }}</option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
-                            <div class="invalid-feedback">
-                                Kontakttyp ist erforderlich
-                            </div>
+                            <div class="invalid-feedback"></div>
                         </div>
 
-                        <!-- Kontaktdaten -->
                         <div class="mb-3">
                             <label for="contactValue" class="form-label">
-                                <i class="bi bi-pencil me-1"></i>
-                                Kontaktdaten <span class="text-danger">*</span>
+                                <i class="bi bi-info-circle me-1"></i>
+                                Kontaktdaten *
                             </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="contactValue"
-                                   name="contact_value"
-                                   placeholder="Kontaktdaten eingeben..."
-                                   required>
-                            <div class="invalid-feedback">
-                                Kontaktdaten sind erforderlich
-                            </div>
+                            <input type="text" class="form-control" id="contactValue" placeholder="Kontaktdaten eingeben..." required autocomplete="off">
+                            <div class="invalid-feedback"></div>
                             <div class="form-text" id="contactHint">
                                 <i class="bi bi-lightbulb me-1"></i>
                                 Geben Sie die entsprechenden Kontaktdaten ein
                             </div>
                         </div>
 
-                        <!-- Abteilung/Beschreibung -->
                         <div class="mb-3">
                             <label for="contactLabel" class="form-label">
-                                <i class="bi bi-building me-1"></i>
-                                Abteilung/Beschreibung
+                                <i class="bi bi-bookmark me-1"></i>
+                                Bezeichnung
                                 <small class="text-muted">(Optional)</small>
                             </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="contactLabel"
-                                   name="contact_label"
-                                   placeholder="z.B. Vertrieb, Support, Buchhaltung...">
+                            <input type="text" class="form-control" id="contactLabel" placeholder="z.B. Büro, Privat, Geschäftlich..." autocomplete="off">
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
-                                Abteilung oder Verwendungszweck für diesen Kontakt
-                            </div>
-                        </div>
-
-                        <!-- Дополнительные опции -->
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           id="contactImportant"
-                                           name="contact_important">
-                                    <label class="form-check-label" for="contactImportant">
-                                        <i class="bi bi-star me-1"></i>
-                                        Als wichtig markieren
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           id="contactPublic"
-                                           name="contact_public">
-                                    <label class="form-check-label" for="contactPublic">
-                                        <i class="bi bi-eye me-1"></i>
-                                        Öffentlich sichtbar
-                                    </label>
-                                </div>
+                                Optional: Bezeichnung zur besseren Unterscheidung
                             </div>
                         </div>
                     </form>
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-1"></i>
                         Abbrechen
                     </button>
-                    <button type="button" class="btn btn-success" id="saveContactBtn">
+                    <button type="button" class="btn btn-primary" id="saveContactBtn">
                         <i class="bi bi-check-circle me-1"></i>
                         Speichern
                     </button>
@@ -405,19 +316,19 @@
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="deleteContactModalLabel">
-                        <i class="bi bi-trash me-2"></i>
+                        <i class="bi bi-exclamation-triangle me-2"></i>
                         Kontakt löschen
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body text-center">
-                    <i class="bi bi-exclamation-triangle display-1 text-warning mb-3"></i>
-                    <p class="mb-0">Möchten Sie diesen Firmenkontakt wirklich löschen?</p>
+                    <i class="bi bi-trash display-4 text-danger mb-3"></i>
+                    <p class="mb-2"><strong>Möchten Sie diesen Kontakt wirklich löschen?</strong></p>
+                    <p class="text-muted small mb-0">Diese Aktion kann nicht rückgängig gemacht werden.</p>
                 </div>
-
-                <div class="modal-footer">
+                <div class="modal-footer justify-content-center">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
                         Abbrechen
                     </button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
@@ -447,7 +358,7 @@
     console.log('Initial contacts:', window.initialAdditionalContactsData);
 </script>
 
-<script src="{% static 'js/register_company_htmx.js' %}?v=2"></script>
-<script src="{% static 'js/register_company_step4.js' %}?v=2"></script>
-<script src="{% static 'js/company_contacts_manager.js' %}?v=2"></script>
+<script src="{% static 'js/register_company_htmx.js' %}?v=4"></script>
+<script src="{% static 'js/register_company_step4.js' %}?v=4"></script>
+<script src="{% static 'js/company_contacts_manager.js' %}?v=4"></script>
 {% endblock %}

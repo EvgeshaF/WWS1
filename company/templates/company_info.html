@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load company_extras %}
 
 {% block title %}Firmendaten{% endblock %}
 
@@ -80,8 +81,8 @@
                             <div class="field-label">Geschäftsführer</div>
                             <div class="field-value">
                                 {% if company.ceo_salutation or company.ceo_title or company.ceo_first_name or company.ceo_last_name %}
-                                    {% if company.ceo_salutation %}{{ company.ceo_salutation|title }} {% endif %}
-                                    {% if company.ceo_title %}{{ company.ceo_title }} {% endif %}
+                                    {% if company.ceo_salutation %}{{ company.ceo_salutation|salutation_display }} {% endif %}
+                                    {% if company.ceo_title %}{{ company.ceo_title|title_display }} {% endif %}
                                     {{ company.ceo_first_name|default:"" }} {{ company.ceo_last_name|default:"" }}
                                 {% else %}
                                     <span class="field-empty">Nicht angegeben</span>

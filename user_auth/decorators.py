@@ -60,13 +60,17 @@ def admin_required(redirect_url: str = 'home'):
             from .authentication import is_user_authenticated
             is_auth, user_data = is_user_authenticated(request)
 
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            is_htmx = request.headers.get('HX-Request') == 'true'
+
             if not is_auth:
                 logger.warning(f"🚫 Неавторизованный доступ к админ-функции {view_func.__name__}")
 
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                if is_ajax or is_htmx:
                     return JsonResponse({
                         'success': False,
-                        'message': 'Administratorrechte erforderlich'
+                        'message': 'Administratorrechte erforderlich',
+                        'redirect_url': '/users/login/'
                     }, status=403)
 
                 messages.error(request, "Zugriff verweigert: Administratorrechte erforderlich")
@@ -76,10 +80,11 @@ def admin_required(redirect_url: str = 'home'):
             if not user_data.get('is_admin', False):
                 logger.warning(f"🚫 Попытка доступа к админ-функции без прав: {user_data.get('username')}")
 
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                if is_ajax or is_htmx:
                     return JsonResponse({
                         'success': False,
-                        'message': 'Administratorrechte erforderlich'
+                        'message': 'Diese Funktion ist nur für Administratoren verfügbar',
+                        'redirect_url': '/'
                     }, status=403)
 
                 messages.error(request, "Zugriff verweigert: Diese Funktion ist nur für Administratoren verfügbar")

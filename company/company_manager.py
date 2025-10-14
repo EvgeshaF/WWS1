@@ -301,13 +301,46 @@ class CompanyManager:
             if company is None:
                 return None
 
-            # Подсчитываем заполненные поля
+            # Подсчитываем ТОЛЬКО обязательные поля
             filled_fields = 0
             total_fields = 0
-            required_fields = ['company_name', 'legal_form', 'street', 'postal_code', 'city', 'country', 'email', 'phone']
-            optional_fields = ['commercial_register', 'tax_number', 'vat_id', 'tax_id', 'fax', 'website', 'ceo_first_name', 'ceo_last_name', 'contact_person_first_name', 'contact_person_last_name', 'industry', 'description']
 
-            for field in required_fields + optional_fields:
+            # Базовые обязательные поля (Шаги 1-3)
+            required_fields = [
+                'company_name', 'legal_form', 'street', 'postal_code', 'city', 'country', 'email', 'phone'
+            ]
+
+            # Банковские обязательные поля (Шаг 5)
+            # Проверяем, есть ли banking_accounts (новый формат) или старые плоские поля
+            if 'banking_accounts' in company and company['banking_accounts']:
+                banking_accounts = company['banking_accounts']
+
+                # Основной счёт (обязательный)
+                primary_account = next((acc for acc in banking_accounts if acc.get('is_primary')), None)
+                if not primary_account and banking_accounts:
+                    primary_account = banking_accounts[0]
+
+                if primary_account:
+                    # Обязательные банковские поля основного счёта
+                    banking_required = ['bank_name', 'iban', 'bic', 'account_holder']
+                    for field in banking_required:
+                        total_fields += 1
+                        if field in primary_account and primary_account[field] and str(primary_account[field]).strip():
+                            filled_fields += 1
+                else:
+                    # Если нет основного счёта, всё равно считаем 4 пустых обязательных поля
+                    total_fields += 4
+            else:
+                # Старый формат (плоские поля) - для обратной совместимости
+                banking_required_old = ['bank_name', 'iban', 'bic', 'account_holder']
+
+                for field in banking_required_old:
+                    total_fields += 1
+                    if field in company and company[field] and str(company[field]).strip():
+                        filled_fields += 1
+
+            # Базовые обязательные поля компании
+            for field in required_fields:
                 total_fields += 1
                 if field in company and company[field] and str(company[field]).strip():
                     filled_fields += 1

@@ -287,7 +287,6 @@ class CompanyAdditionalContactManager {
         console.log('🔧 Инициализация CompanyAdditionalContactManager');
         this.bindEvents();
         this.updateTable();
-        this.updateSummary();
         this.setupFormSubmission();
         this.setupValidation();
         console.log('✅ CompanyAdditionalContactManager инициализирован');
@@ -414,7 +413,6 @@ class CompanyAdditionalContactManager {
         console.log('🔧 Открытие additionalContactsModal');
         const modal = new bootstrap.Modal(modalElement);
         this.updateTable();
-        this.updateModalCounter();
         modal.show();
         console.log('✅ additionalContactsModal открыта');
     }
@@ -683,8 +681,6 @@ class CompanyAdditionalContactManager {
         }
 
         this.updateTable();
-        this.updateModalCounter();
-        this.updateSummary();
         this.updateContactsDataInput();
 
         // Закрываем модальное окно
@@ -713,8 +709,6 @@ class CompanyAdditionalContactManager {
         if (this.deletingIndex >= 0) {
             this.additionalContacts.splice(this.deletingIndex, 1);
             this.updateTable();
-            this.updateModalCounter();
-            this.updateSummary();
             this.updateContactsDataInput();
             this.showAlert('Firmenkontakt erfolgreich gelöscht', 'info');
             console.log('✅ Контакт удален');
@@ -731,24 +725,30 @@ class CompanyAdditionalContactManager {
 
     updateTable() {
         const tableBody = document.getElementById('additionalContactsTableBody');
-        const modalTableContainer = document.querySelector('#additionalContactsModal .table-responsive');
-        const modalPlaceholder = document.querySelector('#additionalContactsModal #emptyAdditionalContactsPlaceholder');
+        const table = document.getElementById('additionalContactsTable');
+        const placeholder = document.getElementById('emptyAdditionalContactsPlaceholder');
+        const counter = document.getElementById('additionalContactsCount');
 
-        if (!tableBody) {
-            console.error('❌ Таблица additionalContactsTableBody не найдена!');
+        if (!tableBody || !table || !placeholder) {
+            console.error('❌ Не найдены элементы таблицы!');
             return;
         }
 
+        // Обновляем счетчик
+        if (counter) {
+            counter.textContent = this.additionalContacts.length;
+        }
+
         if (this.additionalContacts.length === 0) {
-            if (modalTableContainer) modalTableContainer.style.display = 'none';
-            if (modalPlaceholder) modalPlaceholder.style.display = 'block';
+            table.style.display = 'none';
+            placeholder.style.display = 'block';
             tableBody.innerHTML = '';
             console.log('📋 Таблица пуста, показан placeholder');
             return;
         }
 
-        if (modalTableContainer) modalTableContainer.style.display = 'block';
-        if (modalPlaceholder) modalPlaceholder.style.display = 'none';
+        table.style.display = 'table';
+        placeholder.style.display = 'none';
 
         tableBody.innerHTML = this.additionalContacts.map((contact, index) => {
             return this.createContactRow(contact, index);
@@ -758,30 +758,7 @@ class CompanyAdditionalContactManager {
     }
 
     updateModalCounter() {
-        const modalCounter = document.getElementById('modalContactsCount');
-        if (modalCounter) {
-            modalCounter.textContent = this.additionalContacts.length;
-        }
-    }
-
-    updateSummary() {
-        const counter = document.getElementById('additionalContactsCount');
-        const summaryText = document.getElementById('contactsSummaryText');
-
-        if (counter) {
-            counter.textContent = this.additionalContacts.length;
-        }
-
-        if (summaryText) {
-            const count = this.additionalContacts.length;
-            if (count === 0) {
-                summaryText.textContent = 'Keine zusätzlichen Firmenkontakte hinzugefügt';
-            } else if (count === 1) {
-                summaryText.textContent = '1 zusätzlicher Firmenkontakt hinzugefügt';
-            } else {
-                summaryText.textContent = `${count} zusätzliche Firmenkontakte hinzugefügt`;
-            }
-        }
+        // Этот метод больше не нужен, так как счётчик обновляется в updateTable()
     }
 
     createContactRow(contact, index) {
@@ -952,7 +929,6 @@ class CompanyAdditionalContactManager {
         if (Array.isArray(contactsData)) {
             this.additionalContacts = contactsData;
             this.updateTable();
-            this.updateSummary();
             this.updateContactsDataInput();
         }
     }

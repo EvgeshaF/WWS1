@@ -13,9 +13,16 @@
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="adminModalLabel">
                         <i class="bi bi-shield-check me-2"></i>
-                        {{ text.title }}
+                        {% if is_creating_admin %}
+                            Administrator Berechtigungen
+                        {% else %}
+                            Benutzerrechte
+                        {% endif %}
                     </h5>
                     <span class="badge bg-light text-dark ms-auto">Schritt {{ step }} von 3</span>
+                    {% if not is_first_admin %}
+                    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="window.location.href='{% url 'home' %}'"></button>
+                    {% endif %}
                 </div>
                 <div class="modal-body">
 

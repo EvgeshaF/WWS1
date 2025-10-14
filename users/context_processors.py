@@ -45,8 +45,10 @@ def auth_context(request):
         context = {
             # Информация о пользователе
             'is_authenticated': is_auth,
+            'user_authenticated': is_auth,  # Для совместимости с шаблонами
             'current_user': user_data,
             'user_display_name': get_user_display_name(user_data) if user_data else None,
+            'is_admin': user_data.get('is_admin', False) if user_data else False,
 
             # Информация об аутентификации
             'show_login_modal': show_login,
